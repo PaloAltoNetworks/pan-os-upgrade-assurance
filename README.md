@@ -1,31 +1,37 @@
-# pcs-opensource
-Template for all Prisma Cloud open source projects
+# README
 
-[![license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![support](https://img.shields.io/badge/Support%20Level-Community-yellowgreen)](./SUPPORT.md)
+## running examples
 
-## Description
-An outline about your project and overview of use.
+Install poetry if you don't have it:
 
-### Example Formatting
-* How bullet things
-* Step-by-step bullets
+```bash
+curl -sSL https://install.python-poetry.org | python3 -
 ```
-code blocks for commands
+
+Install dependencies:
+
+```bash
+poetry install
 ```
-Can also do `inline code` for more specifics
 
-### More examples
-1. Numbered list
-1. Like so
-1. More info
+This will create a virtualenv and install the dependencies. Afterwards you may active the virtualenv with:
 
+```bash
+poetry shell
+```
 
-## Version History
+Go into the examples directory to run them:
 
-* 0.2
-    * Various changes
-* 0.1
-    * Initial Release
+```bash
+cd examples
 
-## License
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details
+./demo_upgrade.py
+```
+
+## Building
+
+```bash
+poetry build
+```
+
+This will create the wheel and tarball packages in the `dist` directory.
