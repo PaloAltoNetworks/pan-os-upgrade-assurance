@@ -5,14 +5,22 @@ To build documentation for the project, install Sphinx using the following comma
 
 .. code-block:: console
 
-   $ poetry install --only=dev
+    $ poetry install --only=dev
 
-Once all dependencies are installed, you can build HTML documentation by calling the following commands:
+Once all dependencies are installed, you can build HTML documentation by:
 
-.. code-block:: console
+* entering the poetry virtual environment:
 
-   $ cd <path-to-repository>/docs
-   $ make html
+    .. code-block:: console
+
+        $ poetry shell
+
+* calling the following commands:
+
+    .. code-block:: console
+
+        $ cd <path-to-repository>/docs
+        $ make html
 
 If there are some major changes including TOC, you should initially run the **make clean** command:
 
