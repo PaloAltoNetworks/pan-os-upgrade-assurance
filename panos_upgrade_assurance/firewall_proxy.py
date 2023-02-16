@@ -314,7 +314,7 @@ class FirewallProxy(Firewall):
 
         result = {}
         licenses = response['licenses']['entry']
-        for lic in licenses:
+        for lic in licenses if isinstance(licenses, list) else [licenses]:
             result[lic['feature']] = dict(lic)
         return result
 
