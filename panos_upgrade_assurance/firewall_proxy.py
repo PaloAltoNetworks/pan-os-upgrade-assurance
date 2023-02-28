@@ -16,6 +16,10 @@ class ContentDBVersionsFormatException(Exception):
     """Used when parsing Content DB versions fail due to an unknown version format (assuming ``XXXX-YYYY``)."""
     pass
 
+class PanoramaConfigurationMissingException(Exception):
+    """Used when checking Panorama connectivity on a device that was not configured with Panorama"""
+    pass
+
 class FirewallProxy(Firewall):
     """Class representing a Firewall.
 
@@ -99,12 +103,59 @@ class FirewallProxy(Firewall):
     def is_panorama_connected(self) -> bool:
         """Get Panorama connectivity status.
 
-        The actual API command run is ``request panorama-connectivity-check``.
+        The actual API command run is ``show panorama-status``.
+        
+        An output of this command is usually a string. This method is responsible for parsing this string and trying to extract information if at least one of the Panoramas configured is connected.
+
+        :raise PanoramaConfigurationMissingException: Exception being raised when this check is run against a device with no Panorama configured.
+        :raise MalformedResponseException: Exception being raised when response from device does not meet required format.
+
+            Since the response is a string (that we need to parse) this method expects a strict format. For single Panorama this is:
+
+            .. code-block:: python
+            
+                Panorama Server 1 : 1.2.3.4
+                    Connected     : no
+                    HA state      : disconnected
+
+            For two Panoramas (HA pair for example) those are just two blocks:
+
+            .. code-block:: python
+            
+                Panorama Server 1 : 1.2.3.4
+                    Connected     : no
+                    HA state      : disconnected
+                Panorama Server 2 : 5.6.7.8
+                    Connected     : yes
+                    HA state      : disconnected
+
+            If none of this formats is met, this exception is thrown.
 
         :return: ``True`` when connection is up, ``False`` otherwise.
         :rtype: bool
         """
-        return True if self.op_parser(cmd="request panorama-connectivity-check").strip() == "Panorama 1: Connected" else False
+
+        pan_status = self.op_parser(cmd="show panorama-status")
+        if pan_status == None:
+            raise PanoramaConfigurationMissingException("Device not configured with Panorama.")
+
+        if not isinstance(pan_status, str):
+            raise MalformedResponseException("Response from device is not type of string.")
+
+        pan_status_list = pan_status.split('\n')
+        pan_status_list_length = len(pan_status_list)
+
+        if pan_status_list_length in [3,6]:
+            for i in range(1,pan_status_list_length,3):
+                pan_connected = interpret_yes_no(
+                    (pan_status_list[i].split(':')[1]).strip()
+                )
+                if pan_connected:
+                    return True
+        else:
+            raise MalformedResponseException(f"Panorama configuration block does not have typical structure: <{resp}>.")
+
+        return False
 
     def get_ha_configuration(self) -> dict:
         """Get high-availability configuration status.
