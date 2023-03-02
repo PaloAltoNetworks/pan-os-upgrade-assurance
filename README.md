@@ -35,3 +35,12 @@ poetry build
 ```
 
 This will create the wheel and tarball packages in the `dist` directory.
+
+## Direct install with pip
+
+
+You may optionally install directly from the repo with pip. Pip version >19.0 is required which has the PEP-517 implementation.
+
+```bash
+pip3 install 'git+https://github.com/PaloAltoNetworks/pan-os-upgrade-assurance.git'
+```
