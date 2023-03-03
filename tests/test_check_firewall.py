@@ -4,18 +4,11 @@ from panos_upgrade_assurance.check_firewall import CheckFirewall
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
 from panos_upgrade_assurance.utils import CheckResult
 from panos_upgrade_assurance.utils import CheckStatus
-from panos_upgrade_assurance.utils import interpret_yes_no
-
+\
 @pytest.fixture
 def check_firewall_mock():
     tested_class = CheckFirewall(MagicMock(set_spec=FirewallProxy))
     yield tested_class
-
-@pytest.fixture
-def interpret_yes_no_mock():
-    tested_method = interpret_yes_no(MagicMock())
-    yield tested_method
-
 
 class TestCheckFirewall:
 
