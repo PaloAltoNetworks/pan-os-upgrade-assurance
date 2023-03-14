@@ -40,7 +40,6 @@ class TestCheckFirewall:
         check_firewall_mock._node.is_panorama_configured.return_value = False
         assert check_firewall_mock.check_panorama_connectivity() == CheckResult(status=CheckStatus.ERROR, reason="Device not configured with Panorama.")
 
-    # TO DO
     def test_check_ha_status_success(self, check_firewall_mock):
         check_firewall_mock._node.get_ha_configuration.return_value = {
             'enabled': 'yes',
