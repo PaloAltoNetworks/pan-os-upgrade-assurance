@@ -4,7 +4,7 @@ from panos_upgrade_assurance.check_firewall import CheckFirewall
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
 from panos_upgrade_assurance.utils import CheckResult
 from panos_upgrade_assurance.utils import CheckStatus
-\
+
 @pytest.fixture
 def check_firewall_mock():
     tested_class = CheckFirewall(MagicMock(set_spec=FirewallProxy))
@@ -149,15 +149,91 @@ class TestCheckFirewall:
     # TO DO 
     #def check_expired_licenses(self,check_firewall_mock):
 
+    def test_check_expired_licenses_true(self, check_firewall_mock):
+        licenses = check_firewall_mock._node.get_licenses.return_value = {
+                    'AutoFocus Device License': {
+                        'authcode': 'Snnnnnnn',
+                        'base-license-name': 'PA-VM',
+                        'description': 'AutoFocus Device License',
+                        'expired': 'yes',
+                        'expires': 'September 25, 2010',
+                        'feature': 'AutoFocus Device License',
+                        'issued': 'January 12, 2010',
+                        'serial': 'xxxxxxxxxxxxxxxx'
+                    },
+                    'PA-VM': {
+                        'authcode': None,
+                        'description': 'Standard VM-300',
+                        'expired': 'yes',
+                        'expires': 'September 25, 2010',
+                        'feature': 'PA-VM',
+                        'issued': 'January 12, 2010',
+                        'serial': 'xxxxxxxxxxxxxxxx'
+                    }
+                
+        }
+        assert check_firewall_mock.check_expired_licenses() == CheckResult(reason=f"Found expired licenses:  AutoFocus Device License, PA-VM.")
+
+    def test_check_expired_licenses_false(self, check_firewall_mock):
+        licenses = check_firewall_mock._node.get_licenses.return_value = {
+                    'AutoFocus Device License': {
+                        'authcode': 'Snnnnnnn',
+                        'base-license-name': 'PA-VM',
+                        'description': 'AutoFocus Device License',
+                        'expired': 'no',
+                        'expires': 'September 25, 2010',
+                        'feature': 'AutoFocus Device License',
+                        'issued': 'January 12, 2010',
+                        'serial': 'xxxxxxxxxxxxxxxx'
+                    },
+                    'PA-VM': {
+                        'authcode': None,
+                        'description': 'Standard VM-300',
+                        'expired': 'no',
+                        'expires': 'September 25, 2010',
+                        'feature': 'PA-VM',
+                        'issued': 'January 12, 2010',
+                        'serial': 'xxxxxxxxxxxxxxxx'
+                    }
+                
+        }
+        assert check_firewall_mock.check_expired_licenses() == CheckResult(status=CheckStatus.SUCCESS)
 
 
-    # @pytest.mark.parametrize("version",[None, "3421-3234"])
-    # def test_check_content_version(self, check_firewall_mock, version):
-    #     check_firewall_mock._node.get_latest_available_content_version = MagicMock()
-    #     if version is None:
-    #         check_firewall_mock._node.get_latest_available_content_version.called_once()
-    #     else:
-    #         check_firewall_mock._node.get_latest_available_content_version.assert_not_called()
+    def test_check_critical_session_none(self, check_firewall_mock):
+        assert check_firewall_mock.check_critical_session(source=None, destination="5.5.5.5", dest_port="443") == CheckResult(status=CheckStatus.SKIPPED, reason="Missing critical session description. Failing check.")
+
+    def test_check_critical_session_empty_sessions(self, check_firewall_mock):
+        check_firewall_mock._node.get_sessions.return_value = []
+        assert check_firewall_mock.check_critical_session(source="10.10.10.10", destination="5.5.5.5", dest_port="443") == CheckResult(status=CheckStatus.ERROR, reason="Device's session table is empty.")
+
+    def test_check_critical_session_sessions_in_list(self, check_firewall_mock):
+        check_firewall_mock._node.get_sessions.return_value = [
+            {
+            'source': '10.10.10.10',
+            'xdst': '5.5.5.5',
+            'dport': '443'
+            }
+        ]
+        assert check_firewall_mock.check_critical_session(source='10.10.10.10', destination='5.5.5.5', dest_port='443') == CheckResult(status=CheckStatus.SUCCESS)
+
+
+    @pytest.mark.parametrize("version",[None, "3421-3234"])
+    def test_check_content_version_call_get_latest(self, check_firewall_mock, version):
+        check_firewall_mock._node.get_latest_available_content_version = MagicMock()
+        if version is None:
+            check_firewall_mock._node.get_latest_available_content_version.called_once()
+        else:
+            check_firewall_mock._node.get_latest_available_content_version.assert_not_called()
+    
+    def test_check_content_version_ok(self, check_firewall_mock):
+        check_firewall_mock._node.get_latest_available_content_version.return_value = "8670-7824"
+        check_firewall_mock._node.get_content_db_version.return_value = "8670-7824"
+        assert check_firewall_mock.check_content_version() == CheckResult(status=CheckStatus.SUCCESS)
+
+#To continue with the rest of the test cases
+    # def test_check_content_version_
+
 
     # def test_get_content_db_version(self, check_firewall_mock):
     #     check_firewall_mock._node.get_content_db_version.return_value = "1234-2345"
