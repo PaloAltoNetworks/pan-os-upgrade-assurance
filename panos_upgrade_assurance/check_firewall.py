@@ -1,7 +1,9 @@
 from typing import Optional, Union, List, Iterable, Dict
+from math import ceil
 
 from panos_upgrade_assurance.utils import CheckResult, ConfigParser, interpret_yes_no, CheckType, SnapType, CheckStatus
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
+from panos import PanOSVersion
 
 class ContentDBVersionInFutureException(Exception):
     """Used when the installed Content DB version is newer than the latest available version."""
@@ -9,6 +11,10 @@ class ContentDBVersionInFutureException(Exception):
 
 class WrongDataTypeException(Exception):
     """Used when passed configuration does not meet the data type requirements."""
+    pass
+
+class ImageVersionNotAvailableException(Exception):
+    """Used when requested image version is not available for downloading."""
     pass
 
 class CheckFirewall:
@@ -65,6 +71,7 @@ class CheckFirewall:
             CheckType.SESSION_EXIST: self.check_critical_session,
             CheckType.ARP_ENTRY_EXIST: self.check_arp_entry,
             CheckType.IPSEC_TUNNEL_STATUS: self.check_ipsec_tunnel_status,
+            CheckType.FREE_DISK_SPACE: self.check_free_disk_space,
         }
 
     def check_pending_changes(self) -> CheckResult:
@@ -435,6 +442,42 @@ class CheckFirewall:
 
         result.reason = f"Tunnel {tunnel_name} not found."
 
+        return result
+
+    def check_free_disk_space(self, image_version: Optional[str] = None) -> CheckResult:
+        """
+        # TODO add documentation
+        """
+        result = CheckResult()
+        minimum_free_space = ceil(3.0 * 1024)
+        if image_version:
+            image_sem_version = PanOSVersion(image_version)
+            available_versions = self._node.get_available_image_versions()
+            
+            if str(image_sem_version) in available_versions:
+                requested_base_image_size = 0
+                requested_image_size = int(available_versions[str(image_sem_version)]['size'])
+
+                if image_sem_version.patch != 0:
+                    base_image_version = f'{image_sem_version.major}.{image_sem_version.minor}.0'
+                    if base_image_version in available_versions:
+                        if not interpret_yes_no(available_versions[base_image_version]['downloaded']):
+                            requested_base_image_size = int(available_versions[base_image_version]['size'])
+                    else:
+                        raise ImageVersionNotAvailableException(f'Base image {base_image_version} does not exist.')
+
+                minimum_free_space = ceil(1.1*(requested_base_image_size + requested_image_size))
+
+            else:
+                raise ImageVersionNotAvailableException(f'Image {str(image_sem_version)} does not exist.')
+
+        free_space = self._node.get_disk_utilization()
+        free_space_panrepo = free_space['/opt/panrepo']
+
+        if free_space_panrepo > minimum_free_space:
+            result.status = CheckStatus.SUCCESS
+        else:
+            result.reason = f"There is not enough free space, only {str(round(free_space_panrepo/1024,1)) + 'G' if free_space_panrepo >= 1024 else str(free_space_panrepo) + 'M'}B is available."
         return result
 
     def get_content_db_version(self) -> Dict[str,str]:
