@@ -111,11 +111,12 @@ class CheckFirewall:
         else:
             return CheckResult(status=CheckStatus.ERROR, reason="Device not configured with Panorama.")
 
-    def check_ha_status(self) -> CheckResult:
+    def check_ha_status(self, skip_config_sync: Optional[bool] = False) -> CheckResult:
         """Checks HA pair status from the perspective of the current device.
 
         Currently, only Active-Passive configuration is supported.
 
+        :param skip_config_sync: (defaults to ``False``) Use with caution, when set to ``True`` will skip checking if configuration is synchronized between nodes. Helpful when verifying a state of a partially upgraded HA pair.
         :return: Result of HA pair status inspection:
 
             * :attr:`.CheckStatus.SUCCESS` when pair is configured correctly,
@@ -145,7 +146,7 @@ class CheckFirewall:
                 result.status = CheckStatus.ERROR
                 result.reason = f"Both devices have the same state: {ha_pair['local-info']['state']}."
 
-            elif interpret_yes_no(ha_pair['running-sync-enabled']) and ha_pair['running-sync'] != 'synchronized':
+            elif not skip_config_sync and interpret_yes_no(ha_pair['running-sync-enabled']) and ha_pair['running-sync'] != 'synchronized':
                 result.reason = 'Device configuration is not synchronized between the nodes.'
 
             else:
