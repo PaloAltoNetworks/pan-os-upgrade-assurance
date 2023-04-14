@@ -51,6 +51,6 @@ if __name__ == '__main__':
 
     print(f'\n  disk utilization: {proxy.get_disk_utilization()}')
 
-    print(f'\n  available image versions: {proxy.get_available_image_versions()}')
+    print(f'\n  available image versions: {proxy.get_available_image_data()}')
 
     print()

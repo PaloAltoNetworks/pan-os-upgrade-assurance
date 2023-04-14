@@ -804,7 +804,7 @@ class FirewallProxy(Firewall):
 
         return result
 
-    def get_available_image_versions(self) -> dict:
+    def get_available_image_data(self) -> dict:
         """Get information on the available to download PanOS image versions.
 
         The actual API command is ``request system software check``.

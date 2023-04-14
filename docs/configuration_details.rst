@@ -612,7 +612,7 @@ This report produces the `standardized dictionary`_.
 
 
 ``routes``
-------
+----------
 
 Provides a report on differences between Route Table entries. It includes:
 

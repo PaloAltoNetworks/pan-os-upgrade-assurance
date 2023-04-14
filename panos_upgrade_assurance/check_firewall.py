@@ -465,7 +465,7 @@ class CheckFirewall:
         minimum_free_space = ceil(3.0 * 1024)
         if image_version:
             image_sem_version = PanOSVersion(image_version)
-            available_versions = self._node.get_available_image_versions()
+            available_versions = self._node.get_available_image_data()
             
             if str(image_sem_version) in available_versions:
                 requested_base_image_size = 0
