@@ -19,7 +19,7 @@ if __name__ == '__main__':
     password = sys.argv[3]
 
     checks = [
-        # 'all',
+        'all',
         'panorama',
         'ha',
         'ntp_sync',
@@ -27,6 +27,9 @@ if __name__ == '__main__':
         'expired_licenses',
         'content_version',
         # all tests below require config
+        {'free_disk_space':{
+            'image_version': '10.1.6-h6'
+        }},
         {'session_exist': {
             'source': '134.238.135.137',
             'destination': '10.1.0.4',

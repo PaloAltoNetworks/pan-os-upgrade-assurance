@@ -445,8 +445,21 @@ class CheckFirewall:
         return result
 
     def check_free_disk_space(self, image_version: Optional[str] = None) -> CheckResult:
-        """
-        # TODO add documentation
+        """Check if a there is enough space on the ``/opt/panrepo`` volume for downloading an PanOS image.
+
+        This is a check intended to be run before the actual upgrade process starts.
+
+        The method operates in two modes:
+        
+            * default - to be used as last resort, it will verify that the ``/opt/panrepo`` volume has at least 3GB free space available. This amount of free space is somewhat arbitrary and it's based maximum image sizes (path level + base image) available at the time the method was written (+ some additional error margin).
+            * specific target image - suggested mode, it will take one argument ``image_version`` which is the target PanOS version. For that version the actual image size (path + base image) will be calculated. Next, the available free space is verified against that image size + 10% (as an error margin).
+
+        :param image_version: (defaults to ``None``) Version of the target PanOS image. 
+        :type ip: str, optional
+        :return: 
+            * :attr:`.CheckStatus.SUCCESS` when there is enough free space to download an image.
+            * :attr:`.CheckStatus.FAIL` when there is NOT enough free space, additionally the actual free space available is provided as the fail reason.
+        :rtype: :class:`.CheckResult`
         """
         result = CheckResult()
         minimum_free_space = ceil(3.0 * 1024)

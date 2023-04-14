@@ -751,7 +751,7 @@ class FirewallProxy(Firewall):
 
         The actual API command is ``show system disk-space``.
 
-        :return: Disk free space in bytes.
+        :return: Disk free space in MBytes.
 
             Sample output:
 

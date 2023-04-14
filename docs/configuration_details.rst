@@ -46,12 +46,14 @@ The list of checks to run is passed using the ``checks_configuraton`` parameter 
 
     [
         'panorama',
-        'ha',
         'ntp_sync',
         'candidate_config',
         'expired_licenses',
-        # all tests below require config
+        # tests below have optional configuration
         {'content_version': {'version': '8634-7678'}},
+        {'free_disk_space': {'image_version': '10.1.6-h6'}},
+        {'ha': {'skip_config_sync': True}},
+        # tests below require additional configuration
         {'session_exist': {
             'source': '134.238.135.137',
             'destination': '10.1.0.4',
@@ -72,7 +74,7 @@ Please see the sections below for details of each check:
 
 
 ``arp_entry_exist``
----------------
+-------------------
 
 Checks if a specified ARP entry exists.
 
@@ -109,7 +111,7 @@ Sample configuration
 
 
 ``candidate_config``
-----------------
+--------------------
 
 Verifies if there are any changes on the device pending to be committed. This can be either a loaded named config which requires a full commit or just some small changes made manually or with an CLI/API.
 
@@ -122,7 +124,7 @@ Method
 
 
 ``content_version``
----------------
+-------------------
 
 Compares currently installed Content DB version against either:
 
@@ -153,8 +155,37 @@ Sample configuration
 
 
 
+``free_disk_space``
+-------------------
+
+Checks if there is enough free space on the ``/opt/panrepo`` volume to download a PanOS image before an upgrade.
+
+Method
+^^^^^^
+:meth:`.CheckFirewall.check_free_disk_space`
+
+Configuration parameters
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+================== ===========
+paramter           description
+================== ===========
+``image_version``  (optional) target PanOS version to calculate required free space, when skipped arbitrary 3GB is used
+================== ===========
+
+Sample configuration
+^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: python
+
+    {
+        'image_version': '10.1.6-h3'
+    }
+
+
+
 ``expired_licenses``
-----------------
+--------------------
 
 Checks and reports expired licenses.
 
@@ -171,16 +202,32 @@ Method
 
 Verifies if an HA pair is in a correct state. Only Active-Passive configuration is supported at the moment.
 
-Does not require configuration.
-
 Method
 ^^^^^^
 :meth:`.CheckFirewall.check_ha_status`
 
+Configuration parameters
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+===================== ===========
+paramter              description
+===================== ===========
+``skip_config_sync``  Flag to skip (``True``) configuration sync state between HA pair nodes.
+===================== ===========
+
+Sample configuration
+^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: python
+
+    {
+        'skip_config_sync': True
+    }
+
 
 
 ``ip_sec_tunnel_status``
---------------------
+------------------------
 
 Verifies if a given IPSec tunnel is in active state.
 
@@ -208,7 +255,7 @@ Sample configuration
 
 
 ``ntp_sync``
---------
+-----------
 
 Verify if time on a device is synchronized with an NTP server. This check fails if no NTP synchronization is configured.
 
@@ -221,7 +268,7 @@ Method
 
 
 ``panorama``
---------
+------------
 
 Check if a device is connected to the Panorama server. This check fails if no Panorama configuration is present on a device.
 
@@ -234,7 +281,7 @@ Method
 
 
 ``session_exist``
--------------
+-----------------
 
 Does a lookup in a sessions table for a named session. This check is appropriate for verifying if a critical session was established after a device upgrade/reboot.
 
@@ -298,7 +345,7 @@ Please see the sections below for details of each state snapshot:
 
 
 ``arp_table``
----------
+-------------
 
 Makes a snapshot of ARP table.
 
@@ -306,7 +353,7 @@ Method used: :meth:`.FirewallProxy.get_arp_table`.
 
 
 ``content_version``
----------------
+-------------------
 
 Grabs the currently installed Content DB version.
 
@@ -314,7 +361,7 @@ Method used: :meth:`.CheckFirewall.get_content_db_version`.
 
 
 ``ip_sec_tunnels``
---------------
+------------------
 
 Takes a snapshot of configuration of all IPSec tunnels along with their state.
 
@@ -322,7 +369,7 @@ Method used: :meth:`.CheckFirewall.get_ip_sec_tunnels`.
 
 
 ``license``
--------
+-----------
 
 Takes a snapshot of information about all licenses installed on a device.
 
@@ -332,21 +379,21 @@ Method used: :meth:`.FirewallProxy.get_licenses`.
 .. _nics_snapshot:
 
 ``nics``
-----
+--------
 
 Takes a snapshot of a state of all configured (not installed) network interfaces.
 
 Method used: :meth:`.FirewallProxy.get_nics`.
 
 ``routes``
-------
+----------
 
 Takes a snapshot of the Route Table (this includes routes populated from DHCP as well as manually entered ones).
 
 Method used: :meth:`.FirewallProxy.get_routes`.
 
 ``session_stats``
--------------
+-----------------
 
 Gets information about the session statistics, such as current sessions count per a session type (TCP, UDP, etc).
 
@@ -404,7 +451,7 @@ For details on which configuration can be passed, check each report area below (
 
 
 ``arp_table``
----------
+-------------
 
 Runs comparison of ARP tables snapshots.
 
@@ -445,7 +492,7 @@ This report produces the `standardized dictionary`_.
 
 
 ``content_version``
----------------
+-------------------
 
 This is one of a few checks that does not take any configuration. It simply compares Content DB version from both snapshots. Results are presented as the `standardized dictionary`_.
 
@@ -455,7 +502,7 @@ Method
 
 
 ``ip_sec_tunnels``
---------------
+------------------
 
 Compares configuration and the state of IPSec tunnels.
 
@@ -492,7 +539,7 @@ This report produces the `standardized dictionary`_.
 
 
 ``license``
--------
+-----------
 
 Compares installed licenses. This report does not only check if we have the same set of licenses in both snapshots but also compares license details, such as expiration date, etc.
 
@@ -529,7 +576,7 @@ This report produces the `standardized dictionary`_.
 
 
 ``nics``
-----
+--------
 
 Provides a report on status of network interfaces. This report is limited to information about network interfaces available in the snapshots. See the :ref:`nics_snapshot` snapshot information for details.
 
@@ -609,7 +656,7 @@ This report produces the `standardized dictionary`_.
 
 
 ``session_stats``
--------------
+-----------------
 
 This report is slightly different than reports made with the :meth:`.SnapshotCompare.get_diff_and_threshold` method as the snapshot data is different (refer to the :meth:`.FirewallProxy.get_session_stats` method documentation for details).
 
