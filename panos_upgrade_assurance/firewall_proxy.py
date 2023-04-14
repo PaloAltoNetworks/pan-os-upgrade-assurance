@@ -3,6 +3,7 @@ from panos_upgrade_assurance.utils import interpret_yes_no
 from xmltodict import parse as XMLParse
 from typing import Optional, Union, Dict, List
 from panos.firewall import Firewall
+from math import floor
 
 class CommandRunFailedException(Exception):
     """Used when a command run on a device does not return the ``success`` status."""
@@ -17,7 +18,11 @@ class ContentDBVersionsFormatException(Exception):
     pass
 
 class PanoramaConfigurationMissingException(Exception):
-    """Used when checking Panorama connectivity on a device that was not configured with Panorama"""
+    """Used when checking Panorama connectivity on a device that was not configured with Panorama."""
+    pass
+
+class WrongDiskSizeFormatException(Exception):
+    """Used when parsing free disk size information."""
     pass
 
 class FirewallProxy(Firewall):
@@ -740,3 +745,111 @@ class FirewallProxy(Firewall):
         :rtype: dict
         """
         return dict(self.op_parser(cmd="show ntp"))
+
+    def get_disk_utilization(self) -> dict:
+        """Get the disk utilization (in MB) and parse it to a machine readable format.
+
+        The actual API command is ``show system disk-space``.
+
+        :return: Disk free space in MBytes.
+
+            Sample output:
+
+            ::
+
+                {
+                    '/': 2867
+                    '/dev': 7065
+                    '/opt/pancfg': 14336
+                    '/opt/panrepo': 3276
+                    '/dev/shm': 1433
+                    '/cgroup': 7065
+                    '/opt/panlogs': 20480
+                    '/opt/pancfg/mgmt/ssl/private': 12
+                }
+
+        :rtype: dict
+        """
+        result = dict()
+
+        disk_space = self.op_parser(cmd="show system disk-space")
+        disk_space_list = disk_space.split('\n')
+
+        # we start with index 1 to skip header
+        for i in range(1,len(disk_space_list)):
+            row = disk_space_list[i]
+            row_items = row.split(' ')
+            row_items_trimmed = [item for item in row_items if item != '']
+                
+            mount_point = row_items_trimmed[-1]
+            free_size_short = row_items_trimmed[3]
+            free_size_name = free_size_short[-1]
+            free_size_number = float(free_size_short[0:-1])
+
+            if isinstance(free_size_name, str):
+                if free_size_name == 'G':
+                    free_size = free_size_number*1024
+                elif free_size_name == 'M':
+                    free_size = free_size_number
+                elif free_size_name == 'K':
+                    free_size = free_size_number/1024
+
+            elif isinstance(free_size_name, int):
+                free_size = free_size_short/1024/1024
+
+            else:
+                raise WrongDiskSizeFormatException("Free disk size has wrong format.")
+
+            result[mount_point] = floor(free_size)
+
+        return result
+
+    def get_available_image_data(self) -> dict:
+        """Get information on the available to download PanOS image versions.
+
+        The actual API command is ``request system software check``.
+
+        :return: Detailed information on available images.
+
+            Sample output:
+
+            ::
+
+                {
+                    '11.0.1': {
+                        'version': '11.0.1'
+                        'filename': 'PanOS_vm-11.0.1'
+                        'size': '492'
+                        'size-kb': '504796'
+                        'released-on': '2023/03/29 15:05:25'
+                        'release-notes': 'https://www.paloaltonetworks.com/documentation/11-0/pan-os/pan-os-release-notes'
+                        'downloaded': 'no'
+                        'current': 'no'
+                        'latest': 'yes'
+                        'uploaded': 'no'
+                    }
+                    '11.0.0': {
+                        'version': '11.0.0'
+                        'filename': 'PanOS_vm-11.0.0'
+                        'size': '1037'
+                        'size-kb': '1062271'
+                        'released-on': '2022/11/17 08:45:28'
+                        'release-notes': 'https://www.paloaltonetworks.com/documentation/11-0/pan-os/pan-os-release-notes'
+                        'downloaded': 'no'
+                        'current': 'no'
+                        'latest': 'no'
+                        'uploaded': 'no'
+                    }
+                    ...
+                }
+
+        :rtype: dict
+        """
+        result = dict()
+
+        image_data = self.op_parser(cmd="request system software check")
+        images = dict(image_data['sw-updates']['versions'])['entry']
+        for image in images if isinstance(images, list) else [images]:
+            result[image['version']] = dict(image)
+
+        return result

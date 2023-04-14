@@ -17,6 +17,7 @@ if __name__ == '__main__':
 
     proxy = FirewallProxy(address, username, password)
 
+
     p_config = proxy.is_panorama_configured()
     print(f'\n  panorama configured: {p_config}')
 
@@ -47,5 +48,9 @@ if __name__ == '__main__':
     print(f'\n  content DB version: {proxy.get_content_db_version()}')
 
     print(f'\n  latest availble content DB version: {proxy.get_latest_available_content_version()}')
+
+    print(f'\n  disk utilization: {proxy.get_disk_utilization()}')
+
+    print(f'\n  available image versions: {proxy.get_available_image_data()}')
 
     print()

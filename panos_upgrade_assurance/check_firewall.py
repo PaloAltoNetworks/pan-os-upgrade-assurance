@@ -1,7 +1,9 @@
 from typing import Optional, Union, List, Iterable, Dict
+from math import ceil
 
 from panos_upgrade_assurance.utils import CheckResult, ConfigParser, interpret_yes_no, CheckType, SnapType, CheckStatus
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
+from panos import PanOSVersion
 
 class ContentDBVersionInFutureException(Exception):
     """Used when the installed Content DB version is newer than the latest available version."""
@@ -9,6 +11,10 @@ class ContentDBVersionInFutureException(Exception):
 
 class WrongDataTypeException(Exception):
     """Used when passed configuration does not meet the data type requirements."""
+    pass
+
+class ImageVersionNotAvailableException(Exception):
+    """Used when requested image version is not available for downloading."""
     pass
 
 class CheckFirewall:
@@ -65,6 +71,7 @@ class CheckFirewall:
             CheckType.SESSION_EXIST: self.check_critical_session,
             CheckType.ARP_ENTRY_EXIST: self.check_arp_entry,
             CheckType.IPSEC_TUNNEL_STATUS: self.check_ipsec_tunnel_status,
+            CheckType.FREE_DISK_SPACE: self.check_free_disk_space,
         }
 
     def check_pending_changes(self) -> CheckResult:
@@ -435,6 +442,55 @@ class CheckFirewall:
 
         result.reason = f"Tunnel {tunnel_name} not found."
 
+        return result
+
+    def check_free_disk_space(self, image_version: Optional[str] = None) -> CheckResult:
+        """Check if a there is enough space on the ``/opt/panrepo`` volume for downloading an PanOS image.
+
+        This is a check intended to be run before the actual upgrade process starts.
+
+        The method operates in two modes:
+        
+            * default - to be used as last resort, it will verify that the ``/opt/panrepo`` volume has at least 3GB free space available. This amount of free space is somewhat arbitrary and it's based maximum image sizes (path level + base image) available at the time the method was written (+ some additional error margin).
+            * specific target image - suggested mode, it will take one argument ``image_version`` which is the target PanOS version. For that version the actual image size (path + base image) will be calculated. Next, the available free space is verified against that image size + 10% (as an error margin).
+
+        :param image_version: (defaults to ``None``) Version of the target PanOS image. 
+        :type ip: str, optional
+        :return: 
+            * :attr:`.CheckStatus.SUCCESS` when there is enough free space to download an image.
+            * :attr:`.CheckStatus.FAIL` when there is NOT enough free space, additionally the actual free space available is provided as the fail reason.
+        :rtype: :class:`.CheckResult`
+        """
+        result = CheckResult()
+        minimum_free_space = ceil(3.0 * 1024)
+        if image_version:
+            image_sem_version = PanOSVersion(image_version)
+            available_versions = self._node.get_available_image_data()
+            
+            if str(image_sem_version) in available_versions:
+                requested_base_image_size = 0
+                requested_image_size = int(available_versions[str(image_sem_version)]['size'])
+
+                if image_sem_version.patch != 0:
+                    base_image_version = f'{image_sem_version.major}.{image_sem_version.minor}.0'
+                    if base_image_version in available_versions:
+                        if not interpret_yes_no(available_versions[base_image_version]['downloaded']):
+                            requested_base_image_size = int(available_versions[base_image_version]['size'])
+                    else:
+                        raise ImageVersionNotAvailableException(f'Base image {base_image_version} does not exist.')
+
+                minimum_free_space = ceil(1.1*(requested_base_image_size + requested_image_size))
+
+            else:
+                raise ImageVersionNotAvailableException(f'Image {str(image_sem_version)} does not exist.')
+
+        free_space = self._node.get_disk_utilization()
+        free_space_panrepo = free_space['/opt/panrepo']
+
+        if free_space_panrepo > minimum_free_space:
+            result.status = CheckStatus.SUCCESS
+        else:
+            result.reason = f"There is not enough free space, only {str(round(free_space_panrepo/1024,1)) + 'G' if free_space_panrepo >= 1024 else str(free_space_panrepo) + 'M'}B is available."
         return result
 
     def get_content_db_version(self) -> Dict[str,str]:
