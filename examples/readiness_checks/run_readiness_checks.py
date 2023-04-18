@@ -47,3 +47,7 @@ if __name__ == '__main__':
         # report_style=True
     )
     printer(check_readiness)
+    node_state = check_node.check_is_ha_active(
+        # skip_config_sync=True
+        )
+    print(bool(node_state), node_state)

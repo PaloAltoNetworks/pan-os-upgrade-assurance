@@ -124,6 +124,7 @@ class CheckFirewall:
         Currently, only Active-Passive configuration is supported.
 
         :param skip_config_sync: (defaults to ``False``) Use with caution, when set to ``True`` will skip checking if configuration is synchronized between nodes. Helpful when verifying a state of a partially upgraded HA pair.
+        :type skip_config_sync: bool, optional
         :return: Result of HA pair status inspection:
 
             * :attr:`.CheckStatus.SUCCESS` when pair is configured correctly,
@@ -141,6 +142,7 @@ class CheckFirewall:
             ha_pair = ha_config['group']
 
             if ha_pair['mode'] != 'Active-Passive':
+                result.status = CheckStatus.ERROR
                 result.reason = "HA pair is not in Active-Passive mode."
 
             elif ha_pair['local-info']['state'] not in states:
@@ -154,6 +156,7 @@ class CheckFirewall:
                 result.reason = f"Both devices have the same state: {ha_pair['local-info']['state']}."
 
             elif not skip_config_sync and interpret_yes_no(ha_pair['running-sync-enabled']) and ha_pair['running-sync'] != 'synchronized':
+                result.status = CheckStatus.ERROR
                 result.reason = 'Device configuration is not synchronized between the nodes.'
 
             else:
@@ -164,11 +167,13 @@ class CheckFirewall:
 
         return result
 
-    def check_is_ha_active(self) -> CheckResult:
+    def check_is_ha_active(self, skip_config_sync: Optional[bool] = False) -> CheckResult:
         """Checks whether this is an active node of an HA pair.
 
         Before checking the state of the current device, the :meth:`check_ha_status` method is run. If this method does not end with :attr:`.CheckStatus.SUCCESS`, its return value is passed as the result of :meth:`check_is_ha_active`.
 
+        :param skip_config_sync: (defaults to ``False``) Use with caution, when set to ``True`` will skip checking if configuration is synchronized between nodes. Helpful when working with a partially upgraded HA pair.
+        :type skip_config_sync: bool, optional
         :return: The return value depends on the results of running :meth:`check_ha_status` method. If the method returns:
 
             * :attr:`.CheckStatus.SUCCESS` the actual state of the device in an HA pair is checked, if the state is:
@@ -178,7 +183,7 @@ class CheckFirewall:
 
         :rtype: :class:`.CheckResult`
         """
-        ha_status = self.check_ha_status()
+        ha_status = self.check_ha_status(skip_config_sync=skip_config_sync)
         if ha_status:
             ha_config = self._node.get_ha_configuration()
             result = CheckResult()
