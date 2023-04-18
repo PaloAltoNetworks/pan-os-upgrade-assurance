@@ -1,4 +1,4 @@
-# Configuration details {#configuration_documentation}
+# Configuration details
 
 This documentation represents the current state of the available checks
 and snapshot state areas, along with the instructions on how to
@@ -7,7 +7,7 @@ configure them properly.
 
 Table of content
 
-- [Passing configuration in general](#passing-configuration)
+- [Passing configuration in general](#passing-configuration-in-general)
 - [Readiness checks](#readiness-checks)
 - [State snapshots](#state-snapshots)
 - [Reports](#reports)
@@ -48,7 +48,7 @@ covered:
 *Note:* Each entity is documented under its own section where the
 section name is the entity name.
 
-## Readiness checks {#readiness_docs}
+## Readiness checks
 
 Readiness checks represent checks that are `boolean` in nature. A result
 of such checks always presents a `True`/`False` value with some
@@ -286,7 +286,7 @@ device upgrade/reboot.
 }
 ```
 
-## State snapshots {#snapshot_docs}
+## State snapshots
 
 State snapshots store information about the state of a particular device
 area. They do not take any configurations. They store every possible
@@ -370,7 +370,7 @@ count per a session type (TCP, UDP, etc).
 Method used: `.FirewallProxy.get_session_stats`{.interpreted-text
 role="meth"}.
 
-## Reports {#report_docs}
+## Reports
 
 The reporting part is actually the result of comparison of two
 snapshots. It\'s advised to run reports using the common method as some
