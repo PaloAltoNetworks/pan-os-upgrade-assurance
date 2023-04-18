@@ -12,16 +12,16 @@ by:
 
 -   entering the poetry virtual environment:
 
-    > ``` console
-    > $ poetry shell
-    > ```
+     ``` console
+     $ poetry shell
+     ```
 
 -   calling the following commands:
 
-    > ``` console
-    > $ cd <path-to-repository>/docs
-    > $ make html
-    > ```
+     ``` console
+     $ cd <path-to-repository>/docs
+     $ make html
+     ```
 
 If there are some major changes including TOC, you should initially run
 the **make clean** command:
