@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock
-from panos_upgrade_assurance.check_firewall import CheckFirewall
+from panos_upgrade_assurance.check_firewall import CheckFirewall,ContentDBVersionInFutureException
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
 from panos_upgrade_assurance.utils import CheckResult
 from panos_upgrade_assurance.utils import CheckStatus
@@ -146,9 +146,6 @@ class TestCheckFirewall:
         }
         assert check_firewall_mock.check_is_ha_active() == CheckResult(status=CheckStatus.FAIL,reason="Node state is: someothervalue.")
 
-    # TO DO 
-    #def check_expired_licenses(self,check_firewall_mock):
-
     def test_check_expired_licenses_true(self, check_firewall_mock):
         licenses = check_firewall_mock._node.get_licenses.return_value = {
                     'AutoFocus Device License': {
@@ -218,25 +215,108 @@ class TestCheckFirewall:
         assert check_firewall_mock.check_critical_session(source='10.10.10.10', destination='5.5.5.5', dest_port='443') == CheckResult(status=CheckStatus.SUCCESS)
 
 
-    @pytest.mark.parametrize("version",[None, "3421-3234"])
-    def test_check_content_version_call_get_latest(self, check_firewall_mock, version):
-        check_firewall_mock._node.get_latest_available_content_version = MagicMock()
-        if version is None:
-            check_firewall_mock._node.get_latest_available_content_version.called_once()
-        else:
-            check_firewall_mock._node.get_latest_available_content_version.assert_not_called()
-    
-    def test_check_content_version_ok(self, check_firewall_mock):
-        check_firewall_mock._node.get_latest_available_content_version.return_value = "8670-7824"
-        check_firewall_mock._node.get_content_db_version.return_value = "8670-7824"
+    def test_check_content_version_latest_installed(self, check_firewall_mock):
+        check_firewall_mock._node.get_latest_available_content_version.return_value = "1-10"
+        check_firewall_mock._node.get_content_db_version.return_value = "1-10"
         assert check_firewall_mock.check_content_version() == CheckResult(status=CheckStatus.SUCCESS)
 
-#To continue with the rest of the test cases
-    # def test_check_content_version_
+    def test_check_content_version_latest_not_installed(self, check_firewall_mock):
+        check_firewall_mock._node.get_latest_available_content_version.return_value = "2-10"
+        check_firewall_mock._node.get_content_db_version.return_value = "1-10"
+        assert check_firewall_mock.check_content_version() == CheckResult(status=CheckStatus.FAIL, reason=f"Installed content DB version (1-10) is not the latest one (2-10).")
 
+    def test_check_content_version_latest_not_installed_version_not_passed(self, check_firewall_mock):
+        check_firewall_mock._node.get_latest_available_content_version.return_value = "2-10"
+        check_firewall_mock._node.get_content_db_version.return_value = "2-20"
+        with pytest.raises(ContentDBVersionInFutureException) as execption_msg:
+            check_firewall_mock.check_content_version()
+        assert str(execption_msg.value) == "Wrong data returned from device, installed version (2-20) is higher than the required_version available (2-10)."
 
-    # def test_get_content_db_version(self, check_firewall_mock):
-    #     check_firewall_mock._node.get_content_db_version.return_value = "1234-2345"
-    #     result = check_firewall_mock._node.get_content_db_version()
+    def test_check_content_version_latest_not_installed_version_passed(self, check_firewall_mock):
+        check_firewall_mock._node.get_latest_available_content_version.return_value = "2-10"
+        check_firewall_mock._node.get_content_db_version.return_value = "2-20"
+        assert check_firewall_mock.check_content_version(version="2-10") == CheckResult(status=CheckStatus.SUCCESS, reason=f'Installed content DB version (2-20) is higher than the requested one (2-10).')
 
-    #     assert check_firewall_mock.get_content_db_version() == {"version": result}
+    def test_check_content_version_latest_not_installed_version_passed_higher_major(self, check_firewall_mock):
+        check_firewall_mock._node.get_latest_available_content_version.return_value = "2-10"
+        check_firewall_mock._node.get_content_db_version.return_value = "3-10"
+        assert check_firewall_mock.check_content_version(version="2-10") == CheckResult(status=CheckStatus.SUCCESS, reason=f'Installed content DB version (3-10) is higher than the requested one (2-10).')
+
+    def test_check_ntp_synchronization_local_no_ntp(self, check_firewall_mock):
+        check_firewall_mock._node.get_ntp_servers.return_value = {
+            'synched' : 'LOCAL'
+        }
+        assert check_firewall_mock.check_ntp_synchronization() == CheckResult(status=CheckStatus.ERROR, reason="No NTP server configured.")
+
+    def test_check_ntp_synchronization_local_no_ntp_sync(self, check_firewall_mock):
+        check_firewall_mock._node.get_ntp_servers.return_value = {
+            'ntp-server-1': {
+                'authentication-type': 'none',
+                'name': '0.pool.ntp.org',
+                'reachable': 'yes',
+                'status': 'available'
+            },
+            'ntp-server-2': {
+                'authentication-type': 'none',
+                'name': '1.pool.ntp.org',
+                'reachable': 'yes',
+                'status': 'synched'
+            },
+            'synched': 'LOCAL'
+        }
+        assert check_firewall_mock.check_ntp_synchronization() == CheckResult(reason=f"No NTP synchronization in active, servers in following state: 0.pool.ntp.org - available, 1.pool.ntp.org - synched.")
+
+    def test_check_ntp_synchronization_synched_ok(self, check_firewall_mock):
+        check_firewall_mock._node.get_ntp_servers.return_value = {
+            'ntp-server-1': {
+                'authentication-type': 'none',
+                'name': '1.pool.ntp.org',
+                'reachable': 'yes',
+                'status': 'synched'
+            },
+            'synched': '1.pool.ntp.org'
+        }
+        assert check_firewall_mock.check_ntp_synchronization() == CheckResult(status=CheckStatus.SUCCESS)
+
+    def test_check_ntp_synchronization_synched_unknown(self, check_firewall_mock):
+        check_firewall_mock._node.get_ntp_servers.return_value = {
+            'synched': 'unknown'
+        }
+        assert check_firewall_mock.check_ntp_synchronization() == CheckResult(reason=f"NTP synchronization in unknown state: unknown.")
+
+    def test_check_arp_entry_none(self, check_firewall_mock):
+        assert check_firewall_mock.check_arp_entry(ip=None) == CheckResult(CheckStatus.SKIPPED, reason="Missing ARP table entry description.")
+    
+    # def test_check_arp_entry_empty(self, check_firewall_mock):
+    #     check_firewall_mock._node.get_arp_table = MagicMock()
+    #     expected_reason = "ARP table empty."
+    #     expected_status = CheckStatus.ERROR
+
+    #     assert check_firewall_mock.check_arp_entry(ip="1.1.1.1").reason == expected_reason
+    #     assert check_firewall_mock.check_arp_entry(ip="1.1.1.1").status == expected_status
+
+    def test_check_arp_entry_not_found(self, check_firewall_mock):
+        check_firewall_mock._node.get_arp_table.return_value = {
+            'ethernet1/1_10.0.2.1': {
+                'interface': 'ethernet1/1',
+                'ip': '10.0.2.1',
+                'mac': '12:34:56:78:9a:bc',
+                'port': 'ethernet1/1',
+                'status': 'c',
+                'ttl': '1094'
+            }
+        }
+        assert check_firewall_mock.check_arp_entry(ip="10.0.2.1", interface="ethernet1/1") == CheckResult(CheckStatus.SUCCESS)
+
+    def test_check_arp_entry_not_found(self, check_firewall_mock):
+        check_firewall_mock._node.get_arp_table.return_value = {
+            'ethernet1/1_10.0.2.1': {
+                'interface': 'ethernet1/1',
+                'ip': '10.0.2.1',
+                'mac': '12:34:56:78:9a:bc',
+                'port': 'ethernet1/1',
+                'status': 'c',
+                'ttl': '1094'
+            }
+        }
+        assert check_firewall_mock.check_arp_entry(ip="10.0.3.1", interface="ethernet1/2") == CheckResult(reason="Entry not found in ARP table.")
