@@ -1,0 +1,10 @@
+============
+Installation
+============
+
+The *upgrade_assurance* package is not yet available in the public python repository.
+The preferred method is to install it from the package provided by Palo Alto Networks.
+
+.. code-block:: console
+
+    pip3 install path/to/upgrade_assurance-X.Y.Z.tar.gz

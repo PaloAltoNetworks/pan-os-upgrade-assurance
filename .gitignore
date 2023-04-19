@@ -55,6 +55,4 @@ todo
 dist/
 .venv
 
-docs/_build
-
 poetry.lock

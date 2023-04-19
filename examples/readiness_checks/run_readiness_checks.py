@@ -22,28 +22,29 @@ if __name__ == '__main__':
     password = "123QWEasd"
 
     checks = [
-        # 'all',
-        # 'panorama',
-        # 'ha',
-        # 'ntp_sync',
-        # 'candidate_config',
-        # 'expired_licenses',
-        # 'content_version',
-        {'planes_clock_sync': {'diff_threshold': 2000}}
-        # 'planes_clock_sync'
-        # # all tests below require config
-        # {'free_disk_space':{
-        #     'image_version': '10.1.6-h6'
-        # }},
-        # {'session_exist': {
-        #     'source': '134.238.135.137',
-        #     'destination': '10.1.0.4',
-        #     'dest_port': '80'
-        # }},
-        # {'arp_entry_exist': {'ip': '10.0.1.1'} },
-        # {'ip_sec_tunnel_status': {
-        #     'tunnel_name': 'ipsec_tun'
-        # }}
+        'all',
+        'panorama',
+        'ha',
+        'ntp_sync',
+        'candidate_config',
+        'expired_licenses',
+        'content_version',
+        # all tests below require config
+        {'planes_clock_sync': {
+            'diff_threshold': 2000
+        }},
+        {'free_disk_space':{
+            'image_version': '10.1.6-h6'
+        }},
+        {'session_exist': {
+            'source': '134.238.135.137',
+            'destination': '10.1.0.4',
+            'dest_port': '80'
+        }},
+        {'arp_entry_exist': {'ip': '10.0.1.1'} },
+        {'ip_sec_tunnel_status': {
+            'tunnel_name': 'ipsec_tun'
+        }}
     ]
 
     check_node = CheckFirewall(FirewallProxy(address, username, password))
