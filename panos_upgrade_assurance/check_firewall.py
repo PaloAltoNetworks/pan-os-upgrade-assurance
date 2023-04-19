@@ -1,5 +1,6 @@
 from typing import Optional, Union, List, Iterable, Dict
 from math import ceil
+from datetime import datetime
 
 from panos_upgrade_assurance.utils import CheckResult, ConfigParser, interpret_yes_no, CheckType, SnapType, CheckStatus
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
@@ -72,6 +73,7 @@ class CheckFirewall:
             CheckType.ARP_ENTRY_EXIST: self.check_arp_entry,
             CheckType.IPSEC_TUNNEL_STATUS: self.check_ipsec_tunnel_status,
             CheckType.FREE_DISK_SPACE: self.check_free_disk_space,
+            CheckType.MP_DP_CLOCK_SYNC: self.check_mp_dp_sync
         }
 
     def check_pending_changes(self) -> CheckResult:
@@ -496,6 +498,41 @@ class CheckFirewall:
             result.status = CheckStatus.SUCCESS
         else:
             result.reason = f"There is not enough free space, only {str(round(free_space_panrepo/1024,1)) + 'G' if free_space_panrepo >= 1024 else str(free_space_panrepo) + 'M'}B is available."
+        return result
+
+    def check_mp_dp_sync(self, diff_threshold: int = 0) -> CheckResult:
+        """Check if the Data and Management clocks are in sync.
+
+        :param diff_threshold: (defaults to ``0``) Maximum allowable difference in seconds between both clocks. 
+        :type ip: int, optional
+        :return: 
+            * :attr:`.CheckStatus.SUCCESS` when both clocks are the same or within threshold.
+            * :attr:`.CheckStatus.FAIL` when both clocks differ.
+        :rtype: :class:`.CheckResult`
+        """
+        if not isinstance(diff_threshold, int):
+            raise WrongDataTypeException(f"[diff_threshold] should be of type [int] but is of type [{type(diff_threshold)}].")
+
+        result = CheckResult()
+
+        mp_clock = self._node.get_mp_clock()
+        dp_clock = self._node.get_dp_clock()
+
+        mp_dt = datetime.strptime(
+            f"{mp_clock['year']}-{mp_clock['month']}-{mp_clock['day']} {mp_clock['time']}",
+            "%Y-%b-%d %H:%M:%S"
+        )
+        dp_dt = datetime.strptime(
+            f"{dp_clock['year']}-{dp_clock['month']}-{dp_clock['day']} {dp_clock['time']}",
+            "%Y-%b-%d %H:%M:%S"
+        )
+
+        time_fluctuation = abs((mp_dt - dp_dt).total_seconds())
+        if time_fluctuation > diff_threshold:
+            result.reason = f"The data plane clock and management clock are different by {time_fluctuation} seconds."
+        else:
+            result.status = CheckStatus.SUCCESS
+
         return result
 
     def get_content_db_version(self) -> Dict[str,str]:
