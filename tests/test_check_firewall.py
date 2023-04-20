@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock
-from panos_upgrade_assurance.check_firewall import CheckFirewall,ContentDBVersionInFutureException
+from panos_upgrade_assurance.check_firewall import CheckFirewall,ContentDBVersionInFutureException, ImageVersionNotAvailableException
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
 from panos_upgrade_assurance.utils import CheckResult
 from panos_upgrade_assurance.utils import CheckStatus
@@ -285,15 +285,13 @@ class TestCheckFirewall:
         assert check_firewall_mock.check_ntp_synchronization() == CheckResult(reason=f"NTP synchronization in unknown state: unknown.")
 
     def test_check_arp_entry_none(self, check_firewall_mock):
+
         assert check_firewall_mock.check_arp_entry(ip=None) == CheckResult(CheckStatus.SKIPPED, reason="Missing ARP table entry description.")
     
-    # def test_check_arp_entry_empty(self, check_firewall_mock):
-    #     check_firewall_mock._node.get_arp_table = MagicMock()
-    #     expected_reason = "ARP table empty."
-    #     expected_status = CheckStatus.ERROR
+    def test_check_arp_entry_empty(self, check_firewall_mock):
+        check_firewall_mock._node.get_arp_table.return_value = None
 
-    #     assert check_firewall_mock.check_arp_entry(ip="1.1.1.1").reason == expected_reason
-    #     assert check_firewall_mock.check_arp_entry(ip="1.1.1.1").status == expected_status
+        assert check_firewall_mock.check_arp_entry(ip="5.5.5.5") == CheckResult(status=CheckStatus.ERROR, reason="ARP table empty.")
 
     def test_check_arp_entry_not_found(self, check_firewall_mock):
         check_firewall_mock._node.get_arp_table.return_value = {
@@ -320,3 +318,80 @@ class TestCheckFirewall:
             }
         }
         assert check_firewall_mock.check_arp_entry(ip="10.0.3.1", interface="ethernet1/2") == CheckResult(reason="Entry not found in ARP table.")
+
+    def test_ipsec_tunnel_status_none(self, check_firewall_mock):
+
+        assert check_firewall_mock.check_ipsec_tunnel_status(tunnel_name=None) == CheckResult(CheckStatus.SKIPPED, reason="Missing tunnel specification.")
+    
+    def test_ipsec_tunnel_status_no_ipsec_tunnels(self, check_firewall_mock):
+        check_firewall_mock._node.get_tunnels.return_value = {"key" : "value"}
+
+        assert check_firewall_mock.check_ipsec_tunnel_status(tunnel_name="MyTunnel") == CheckResult(CheckStatus.ERROR, reason="No IPSec Tunnel is configured on the device.")
+    
+    def test_ipsec_tunnel_status_active(self, check_firewall_mock):
+        check_firewall_mock._node.get_tunnels.return_value = {
+            "IPSec" : {
+                "MyTunnel" : {
+                    "state" : "active"
+                }
+            }
+        }
+        assert check_firewall_mock.check_ipsec_tunnel_status(tunnel_name="MyTunnel") == CheckResult(CheckStatus.SUCCESS)
+    
+    def test_ipsec_tunnel_status_not_active(self, check_firewall_mock):
+        check_firewall_mock._node.get_tunnels.return_value = {
+            "IPSec" : {
+                "MyTunnel" : {
+                    "state" : "down"
+                }
+            }
+        }
+        assert check_firewall_mock.check_ipsec_tunnel_status(tunnel_name="MyTunnel") == CheckResult(CheckStatus.FAIL, reason="Tunnel MyTunnel in state: down.")
+
+    def test_ipsec_tunnel_status_not_found(self, check_firewall_mock):
+        check_firewall_mock._node.get_tunnels.return_value = {
+            "IPSec" : {
+                "MyTunnel" : {
+                    "state" : "active"
+                }
+            }
+        }
+        assert check_firewall_mock.check_ipsec_tunnel_status(tunnel_name="NotMyTunnel") == CheckResult(reason="Tunnel NotMyTunnel not found.")
+
+    def test_check_free_disk_space_ok(self, check_firewall_mock):
+        check_firewall_mock._node.get_disk_utilization.return_value = {
+            "/opt/panrepo" : 50000
+        }
+
+        assert check_firewall_mock.check_free_disk_space() == CheckResult(CheckStatus.SUCCESS)
+
+    def test_check_free_disk_space_nok(self, check_firewall_mock):
+        check_firewall_mock._node.get_disk_utilization.return_value = {
+            "/opt/panrepo" : 50
+        }
+
+        assert check_firewall_mock.check_free_disk_space() == CheckResult(CheckStatus.FAIL, reason="There is not enough free space, only 50MB is available.")
+
+    def test_get_content_db_version(self, check_firewall_mock):
+        check_firewall_mock._node.get_content_db_version.return_value = "5555-6666"
+
+        assert check_firewall_mock.get_content_db_version() == {'version':'5555-6666'}
+
+    def test_get_ip_sec_tunnels(self, check_firewall_mock):
+        check_firewall_mock._node.get_tunnels.return_value = {
+            "IPSec" : {
+                "MyTunnel" : {
+                    "name" : "tunnel_name"
+                }
+            }
+        }
+
+        check_firewall_mock.get_ip_sec_tunnels() == {
+                "MyTunnel" : {
+                    "name" : "tunnel_name"
+                }
+            }
+
+# TO DO :
+#   run_readiness_checks
+#   run_snapshots
