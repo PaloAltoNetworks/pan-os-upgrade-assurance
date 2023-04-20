@@ -85,8 +85,16 @@ parameter and it looks as follows:
 
 Please see the sections below for details of each check:
 
-::: {.contents local="" backlinks="entry" depth="1"}
-:::
+- [arp_entry_exist](#arp_entry_exist)
+- [candidate_config](#candidate_config)
+- [content_version](#content_version)
+- [free_disk_space](#free_disk_space)
+- [expired_licenses](#expired_licenses)
+- [ha](#ha)
+- [ip_sec_tunnel_status](#ip_sec_tunnel_status)
+- [ntp_sync](#ntp_sync)
+- [panorama](#panorama)
+- [session_exist](#session_exist)
 
 ### `arp_entry_exist`
 
