@@ -5,7 +5,7 @@ and snapshot state areas, along with the instructions on how to
 configure them properly.
 
 
-Table of content
+Table of contents
 
 - [Passing configuration in general](#passing-configuration-in-general)
 - [Readiness checks](#readiness-checks)
