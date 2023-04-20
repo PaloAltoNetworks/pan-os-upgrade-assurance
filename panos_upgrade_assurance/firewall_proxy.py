@@ -853,3 +853,72 @@ class FirewallProxy(Firewall):
             result[image['version']] = dict(image)
 
         return result
+
+    def get_mp_clock(self) -> dict:
+        """Get the clock information from management plane.
+
+        The actual API command is ``show clock``.
+        :return: The clock information represented as a dictionary.
+
+            Sample output:
+
+            ::
+
+                {
+                    'time': '00:41:36',
+                    'tz': 'PDT',
+                    'day': '19',
+                    'month': 'Apr',
+                    'year': '2023',
+                    'day_of_week': 'Wed'
+                }
+
+        :rtype: dict
+        """
+        time_string = self.op_parser(cmd="show clock")
+        time_dict = time_string.split(' ')
+        result = {
+            'time': time_dict[3],
+            'tz':  time_dict[4],
+            'day':  time_dict[2],
+            'month':  time_dict[1],
+            'year':  time_dict[5],
+            'day_of_week':  time_dict[0],
+        }
+        
+        return(result)
+
+    def get_dp_clock(self) -> dict:
+        """Get the clock information from data plane.
+
+        The actual API command is ``show clock more``.
+        :return: The clock information represented as a dictionary.
+
+            Sample output:
+
+            ::
+
+                {
+                    'time': '00:41:36',
+                    'tz': 'PDT',
+                    'day': '19',
+                    'month': 'Apr',
+                    'year': '2023',
+                    'day_of_week': 'Wed'
+                }
+
+        :rtype: dict
+        """
+        response = self.op_parser(cmd="show clock more")
+        time_string = dict(response)['member']
+        time_dict = time_string.split(' ')
+        result = {
+            'time': time_dict[5],
+            'tz':  time_dict[6],
+            'day':  time_dict[4],
+            'month':  time_dict[3],
+            'year':  time_dict[7],
+            'day_of_week':  time_dict[2],
+        }
+        
+        return(result)

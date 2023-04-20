@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>panos_upgrade_assurance.check_firewall &mdash; PanOS Upgrade Assurance 0.0.1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            PanOS Upgrade Assurance
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration_details.html">Configuration details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../building_docs.html">Building documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PanOS Upgrade Assurance</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">panos_upgrade_assurance.check_firewall</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for panos_upgrade_assurance.check_firewall</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Dict</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">ceil</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">from</span> <span class="nn">panos_upgrade_assurance.utils</span> <span class="kn">import</span> <span class="n">CheckResult</span><span class="p">,</span> <span class="n">ConfigParser</span><span class="p">,</span> <span class="n">interpret_yes_no</span><span class="p">,</span> <span class="n">CheckType</span><span class="p">,</span> <span class="n">SnapType</span><span class="p">,</span> <span class="n">CheckStatus</span>
+<span class="kn">from</span> <span class="nn">panos_upgrade_assurance.firewall_proxy</span> <span class="kn">import</span> <span class="n">FirewallProxy</span>
+<span class="kn">from</span> <span class="nn">panos</span> <span class="kn">import</span> <span class="n">PanOSVersion</span>
+
+<div class="viewcode-block" id="ContentDBVersionInFutureException"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.check_firewall.ContentDBVersionInFutureException">[docs]</a><span class="k">class</span> <span class="nc">ContentDBVersionInFutureException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Used when the installed Content DB version is newer than the latest available version.&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="WrongDataTypeException"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.check_firewall.WrongDataTypeException">[docs]</a><span class="k">class</span> <span class="nc">WrongDataTypeException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Used when passed configuration does not meet the data type requirements.&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="ImageVersionNotAvailableException"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.check_firewall.ImageVersionNotAvailableException">[docs]</a><span class="k">class</span> <span class="nc">ImageVersionNotAvailableException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Used when requested image version is not available for downloading.&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="CheckFirewall"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.check_firewall.CheckFirewall">[docs]</a><span class="k">class</span> <span class="nc">CheckFirewall</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class responsible for running readiness checks and creating Firewall state snapshots.</span>
+
+<span class="sd">    This class is designed to:</span>
+
+<span class="sd">    * run one or more :class:`.FirewallProxy` class methods,</span>
+<span class="sd">    * gather and interpret results,</span>
+<span class="sd">    * present results.</span>
+<span class="sd">    </span>
+<span class="sd">    It is split into two parts responsible for:</span>
+
+<span class="sd">    1. running readiness checks, all methods related to this functionality are prefixed with ``check_``,</span>
+<span class="sd">    2. running state snapshots, all methods related to this functionality are prefixed with ``get_``, although usually the :class:`.FirewallProxy` methods are run directly.</span>
+
+<span class="sd">    Although it is possible to run the methods directly, the preferred way is to run them through one of the following ``run`` methods:</span>
+
+<span class="sd">    * :meth:`.run_readiness_checks` is responsible for running specified readiness checks,</span>
+<span class="sd">    * :meth:`.run_snapshots` is responsible for getting a snapshot of specified device areas.</span>
+
+<span class="sd">    :param _snapshot_method_mapping: Internal variable containing a map of all valid snapshot types mapped to the specific methods.</span>
+<span class="sd">    </span>
+<span class="sd">        This mapping is used to verify the requested snapshot types and to map the snapshot with an actual method that will eventually run. Keys in this dictionary are snapshot names as defined in the :class:`.SnapType` class, values are references to methods that will be run.</span>
+<span class="sd">    :type _snapshot_method_mapping: dict</span>
+<span class="sd">    :param _check_method_mapping: Internal variable containing the map of all valid check types mapped to the specific methods. This mapping is used to verify requested check types and to map a check with an actual method that will be eventually run. Keys in this dictionary are check names as defined in the :class:`.CheckType` class, values are references to methods that will be run.</span>
+<span class="sd">    :type _check_method_mapping: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">FirewallProxy</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;CheckFirewall constructor.</span>
+
+<span class="sd">        :param node: Object representing a device against which checks and/or snapshots are run.</span>
+<span class="sd">        :type node: :class:`.FirewallProxy`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_node</span> <span class="o">=</span> <span class="n">node</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_snapshot_method_mapping</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">SnapType</span><span class="o">.</span><span class="n">NICS</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">get_nics</span><span class="p">,</span>
+            <span class="n">SnapType</span><span class="o">.</span><span class="n">ROUTES</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">get_routes</span><span class="p">,</span>
+            <span class="n">SnapType</span><span class="o">.</span><span class="n">LICENSE</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">get_licenses</span><span class="p">,</span>
+            <span class="n">SnapType</span><span class="o">.</span><span class="n">ARP_TABLE</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">get_arp_table</span><span class="p">,</span>
+            <span class="n">SnapType</span><span class="o">.</span><span class="n">CONTENT_VERSION</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_content_db_version</span><span class="p">,</span>
+            <span class="n">SnapType</span><span class="o">.</span><span class="n">SESSION_STATS</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">get_session_stats</span><span class="p">,</span>
+            <span class="n">SnapType</span><span class="o">.</span><span class="n">IPSEC_TUNNELS</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ip_sec_tunnels</span>
+        <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_method_mapping</span> <span class="o">=</span>  <span class="p">{</span>
+            <span class="n">CheckType</span><span class="o">.</span><span class="n">PANORAMA</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_panorama_connectivity</span><span class="p">,</span>
+            <span class="n">CheckType</span><span class="o">.</span><span class="n">HA</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_ha_status</span><span class="p">,</span>
+            <span class="n">CheckType</span><span class="o">.</span><span class="n">NTP_SYNC</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_ntp_synchronization</span><span class="p">,</span>
+            <span class="n">CheckType</span><span class="o">.</span><span class="n">CANDIDATE_CONFIG</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_pending_changes</span><span class="p">,</span>
+            <span class="n">CheckType</span><span class="o">.</span><span class="n">EXPIRED_LICENSES</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_expired_licenses</span><span class="p">,</span>
+            <span class="n">CheckType</span><span class="o">.</span><span class="n">CONTENT_VERSION</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_content_version</span><span class="p">,</span>
+            <span class="n">CheckType</span><span class="o">.</span><span class="n">SESSION_EXIST</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_critical_session</span><span class="p">,</span>
+            <span class="n">CheckType</span><span class="o">.</span><span class="n">ARP_ENTRY_EXIST</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_arp_entry</span><span class="p">,</span>
+            <span class="n">CheckType</span><span class="o">.</span><span class="n">IPSEC_TUNNEL_STATUS</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_ipsec_tunnel_status</span><span class="p">,</span>
+            <span class="n">CheckType</span><span class="o">.</span><span class="n">FREE_DISK_SPACE</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_free_disk_space</span><span class="p">,</span>
+            <span class="n">CheckType</span><span class="o">.</span><span class="n">MP_DP_CLOCK_SYNC</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_mp_dp_sync</span>
+        <span class="p">}</span>
+
+<div class="viewcode-block" id="CheckFirewall.check_pending_changes"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.check_firewall.CheckFirewall.check_pending_changes">[docs]</a>    <span class="k">def</span> <span class="nf">check_pending_changes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CheckResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if there are pending changes on device.</span>
+
+<span class="sd">        It checks two states:</span>
+
+<span class="sd">        1. if there is full commit required on the device,</span>
+<span class="sd">        2. if not, if there is a candidate config pending on a device.</span>
+
+<span class="sd">        :return: Object representing the result of the content version check:</span>
+
+<span class="sd">            * :attr:`.CheckStatus.SUCCESS` if there is no pending configuration,</span>
+<span class="sd">            * :attr:`.CheckStatus.FAIL` otherwise.</span>
+
+<span class="sd">        :rtype: :class:`.CheckResult`</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">is_full_commit_required</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">CheckResult</span><span class="p">(</span><span class="n">reason</span><span class="o">=</span><span class="s2">&quot;Full commit required on device.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">is_pending_changes</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">CheckResult</span><span class="p">(</span><span class="n">reason</span><span class="o">=</span><span class="s2">&quot;Pending changes found on device.&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">CheckResult</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">CheckStatus</span><span class="o">.</span><span class="n">SUCCESS</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CheckFirewall.check_panorama_connectivity"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.check_firewall.CheckFirewall.check_panorama_connectivity">[docs]</a>    <span class="k">def</span> <span class="nf">check_panorama_connectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CheckResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check connectivity with the Panorama service.</span>
+
+<span class="sd">        :return: State of Panorama connection:</span>
+
+<span class="sd">            * :attr:`.CheckStatus.SUCCESS` when device is connected to Panorama,</span>
+<span class="sd">            * :attr:`.CheckStatus.FAIL` otherwise,</span>
+<span class="sd">            * :attr:`.CheckStatus.ERROR` is returned when no Panorama configuration is found.</span>
+
+<span class="sd">        :rtype: :class:`.CheckResult`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">is_panorama_configured</span><span class="p">():</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">is_panorama_connected</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">CheckResult</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">CheckStatus</span><span class="o">.</span><span class="n">SUCCESS</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">CheckResult</span><span class="p">(</span><span class="n">reason</span><span class="o">=</span><span class="s2">&quot;Device not connected to Panorama.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">CheckResult</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">CheckStatus</span><span class="o">.</span><span class="n">ERROR</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="s2">&quot;Device not configured with Panorama.&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CheckFirewall.check_ha_status"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.check_firewall.CheckFirewall.check_ha_status">[docs]</a>    <span class="k">def</span> <span class="nf">check_ha_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skip_config_sync</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CheckResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Checks HA pair status from the perspective of the current device.</span>
+
+<span class="sd">        Currently, only Active-Passive configuration is supported.</span>
+
+<span class="sd">        :param skip_config_sync: (defaults to ``False``) Use with caution, when set to ``True`` will skip checking if configuration is synchronized between nodes. Helpful when verifying a state of a partially upgraded HA pair.</span>
+<span class="sd">        :type skip_config_sync: bool, optional</span>
+<span class="sd">        :return: Result of HA pair status inspection:</span>
+
+<span class="sd">            * :attr:`.CheckStatus.SUCCESS` when pair is configured correctly,</span>
+<span class="sd">            * :attr:`.CheckStatus.FAIL` otherwise,</span>
+<span class="sd">            * :attr:`.CheckStatus.ERROR` is returned when device is not a member of an HA pair or the pair is not in Active-Passive configuration.</span>
+
+<span class="sd">        :rtype: :class:`.CheckResult`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">states</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;active&quot;</span><span class="p">,</span> <span class="s2">&quot;passive&quot;</span><span class="p">)</span>
+
+        <span class="n">ha_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">get_ha_configuration</span><span class="p">()</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">CheckResult</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">interpret_yes_no</span><span class="p">(</span><span class="n">ha_config</span><span class="p">[</span><span class="s1">&#39;enabled&#39;</span><span class="p">]):</span>
+            <span class="n">ha_pair</span> <span class="o">=</span> <span class="n">ha_config</span><span class="p">[</span><span class="s1">&#39;group&#39;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">ha_pair</span><span class="p">[</span><span class="s1">&#39;mode&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;Active-Passive&#39;</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">ERROR</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="s2">&quot;HA pair is not in Active-Passive mode.&quot;</span>
+
+            <span class="k">elif</span> <span class="n">ha_pair</span><span class="p">[</span><span class="s1">&#39;local-info&#39;</span><span class="p">][</span><span class="s1">&#39;state&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">states</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="s2">&quot;Local device is not in active or passive state.&quot;</span>
+
+            <span class="k">elif</span> <span class="n">ha_pair</span><span class="p">[</span><span class="s1">&#39;peer-info&#39;</span><span class="p">][</span><span class="s1">&#39;state&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">states</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="s2">&quot;Peer device is not in active or passive state.&quot;</span>
+
+            <span class="k">elif</span> <span class="n">ha_pair</span><span class="p">[</span><span class="s1">&#39;local-info&#39;</span><span class="p">][</span><span class="s1">&#39;state&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">ha_pair</span><span class="p">[</span><span class="s1">&#39;peer-info&#39;</span><span class="p">][</span><span class="s1">&#39;state&#39;</span><span class="p">]:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">ERROR</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Both devices have the same state: </span><span class="si">{</span><span class="n">ha_pair</span><span class="p">[</span><span class="s1">&#39;local-info&#39;</span><span class="p">][</span><span class="s1">&#39;state&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">.&quot;</span>
+
+            <span class="k">elif</span> <span class="ow">not</span> <span class="n">skip_config_sync</span> <span class="ow">and</span> <span class="n">interpret_yes_no</span><span class="p">(</span><span class="n">ha_pair</span><span class="p">[</span><span class="s1">&#39;running-sync-enabled&#39;</span><span class="p">])</span> <span class="ow">and</span> <span class="n">ha_pair</span><span class="p">[</span><span class="s1">&#39;running-sync&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;synchronized&#39;</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">ERROR</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="s1">&#39;Device configuration is not synchronized between the nodes.&#39;</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">SUCCESS</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="s2">&quot;Device is not a member of an HA pair.&quot;</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">ERROR</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="CheckFirewall.check_is_ha_active"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.check_firewall.CheckFirewall.check_is_ha_active">[docs]</a>    <span class="k">def</span> <span class="nf">check_is_ha_active</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skip_config_sync</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CheckResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Checks whether this is an active node of an HA pair.</span>
+
+<span class="sd">        Before checking the state of the current device, the :meth:`check_ha_status` method is run. If this method does not end with :attr:`.CheckStatus.SUCCESS`, its return value is passed as the result of :meth:`check_is_ha_active`.</span>
+
+<span class="sd">        :param skip_config_sync: (defaults to ``False``) Use with caution, when set to ``True`` will skip checking if configuration is synchronized between nodes. Helpful when working with a partially upgraded HA pair.</span>
+<span class="sd">        :type skip_config_sync: bool, optional</span>
+<span class="sd">        :return: The return value depends on the results of running :meth:`check_ha_status` method. If the method returns:</span>
+
+<span class="sd">            * :attr:`.CheckStatus.SUCCESS` the actual state of the device in an HA pair is checked, if the state is:</span>
+<span class="sd">                * active :attr:`,.CheckStatus.SUCCESS` is returned,</span>
+<span class="sd">                * passive :attr:`,.CheckStatus.FAIL` is returned,</span>
+<span class="sd">            * anything else than :attr:`.CheckStatus.SUCCESS`, the :meth:`check_ha_status` return value is passed as a return value of this method.</span>
+
+<span class="sd">        :rtype: :class:`.CheckResult`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ha_status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_ha_status</span><span class="p">(</span><span class="n">skip_config_sync</span><span class="o">=</span><span class="n">skip_config_sync</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ha_status</span><span class="p">:</span>
+            <span class="n">ha_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">get_ha_configuration</span><span class="p">()</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">CheckResult</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">ha_config</span><span class="p">[</span><span class="s1">&#39;group&#39;</span><span class="p">][</span><span class="s1">&#39;local-info&#39;</span><span class="p">][</span><span class="s1">&#39;state&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;active&#39;</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">SUCCESS</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Node state is: </span><span class="si">{</span><span class="n">ha_config</span><span class="p">[</span><span class="s1">&#39;group&#39;</span><span class="p">][</span><span class="s1">&#39;local-info&#39;</span><span class="p">][</span><span class="s1">&#39;state&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="k">return</span> <span class="n">result</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ha_status</span></div>
+
+<div class="viewcode-block" id="CheckFirewall.check_expired_licenses"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.check_firewall.CheckFirewall.check_expired_licenses">[docs]</a>    <span class="k">def</span> <span class="nf">check_expired_licenses</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CheckResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if any license is expired.</span>
+
+<span class="sd">        :return:</span>
+
+<span class="sd">            * :attr:`.CheckStatus.SUCCESS` if no license is expired,</span>
+<span class="sd">            * :attr:`.CheckStatus.FAIL` otherwise.</span>
+
+<span class="sd">        :rtype: :class:`.CheckResult`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">licenses</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">get_licenses</span><span class="p">()</span>
+
+        <span class="n">expired_licenses</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">CheckResult</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">lic</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">licenses</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">interpret_yes_no</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="s2">&quot;expired&quot;</span><span class="p">]):</span>
+                <span class="n">expired_licenses</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">lic</span><span class="si">}</span><span class="s2">, &quot;</span>
+
+        <span class="k">if</span> <span class="n">expired_licenses</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Found expired licenses:  </span><span class="si">{</span><span class="n">expired_licenses</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">SUCCESS</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="CheckFirewall.check_critical_session"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.check_firewall.CheckFirewall.check_critical_session">[docs]</a>    <span class="k">def</span> <span class="nf">check_critical_session</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">source</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">destination</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dest_port</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CheckResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if a critical session is present in the sessions table.</span>
+
+<span class="sd">        :param source: (defaults to ``None``) Source IPv4 address for the examined session.</span>
+<span class="sd">        :type source: str, optional</span>
+<span class="sd">        :param destination: (defaults to ``None``) Destination IPv4 address for the examined session.</span>
+<span class="sd">        :type destination: str, optional</span>
+<span class="sd">        :param dest_port: (defaults to ``None``) Destination port value. This should be an integer value, but string representations such as ``&quot;8080&quot;`` are also accepted.</span>
+<span class="sd">        :type dest_port: int, str, optional</span>
+<span class="sd">        :return:</span>
+
+<span class="sd">            * :attr:`.CheckStatus.SUCCESS` if a session is found in the sessions table,</span>
+<span class="sd">            * :attr:`.CheckStatus.FAIL` otherwise,</span>
+<span class="sd">            * :attr:`.CheckStatus.SKIPPED` when no config is passed,</span>
+<span class="sd">            * :attr:`.CheckStatus.ERROR` if the session table is empty.</span>
+
+<span class="sd">        :rtype: :class:`.CheckResult`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">CheckResult</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="kc">None</span> <span class="ow">in</span> <span class="p">[</span><span class="n">source</span><span class="p">,</span> <span class="n">destination</span><span class="p">,</span> <span class="n">dest_port</span><span class="p">]:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="s1">&#39;Missing critical session description. Failing check.&#39;</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">SKIPPED</span>
+            <span class="k">return</span> <span class="n">result</span>
+
+        <span class="n">sessions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">get_sessions</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sessions</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="s2">&quot;Device&#39;s session table is empty.&quot;</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">ERROR</span>
+            <span class="k">return</span> <span class="n">result</span>
+
+        <span class="k">for</span> <span class="n">session</span> <span class="ow">in</span> <span class="n">sessions</span><span class="p">:</span>
+            <span class="n">source_check</span> <span class="o">=</span> <span class="n">session</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">source</span>
+            <span class="n">destination_check</span> <span class="o">=</span> <span class="n">session</span><span class="p">[</span><span class="s1">&#39;xdst&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">destination</span>
+            <span class="n">port_check</span> <span class="o">=</span> <span class="n">session</span><span class="p">[</span><span class="s1">&#39;dport&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">dest_port</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">all</span><span class="p">((</span><span class="n">source_check</span><span class="p">,</span> <span class="n">destination_check</span><span class="p">,</span> <span class="n">port_check</span><span class="p">)):</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">SUCCESS</span>
+                <span class="k">return</span> <span class="n">result</span>
+
+        <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="s2">&quot;Session not found in session table.&quot;</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="CheckFirewall.check_content_version"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.check_firewall.CheckFirewall.check_content_version">[docs]</a>    <span class="k">def</span> <span class="nf">check_content_version</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CheckResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Verify installed version of the Content Database.</span>
+
+<span class="sd">        This method runs in two modes:</span>
+
+<span class="sd">            * w/o any configuration - checks if the latest version of the Content DB is installed.</span>
+<span class="sd">            * with specific version passed - verifies if the installed Content DB is at least equal.</span>
+
+<span class="sd">        :param version: (defaults to ``None``) Target version of the content DB.</span>
+<span class="sd">        :type version: str, optional</span>
+<span class="sd">        :raises ContentDBVersionInFutureException: If the data returned from a device is newer than the latest version available.</span>
+<span class="sd">        :return: The return value meaning depends on the ``version`` parameter. If it was:</span>
+
+<span class="sd">            * defined:</span>
+<span class="sd">                * :py:attr:`.CheckStatus.SUCCESS` when the installed Content DB is at least the same as the version passed as a parameter.</span>
+<span class="sd">                * :py:attr:`.CheckStatus.FAIL` when the installed Content DB version is lower than the version passed as a parameter.</span>
+<span class="sd">            * not defined:</span>
+<span class="sd">                * :py:attr:`.CheckStatus.SUCCESS` when the installed Content DB is the latest one.</span>
+<span class="sd">                * :py:attr:`.CheckStatus.FAIL` when the installed Content DB is not the latest one.</span>
+
+<span class="sd">        :rtype: :py:class:`.CheckResult` Object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">CheckResult</span><span class="p">()</span>
+
+        <span class="n">required_version</span> <span class="o">=</span> <span class="n">version</span> <span class="k">if</span> <span class="n">version</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">get_latest_available_content_version</span><span class="p">()</span>
+        <span class="n">installed_version</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">get_content_db_version</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">required_version</span> <span class="o">==</span> <span class="n">installed_version</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">SUCCESS</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exception_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Wrong data returned from device, installed version (</span><span class="si">{</span><span class="n">installed_version</span><span class="si">}</span><span class="s1">) is higher than the required_version available (</span><span class="si">{</span><span class="n">required_version</span><span class="si">}</span><span class="s1">).&#39;</span>
+            <span class="n">conditional_success_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Installed content DB version (</span><span class="si">{</span><span class="n">installed_version</span><span class="si">}</span><span class="s1">) is higher than the requested one (</span><span class="si">{</span><span class="n">required_version</span><span class="si">}</span><span class="s1">).&#39;</span>
+
+            <span class="c1"># we already know that the versions are different, so as a default result we assume FAILED</span>
+            <span class="c1"># now let&#39;s handle corner cases</span>
+            <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">required_version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&lt;</span> <span class="nb">int</span><span class="p">(</span><span class="n">installed_version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="c1"># if the passed required version is higher that the installed then we assume the test passed</span>
+                <span class="c1"># this is a type of a test where we look for the minimum version</span>
+                <span class="k">if</span> <span class="n">version</span><span class="p">:</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">SUCCESS</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="n">conditional_success_text</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># in case where no version was passed we treat this situation as an exception</span>
+                    <span class="c1"># latest version cannot by lower than the installed one. </span>
+                    <span class="k">raise</span> <span class="n">ContentDBVersionInFutureException</span><span class="p">(</span><span class="n">exception_text</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">int</span><span class="p">(</span><span class="n">required_version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">installed_version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="c1"># majors the same, compare minors assuming the same logic we used for majors</span>
+                <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">required_version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;</span> <span class="nb">int</span><span class="p">(</span><span class="n">installed_version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]):</span>
+                    <span class="k">if</span> <span class="n">version</span><span class="p">:</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">SUCCESS</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="n">conditional_success_text</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">ContentDBVersionInFutureException</span><span class="p">(</span><span class="n">exception_text</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="p">:</span>
+                <span class="n">reason_suffix</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;older then the request one (</span><span class="si">{</span><span class="n">required_version</span><span class="si">}</span><span class="s1">).&#39;</span> <span class="k">if</span> <span class="n">version</span> <span class="k">else</span> <span class="sa">f</span><span class="s1">&#39;not the latest one (</span><span class="si">{</span><span class="n">required_version</span><span class="si">}</span><span class="s1">).&#39;</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Installed content DB version (</span><span class="si">{</span><span class="n">installed_version</span><span class="si">}</span><span class="s2">) is </span><span class="si">{</span><span class="n">reason_suffix</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="CheckFirewall.check_ntp_synchronization"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.check_firewall.CheckFirewall.check_ntp_synchronization">[docs]</a>    <span class="k">def</span> <span class="nf">check_ntp_synchronization</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CheckResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check synchronization with NTP server.</span>
+
+<span class="sd">        :return:</span>
+
+<span class="sd">            * :attr:`.CheckStatus.SUCCESS` when a device is synchronized with the NTP server.</span>
+<span class="sd">            * :attr:`.CheckStatus.FAIL` when a device is not synchronized with the NTP server.</span>
+<span class="sd">            * :attr:`.CheckStatus.ERROR` when a device is not configured for NTP synchronization.</span>
+
+<span class="sd">        :rtype: :class:`.CheckResult`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">CheckResult</span><span class="p">()</span>
+        
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">get_ntp_servers</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;synched&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;LOCAL&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">response</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="s1">&#39;No NTP server configured.&#39;</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">ERROR</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;synched&#39;</span><span class="p">]</span>
+                <span class="n">srvs_state</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+                <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                    <span class="n">srvs_state</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">v</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">v</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, &quot;</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;No NTP synchronization in active, servers in following state: </span><span class="si">{</span><span class="n">srvs_state</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">synched</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;synched&#39;</span><span class="p">]</span>
+            <span class="k">del</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;synched&#39;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">synched</span> <span class="ow">in</span> <span class="p">[</span><span class="n">v</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">values</span><span class="p">()]:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">SUCCESS</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;NTP synchronization in unknown state: </span><span class="si">{</span><span class="n">synched</span><span class="si">}</span><span class="s1">.&#39;</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="CheckFirewall.check_arp_entry"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.check_firewall.CheckFirewall.check_arp_entry">[docs]</a>    <span class="k">def</span> <span class="nf">check_arp_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">interface</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CheckResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if a given ARP entry is available in the ARP table.</span>
+
+<span class="sd">        :param interface: (defaults to ``None``) A name of an interface we examine for the ARP entries. When skipped, all interfaces are examined.</span>
+<span class="sd">        :type interface: str, optional</span>
+<span class="sd">        :param ip: (defaults to ``None``) IP address of the ARP entry we look for.</span>
+<span class="sd">        :type ip: str, optional</span>
+<span class="sd">        :return:</span>
+<span class="sd">        </span>
+<span class="sd">            * :attr:`.CheckStatus.SUCCESS` when the ARP entry is found.</span>
+<span class="sd">            * :attr:`.CheckStatus.FAIL` when the ARP entry is not found.</span>
+<span class="sd">            * :attr:`.CheckStatus.SKIPPED` when ``ip`` is not provided.</span>
+<span class="sd">            * :attr:`.CheckStatus.ERROR` when the ARP table is empty.</span>
+
+<span class="sd">        :rtype: :class:`.CheckResult`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">CheckResult</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">ip</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="s2">&quot;Missing ARP table entry description.&quot;</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">SKIPPED</span>
+            <span class="k">return</span> <span class="n">result</span>
+
+        <span class="n">arp_table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">get_arp_table</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">arp_table</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="s2">&quot;ARP table empty.&quot;</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">ERROR</span>
+            <span class="k">return</span> <span class="n">result</span>
+
+        <span class="k">for</span> <span class="n">arp_entry</span> <span class="ow">in</span> <span class="n">arp_table</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">interface</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">found</span> <span class="o">=</span> <span class="n">ip</span> <span class="o">==</span> <span class="n">arp_entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ip&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">interface</span> <span class="o">==</span> <span class="n">arp_entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;interface&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">found</span> <span class="o">=</span> <span class="n">ip</span> <span class="o">==</span> <span class="n">arp_entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ip&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">found</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">SUCCESS</span>
+                <span class="k">return</span> <span class="n">result</span>
+
+        <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="s2">&quot;Entry not found in ARP table.&quot;</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="CheckFirewall.check_ipsec_tunnel_status"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.check_firewall.CheckFirewall.check_ipsec_tunnel_status">[docs]</a>    <span class="k">def</span> <span class="nf">check_ipsec_tunnel_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tunnel_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CheckResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if a given IPSec tunnel is in active state.</span>
+
+<span class="sd">        :param tunnel_name: (defaults to ``None``) Name of the searched IPSec tunnel.</span>
+<span class="sd">        :type ip: str, optional</span>
+<span class="sd">        :return: </span>
+<span class="sd">            * :attr:`.CheckStatus.SUCCESS` when a tunnel is found and is in active state.</span>
+<span class="sd">            * :attr:`.CheckStatus.FAIL` when a tunnel is either not active or missing in the current configuration.</span>
+<span class="sd">            * :attr:`.CheckStatus.SKIPPED` when ``tunnel_name`` is not provided.</span>
+<span class="sd">            * :attr:`.CheckStatus.ERROR` when no IPSec tunnels are configured on the device.</span>
+
+<span class="sd">        :rtype: :class:`.CheckResult`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">CheckResult</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">tunnel_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">SKIPPED</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="s1">&#39;Missing tunnel specification.&#39;</span>
+            <span class="k">return</span> <span class="n">result</span>
+            
+        <span class="n">tunnels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">get_tunnels</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">tunnels</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;IPSec&quot;</span><span class="p">):</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="s1">&#39;No IPSec Tunnel is configured on the device.&#39;</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">ERROR</span>
+            <span class="k">return</span> <span class="n">result</span>
+
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">tunnels</span><span class="p">[</span><span class="s1">&#39;IPSec&#39;</span><span class="p">]:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">tunnels</span><span class="p">[</span><span class="s1">&#39;IPSec&#39;</span><span class="p">][</span><span class="n">name</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="n">tunnel_name</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;state&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;active&#39;</span><span class="p">:</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">SUCCESS</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Tunnel </span><span class="si">{</span><span class="n">tunnel_name</span><span class="si">}</span><span class="s2"> in state: </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;state&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="k">return</span> <span class="n">result</span>
+
+        <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Tunnel </span><span class="si">{</span><span class="n">tunnel_name</span><span class="si">}</span><span class="s2"> not found.&quot;</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="CheckFirewall.check_free_disk_space"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.check_firewall.CheckFirewall.check_free_disk_space">[docs]</a>    <span class="k">def</span> <span class="nf">check_free_disk_space</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_version</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CheckResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if a there is enough space on the ``/opt/panrepo`` volume for downloading an PanOS image.</span>
+
+<span class="sd">        This is a check intended to be run before the actual upgrade process starts.</span>
+
+<span class="sd">        The method operates in two modes:</span>
+<span class="sd">        </span>
+<span class="sd">            * default - to be used as last resort, it will verify that the ``/opt/panrepo`` volume has at least 3GB free space available. This amount of free space is somewhat arbitrary and it&#39;s based maximum image sizes (path level + base image) available at the time the method was written (+ some additional error margin).</span>
+<span class="sd">            * specific target image - suggested mode, it will take one argument ``image_version`` which is the target PanOS version. For that version the actual image size (path + base image) will be calculated. Next, the available free space is verified against that image size + 10% (as an error margin).</span>
+
+<span class="sd">        :param image_version: (defaults to ``None``) Version of the target PanOS image. </span>
+<span class="sd">        :type ip: str, optional</span>
+<span class="sd">        :return: </span>
+<span class="sd">            * :attr:`.CheckStatus.SUCCESS` when there is enough free space to download an image.</span>
+<span class="sd">            * :attr:`.CheckStatus.FAIL` when there is NOT enough free space, additionally the actual free space available is provided as the fail reason.</span>
+<span class="sd">        :rtype: :class:`.CheckResult`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">CheckResult</span><span class="p">()</span>
+        <span class="n">minimum_free_space</span> <span class="o">=</span> <span class="n">ceil</span><span class="p">(</span><span class="mf">3.0</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">image_version</span><span class="p">:</span>
+            <span class="n">image_sem_version</span> <span class="o">=</span> <span class="n">PanOSVersion</span><span class="p">(</span><span class="n">image_version</span><span class="p">)</span>
+            <span class="n">available_versions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">get_available_image_data</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">image_sem_version</span><span class="p">)</span> <span class="ow">in</span> <span class="n">available_versions</span><span class="p">:</span>
+                <span class="n">requested_base_image_size</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">requested_image_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">available_versions</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">image_sem_version</span><span class="p">)][</span><span class="s1">&#39;size&#39;</span><span class="p">])</span>
+
+                <span class="k">if</span> <span class="n">image_sem_version</span><span class="o">.</span><span class="n">patch</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">base_image_version</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">image_sem_version</span><span class="o">.</span><span class="n">major</span><span class="si">}</span><span class="s1">.</span><span class="si">{</span><span class="n">image_sem_version</span><span class="o">.</span><span class="n">minor</span><span class="si">}</span><span class="s1">.0&#39;</span>
+                    <span class="k">if</span> <span class="n">base_image_version</span> <span class="ow">in</span> <span class="n">available_versions</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">interpret_yes_no</span><span class="p">(</span><span class="n">available_versions</span><span class="p">[</span><span class="n">base_image_version</span><span class="p">][</span><span class="s1">&#39;downloaded&#39;</span><span class="p">]):</span>
+                            <span class="n">requested_base_image_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">available_versions</span><span class="p">[</span><span class="n">base_image_version</span><span class="p">][</span><span class="s1">&#39;size&#39;</span><span class="p">])</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">ImageVersionNotAvailableException</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Base image </span><span class="si">{</span><span class="n">base_image_version</span><span class="si">}</span><span class="s1"> does not exist.&#39;</span><span class="p">)</span>
+
+                <span class="n">minimum_free_space</span> <span class="o">=</span> <span class="n">ceil</span><span class="p">(</span><span class="mf">1.1</span><span class="o">*</span><span class="p">(</span><span class="n">requested_base_image_size</span> <span class="o">+</span> <span class="n">requested_image_size</span><span class="p">))</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ImageVersionNotAvailableException</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Image </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">image_sem_version</span><span class="p">)</span><span class="si">}</span><span class="s1"> does not exist.&#39;</span><span class="p">)</span>
+
+        <span class="n">free_space</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">get_disk_utilization</span><span class="p">()</span>
+        <span class="n">free_space_panrepo</span> <span class="o">=</span> <span class="n">free_space</span><span class="p">[</span><span class="s1">&#39;/opt/panrepo&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">free_space_panrepo</span> <span class="o">&gt;</span> <span class="n">minimum_free_space</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">SUCCESS</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;There is not enough free space, only </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">free_space_panrepo</span><span class="o">/</span><span class="mi">1024</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s1">&#39;G&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">free_space_panrepo</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">1024</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="nb">str</span><span class="p">(</span><span class="n">free_space_panrepo</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s1">&#39;M&#39;</span><span class="si">}</span><span class="s2">B is available.&quot;</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="CheckFirewall.check_mp_dp_sync"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.check_firewall.CheckFirewall.check_mp_dp_sync">[docs]</a>    <span class="k">def</span> <span class="nf">check_mp_dp_sync</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">diff_threshold</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CheckResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if the Data and Management clocks are in sync.</span>
+
+<span class="sd">        :param diff_threshold: (defaults to ``0``) Maximum allowable difference in seconds between both clocks. </span>
+<span class="sd">        :type ip: int, optional</span>
+<span class="sd">        :return: </span>
+<span class="sd">            * :attr:`.CheckStatus.SUCCESS` when both clocks are the same or within threshold.</span>
+<span class="sd">            * :attr:`.CheckStatus.FAIL` when both clocks differ.</span>
+<span class="sd">        :rtype: :class:`.CheckResult`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">diff_threshold</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">WrongDataTypeException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[diff_threshold] should be of type [int] but is of type [</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">diff_threshold</span><span class="p">)</span><span class="si">}</span><span class="s2">].&quot;</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">CheckResult</span><span class="p">()</span>
+
+        <span class="n">mp_clock</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">get_mp_clock</span><span class="p">()</span>
+        <span class="n">dp_clock</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">get_dp_clock</span><span class="p">()</span>
+
+        <span class="n">mp_dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mp_clock</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">mp_clock</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">mp_clock</span><span class="p">[</span><span class="s1">&#39;day&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">mp_clock</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;%Y-%b-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span>
+        <span class="p">)</span>
+        <span class="n">dp_dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dp_clock</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">dp_clock</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">dp_clock</span><span class="p">[</span><span class="s1">&#39;day&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">dp_clock</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;%Y-%b-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span>
+        <span class="p">)</span>
+
+        <span class="n">time_fluctuation</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">((</span><span class="n">mp_dt</span> <span class="o">-</span> <span class="n">dp_dt</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">time_fluctuation</span> <span class="o">&gt;</span> <span class="n">diff_threshold</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;The data plane clock and management clock are different by </span><span class="si">{</span><span class="n">time_fluctuation</span><span class="si">}</span><span class="s2"> seconds.&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">SUCCESS</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="CheckFirewall.get_content_db_version"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.check_firewall.CheckFirewall.get_content_db_version">[docs]</a>    <span class="k">def</span> <span class="nf">get_content_db_version</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Content DB version.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: To keep the standard of all ``get`` methods returning a dictionary. This value is also returned as a dictionary in the following format:</span>
+
+<span class="sd">            ::</span>
+<span class="sd">            </span>
+<span class="sd">                {</span>
+<span class="sd">                    &#39;version&#39;: &#39;xxxx-yyyy&#39;</span>
+<span class="sd">                }</span>
+
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;version&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">get_content_db_version</span><span class="p">()}</span></div>
+
+<div class="viewcode-block" id="CheckFirewall.get_ip_sec_tunnels"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.check_firewall.CheckFirewall.get_ip_sec_tunnels">[docs]</a>    <span class="k">def</span> <span class="nf">get_ip_sec_tunnels</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span><span class="nb">int</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract information about IPSEC tunnels from all tunnel data retrieved from a device.</span>
+
+<span class="sd">        :return: Currently configured IPSEC tunnels.</span>
+<span class="sd">            The returned value is similar to the example below. It can differ though depending on the version of PanOS:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &quot;tunnel_name&quot;: {</span>
+<span class="sd">                        &quot;peerip&quot;: &quot;10.26.129.5&quot;,</span>
+<span class="sd">                        &quot;name&quot;: &quot;tunnel_name&quot;,</span>
+<span class="sd">                        &quot;outer-if&quot;: &quot;ethernet1/2&quot;,</span>
+<span class="sd">                        &quot;gwid&quot;: &quot;1&quot;,</span>
+<span class="sd">                        &quot;localip&quot;: &quot;0.0.0.0&quot;,</span>
+<span class="sd">                        &quot;state&quot;: &quot;init&quot;,</span>
+<span class="sd">                        &quot;inner-if&quot;: &quot;tunnel.1&quot;,</span>
+<span class="sd">                        &quot;mon&quot;: &quot;off&quot;,</span>
+<span class="sd">                        &quot;owner&quot;: &quot;1&quot;,</span>
+<span class="sd">                        &quot;id&quot;: &quot;1&quot;</span>
+<span class="sd">                    }</span>
+<span class="sd">                }</span>
+
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">get_tunnels</span><span class="p">()[</span><span class="s1">&#39;IPSec&#39;</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="CheckFirewall.run_readiness_checks"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.check_firewall.CheckFirewall.run_readiness_checks">[docs]</a>    <span class="k">def</span> <span class="nf">run_readiness_checks</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">checks_configuration</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">report_style</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run readiness checks.</span>
+
+<span class="sd">        This method provides a convenient way of running readiness check methods.</span>
+
+<span class="sd">        :param checks_configuration: (defaults to ``None``) A list of readiness checks to run with an optional configuration.</span>
+<span class="sd">            This list is defined using the :class:`.ConfigParser` class `dialect`_. For details, refer to the documentation for this class. </span>
+
+<span class="sd">            Elements of this list can be either of the ``str`` or ``dict`` type:</span>
+
+<span class="sd">                * ``str`` - the element simply specifies the name of a check to run.</span>
+<span class="sd">                * ``dict`` - the element contains the check name and a configuration (if a particular check requires one); the dictionary format is as follows:</span>
+
+<span class="sd">                    ::</span>
+
+<span class="sd">                        {</span>
+<span class="sd">                            &#39;check_name&#39;: {</span>
+<span class="sd">                                &#39;config_name&#39;: &#39;config_value&#39;</span>
+<span class="sd">                                &#39;config2_name&#39;: &#39;config2_value&#39;</span>
+<span class="sd">                            }</span>
+<span class="sd">                        }</span>
+
+<span class="sd">                    Refer to the :ref:`readiness_docs` documentation for details on each check configuration.</span>
+
+<span class="sd">            Following :class:`.ConfigParser` `dialect`_, when no configuration is provided, the **all** checks are triggered. *Notice* that in this situation checks that require configuration to run will return :attr:`.CheckStatus.SKIPPED`.</span>
+
+<span class="sd">            Example of the ``checks_configuration`` parameter:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                [</span>
+<span class="sd">                    &#39;all&#39;,</span>
+<span class="sd">                    &#39;!ha&#39;,</span>
+<span class="sd">                    {&#39;content_version&#39;: {&#39;version&#39;: &#39;8634-7678&#39;}}</span>
+<span class="sd">                ]</span>
+
+<span class="sd">            This is interpreted as: run all checks, except for the HA status verification and override the Content DB version check to check for the minimum version of 8634-7678.</span>
+
+<span class="sd">        :rtype: list(str,dict), optional</span>
+<span class="sd">        :param report_style: (defaults to ``False``) Changes the output to more descriptive. Can be used directly when generating a report.</span>
+<span class="sd">        :type report_style: bool</span>
+<span class="sd">        :raises WrongDataTypeException: An exception is raised when the configuration is in a data type different then ``str`` or ``dict``.</span>
+<span class="sd">        :return: The format differs depending on the value of the ``report_style`` parameter. If the value is:</span>
+<span class="sd">            </span>
+<span class="sd">            * ``False`` (default): results of executed checks are formatted as ``dict``, where keys are check names as passed in ``checks_configuration`` and values are dictionaries containing two keys:</span>
+
+<span class="sd">                * ``state``: a ``bool`` representation of the :class:`.CheckResult` class for a particular check.</span>
+<span class="sd">                * ``reason``:  a ``str`` representation of the :class:`.CheckResult` class for a particular check.</span>
+
+<span class="sd">                Assuming that we run the checks with the following configuration:</span>
+
+<span class="sd">                ::</span>
+
+<span class="sd">                    [</span>
+<span class="sd">                        &#39;ha&#39;,</span>
+<span class="sd">                        &#39;panorama&#39;,</span>
+<span class="sd">                    ]</span>
+
+<span class="sd">                The return ``dict`` should look as follows:</span>
+
+<span class="sd">                ::</span>
+
+<span class="sd">                    {</span>
+<span class="sd">                        &#39;ha&#39;: {</span>
+<span class="sd">                            &#39;state&#39;: False</span>
+<span class="sd">                            &#39;reason&#39;: &#39;[FAIL] Device configuration is not synchronized between the nodes.&#39;</span>
+<span class="sd">                        }</span>
+<span class="sd">                        &#39;candidate_config&#39;: {</span>
+<span class="sd">                            &#39;state&#39;: True</span>
+<span class="sd">                            &#39;reason&#39;: &#39;[SUCCESS]&#39;</span>
+<span class="sd">                        }</span>
+<span class="sd">                    }</span>
+
+<span class="sd">            * ``True``: results are also formatted as ``dict`` with the keys corresponding to checks names, but values are a string representations of the :class:`.CheckResult` class.</span>
+<span class="sd">            </span>
+<span class="sd">                For the above example of checks, the result would be similar to:</span>
+
+<span class="sd">                ::</span>
+
+<span class="sd">                    {</span>
+<span class="sd">                        &#39;ha&#39;: &#39;[FAIL] Device configuration is not synchronized between the nodes.&#39;</span>
+<span class="sd">                        &#39;candidate_config&#39;: &#39;[SUCCESS].&#39;</span>
+<span class="sd">                    }</span>
+
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">checks_list</span> <span class="o">=</span> <span class="n">ConfigParser</span><span class="p">(</span><span class="n">valid_elements</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_check_method_mapping</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span>
+                                   <span class="n">requested_config</span><span class="o">=</span><span class="n">checks_configuration</span><span class="p">)</span><span class="o">.</span><span class="n">prepare_config</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">check</span> <span class="ow">in</span> <span class="n">checks_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">check</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">check_type</span><span class="p">,</span> <span class="n">check_config</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">check</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+                <span class="c1"># check_result = self._check_method_mapping[check_type](check_config)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">check</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">check_type</span><span class="p">,</span> <span class="n">check_config</span> <span class="o">=</span> <span class="n">check</span><span class="p">,</span> <span class="p">{}</span>
+                <span class="c1"># check_result = self._check_method_mapping[check_type]()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">WrongDataTypeException</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Wrong configuration format for check: </span><span class="si">{</span><span class="n">check</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+
+            <span class="n">check_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_method_mapping</span><span class="p">[</span><span class="n">check_type</span><span class="p">](</span><span class="o">**</span><span class="n">check_config</span><span class="p">)</span>  <span class="c1"># (**) would pass dict config values as seperate parameters to method.</span>
+            <span class="n">result</span><span class="p">[</span><span class="n">check_type</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">check_result</span><span class="p">)</span> <span class="k">if</span> <span class="n">report_style</span> <span class="k">else</span> <span class="p">{</span><span class="s1">&#39;state&#39;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">check_result</span><span class="p">),</span> <span class="s1">&#39;reason&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">check_result</span><span class="p">)}</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="CheckFirewall.run_snapshots"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.check_firewall.CheckFirewall.run_snapshots">[docs]</a>    <span class="k">def</span> <span class="nf">run_snapshots</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">snapshots_config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run snapshots of different firewall areas&#39; states.</span>
+
+<span class="sd">        This method provides a convenient way of running snapshots of a device state.</span>
+
+<span class="sd">        :param snapshots_config: (defaults to ``None``) Defines snapshots of which areas will be taken.</span>
+<span class="sd">        </span>
+<span class="sd">            This list is specified in :class:`.ConfigParser` class`dialect`_. For details, refer to the documentation for this class.</span>
+<span class="sd">            Following that`dialect`_, when no list is passed, **all** state snapshots are made.</span>
+
+<span class="sd">            On the contrary to ``run_readiness_checks``, it is not possible to configure a snapshot. One can only specify which type of data should be captured.</span>
+<span class="sd">            That&#39;s why, below there is a list of strings only. Refer to the :ref:`snapshot_docs` documentation for details on the currently available snapshot areas.</span>
+
+<span class="sd">        :type snapshot_config: list(str), optional</span>
+<span class="sd">        :raises WrongDataTypeException: An exception is raised when the configuration in a data type is different than in a string.</span>
+<span class="sd">        :return: The results of the executed snapshots are formatted as a dictionary where:</span>
+<span class="sd">        </span>
+<span class="sd">            * keys are state areas as passed in ``snapshot_config`` parameter,</span>
+<span class="sd">            * values are dictionaries with the actual data.</span>
+
+<span class="sd">                Each dictionary can have a different structure. The structure depends on the nature of data we want to capture.</span>
+<span class="sd">                See the :ref:`snapshot_docs` documentation to refer to the methods used to take snapshots of a particular area. The documentation for these methods inludes details on the actual structure of results.</span>
+<span class="sd">            </span>
+<span class="sd">            The sample output containing a snapshot for route tables, licenses, and IPSec tunnels is shown below (one element per each area):</span>
+
+<span class="sd">            .. code-block:: python</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &quot;ip_sec_tunnels&quot;: {</span>
+<span class="sd">                        &quot;ipsec_tun&quot;: {</span>
+<span class="sd">                            &quot;peerip&quot;: &quot;10.26.129.5&quot;,</span>
+<span class="sd">                            &quot;name&quot;: &quot;ipsec_tun&quot;,</span>
+<span class="sd">                            &quot;outer-if&quot;: &quot;ethernet1/2&quot;,</span>
+<span class="sd">                            &quot;gwid&quot;: &quot;1&quot;,</span>
+<span class="sd">                            &quot;localip&quot;: &quot;0.0.0.0&quot;,</span>
+<span class="sd">                            &quot;state&quot;: &quot;init&quot;,</span>
+<span class="sd">                            &quot;inner-if&quot;: &quot;tunnel.1&quot;,</span>
+<span class="sd">                            &quot;mon&quot;: &quot;off&quot;,</span>
+<span class="sd">                            &quot;owner&quot;: &quot;1&quot;,</span>
+<span class="sd">                            &quot;id&quot;: &quot;1&quot;</span>
+<span class="sd">                        },</span>
+<span class="sd">                    }.</span>
+<span class="sd">                    &quot;routes&quot;: {</span>
+<span class="sd">                        &quot;default_0.0.0.0/0_ethernet1/3&quot;: {</span>
+<span class="sd">                            &quot;virtual-router&quot;: &quot;default&quot;,</span>
+<span class="sd">                            &quot;destination&quot;: &quot;0.0.0.0/0&quot;,</span>
+<span class="sd">                            &quot;nexthop&quot;: &quot;10.26.129.129&quot;,</span>
+<span class="sd">                            &quot;metric&quot;: &quot;10&quot;,</span>
+<span class="sd">                            &quot;flags&quot;: &quot;A S&quot;,</span>
+<span class="sd">                            &quot;age&quot;: null,</span>
+<span class="sd">                            &quot;interface&quot;: &quot;ethernet1/3&quot;,</span>
+<span class="sd">                            &quot;route-table&quot;: &quot;unicast&quot;</span>
+<span class="sd">                        },</span>
+<span class="sd">                    },</span>
+<span class="sd">                    &quot;license&quot;: {</span>
+<span class="sd">                        &quot;DNS Security&quot;: {</span>
+<span class="sd">                            &quot;feature&quot;: &quot;DNS Security&quot;,</span>
+<span class="sd">                            &quot;description&quot;: &quot;Palo Alto Networks DNS Security License&quot;,</span>
+<span class="sd">                            &quot;serial&quot;: &quot;007257000334668&quot;,</span>
+<span class="sd">                            &quot;issued&quot;: &quot;November 08, 2022&quot;,</span>
+<span class="sd">                            &quot;expires&quot;: &quot;November 01, 2023&quot;,</span>
+<span class="sd">                            &quot;expired&quot;: &quot;no&quot;,</span>
+<span class="sd">                            &quot;base-license-name&quot;: &quot;PA-VM&quot;,</span>
+<span class="sd">                            &quot;authcode&quot;: null</span>
+<span class="sd">                        },</span>
+<span class="sd">                    }</span>
+<span class="sd">                }</span>
+
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">snaps_list</span> <span class="o">=</span> <span class="n">ConfigParser</span><span class="p">(</span><span class="n">valid_elements</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_snapshot_method_mapping</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span>
+                                  <span class="n">requested_config</span><span class="o">=</span><span class="n">snapshots_config</span><span class="p">)</span><span class="o">.</span><span class="n">prepare_config</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">snap_type</span> <span class="ow">in</span> <span class="n">snaps_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">snap_type</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">WrongDataTypeException</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Wrong configuration format for snapshot: </span><span class="si">{</span><span class="n">snap_type</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+
+            <span class="n">result</span><span class="p">[</span><span class="n">snap_type</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_snapshot_method_mapping</span><span class="p">[</span><span class="n">snap_type</span><span class="p">]()</span>
+
+        <span class="k">return</span> <span class="n">result</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Palo Alto Networks.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

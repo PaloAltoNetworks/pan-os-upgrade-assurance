@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>panos_upgrade_assurance.snapshot_compare &mdash; PanOS Upgrade Assurance 0.0.1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            PanOS Upgrade Assurance
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration_details.html">Configuration details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../building_docs.html">Building documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PanOS Upgrade Assurance</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">panos_upgrade_assurance.snapshot_compare</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for panos_upgrade_assurance.snapshot_compare</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span>
+<span class="kn">from</span> <span class="nn">panos_upgrade_assurance.utils</span> <span class="kn">import</span> <span class="n">ConfigParser</span><span class="p">,</span> <span class="n">SnapType</span>
+
+
+<div class="viewcode-block" id="MissingKeyException"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.snapshot_compare.MissingKeyException">[docs]</a><span class="k">class</span> <span class="nc">MissingKeyException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Used when an exception about the missing keys in a dictionary is thrown.&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="WrongDataTypeException"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.snapshot_compare.WrongDataTypeException">[docs]</a><span class="k">class</span> <span class="nc">WrongDataTypeException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Used when a variable does not meet the data type requirements.&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="SnapshotSchemeMismatchException"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.snapshot_compare.SnapshotSchemeMismatchException">[docs]</a><span class="k">class</span> <span class="nc">SnapshotSchemeMismatchException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Used when a snapshot element contains different properties in both snapshots.&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="SnapshotCompare"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.snapshot_compare.SnapshotCompare">[docs]</a><span class="k">class</span> <span class="nc">SnapshotCompare</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class comparing snapshots of Firewall Nodes.</span>
+
+<span class="sd">    This object can be used to compare two Firewall snapshots made with the :meth:`.CheckFirewall.run_snapshots` method and present results of this comparison.</span>
+<span class="sd">    Its main purpose is to compare two snapshots made with the :class:`.CheckFirewall` class. However, the code is generic enough to compare any two dictionaries as long as they follow the schema below:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        {</span>
+<span class="sd">            &#39;root_key&#39;: {</span>
+<span class="sd">                &#39;key&#39;: value</span>
+<span class="sd">            }</span>
+<span class="sd">        }</span>
+
+<span class="sd">    Where:</span>
+
+<span class="sd">        * ``root_key`` has to be present and mapped to a method in the ``_functions_mapping`` variable in order to be recognized during a comparison. </span>
+<span class="sd">        * ``value`` can be either of a simple type (``str``, ``int``, ``float``, ``bool``) or a nested ``dict``. </span>
+
+<span class="sd">    :ivar _functions_mapping: Internal variable containing the map of all valid report types mapped to the specific methods.</span>
+<span class="sd">        </span>
+<span class="sd">        This mapping is used to verify the requested report and to map the report to an actual method that will eventually run. Keys in this dictionary are report names as defined in the :class:`.SnapType` class. Essentially, these are the same values that one would specify when creating a snapshot with the :meth:`.CheckFirewall.run_snapshots` method. Values are references to the methods that will run.</span>
+<span class="sd">    :vartype _functions_mapping: dict</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="SnapshotCompare.__init__"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.snapshot_compare.SnapshotCompare.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">left_snapshot</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]],</span>
+        <span class="n">right_snapshot</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;SnapshotCompare constructor.</span>
+
+<span class="sd">        Initializes an object by storing both snapshots to be compared.</span>
+
+<span class="sd">        :param left_snapshot: First snapshot dictionary to be compared, usually the older one, for example a pre-upgrade snapshot.</span>
+<span class="sd">        :type left_snapshot: dict</span>
+<span class="sd">        :param right_snapshot: Second snapshot dictionary to be compared, usually the newer one, for example a post-upgrade snapshot.</span>
+<span class="sd">        :type right_snapshot: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">left_snap</span> <span class="o">=</span> <span class="n">left_snapshot</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">right_snap</span> <span class="o">=</span> <span class="n">right_snapshot</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_functions_mapping</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">SnapType</span><span class="o">.</span><span class="n">NICS</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_diff_and_threshold</span><span class="p">,</span>
+            <span class="n">SnapType</span><span class="o">.</span><span class="n">ROUTES</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_diff_and_threshold</span><span class="p">,</span>
+            <span class="n">SnapType</span><span class="o">.</span><span class="n">LICENSE</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_diff_and_threshold</span><span class="p">,</span>
+            <span class="n">SnapType</span><span class="o">.</span><span class="n">ARP_TABLE</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_diff_and_threshold</span><span class="p">,</span>
+            <span class="n">SnapType</span><span class="o">.</span><span class="n">CONTENT_VERSION</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_diff_and_threshold</span><span class="p">,</span>
+            <span class="n">SnapType</span><span class="o">.</span><span class="n">SESSION_STATS</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_count_change_percentage</span><span class="p">,</span>
+            <span class="n">SnapType</span><span class="o">.</span><span class="n">IPSEC_TUNNELS</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_diff_and_threshold</span>
+        <span class="p">}</span></div>
+
+<div class="viewcode-block" id="SnapshotCompare.compare_snapshots"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.snapshot_compare.SnapshotCompare.compare_snapshots">[docs]</a>    <span class="k">def</span> <span class="nf">compare_snapshots</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">reports</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A method that triggers the actual snapshot comparison.</span>
+
+<span class="sd">        This is a single point of entry to generate a comparison report. It takes both reports stored in the class object and compares areas specified in the ``reports`` parameter.</span>
+
+<span class="sd">        :param reports: A list of reports - snapshot state areas with optional configuration. This parameter follows the`dialect`_ of :class:`.ConfigParser` class.</span>
+
+<span class="sd">            The reports list is essentially the list of keys present in the snapshots. These keys, however, are the state areas specified when the snapshot is made with the :meth:`.CheckFirewall.run_snapshots` method. This means that the reports list is basically the list of state areas. The only difference is that for reports, it is possible to specify an additional configuration. This means that the list can be specified in two ways, as ``str`` or ``dict`` (in the same manner as for :meth:`.CheckFirewall.run_readiness_checks`).</span>
+
+<span class="sd">            For the elements specified as:</span>
+
+<span class="sd">                * ``str`` - the element value is the name of the report (state area),</span>
+<span class="sd">                * ``dict`` - the element contains the report name (state area) and the key value and report configuration as the element value.</span>
+
+<span class="sd">            Refer to the :ref:`report_docs` documentation for details on the currently available snapshot areas and optional parameters that can be configured for them.</span>
+
+<span class="sd">        :type reports: list, optional</span>
+<span class="sd">        :raises WrongDataTypeException: An exception is raised when the configuration in a data type is different than ``str`` or ``dict``.</span>
+<span class="sd">        :return: Result of comparison in a form of the Python dictionary.</span>
+
+<span class="sd">            Keys in this dictionary are again state areas where values depend on the actual comparison method that was run. Again, refer to the :ref:`report_docs` documentation for details.</span>
+
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">reports</span> <span class="o">=</span> <span class="n">ConfigParser</span><span class="p">(</span>
+                               <span class="n">valid_elements</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_functions_mapping</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span>
+                               <span class="n">requested_config</span><span class="o">=</span><span class="n">reports</span>
+                  <span class="p">)</span><span class="o">.</span><span class="n">prepare_config</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">report</span> <span class="ow">in</span> <span class="n">reports</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">report</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">report_type</span><span class="p">,</span> <span class="n">report_config</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">report</span><span class="o">.</span><span class="n">items</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">report_config</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;report_type&#39;</span><span class="p">:</span> <span class="n">report_type</span><span class="p">})</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">report</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">report_type</span> <span class="o">=</span> <span class="n">report</span>
+                <span class="n">report_config</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;report_type&#39;</span><span class="p">:</span> <span class="n">report_type</span><span class="p">}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">WrongDataTypeException</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Wrong configuration format for report: </span><span class="si">{</span><span class="n">report</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">key_checker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">left_snap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">right_snap</span><span class="p">,</span> <span class="n">report_type</span><span class="p">)</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">report_type</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_functions_mapping</span><span class="p">[</span><span class="n">report_type</span><span class="p">](</span><span class="o">**</span><span class="n">report_config</span><span class="p">)})</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="SnapshotCompare.key_checker"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.snapshot_compare.SnapshotCompare.key_checker">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">key_checker</span><span class="p">(</span><span class="n">left_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">right_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The static method to check if a key is available in both dictionaries.</span>
+
+<span class="sd">        This method looks for a given key in two dictionaries. Its main purpose is to assure that when comparing a key-value pair from two dictionaries, it actually exists in both.</span>
+
+<span class="sd">        :param left_dict: 1st dictionary to verify.</span>
+<span class="sd">        :type left_dict: dict</span>
+<span class="sd">        :param right_dict: 2nd dictionary to verify.</span>
+<span class="sd">        :type right_dict: dict</span>
+<span class="sd">        :param key: Key name to check.</span>
+<span class="sd">        :type key: str</span>
+<span class="sd">        :raises MissingKeyException: when key is not available in at least one snapshot.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">left_snap_missing_key</span> <span class="o">=</span> <span class="kc">False</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">left_dict</span> <span class="k">else</span> <span class="kc">True</span>
+        <span class="n">right_snap_missing_key</span> <span class="o">=</span> <span class="kc">False</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">right_dict</span> <span class="k">else</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="n">left_snap_missing_key</span> <span class="ow">and</span> <span class="n">right_snap_missing_key</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">MissingKeyException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> is missing in both snapshots&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">left_snap_missing_key</span> <span class="ow">or</span> <span class="n">right_snap_missing_key</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">MissingKeyException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> is missing in </span><span class="si">{</span><span class="s1">&#39;left snapshot&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">left_snap_missing_key</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;right snapshot&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SnapshotCompare.calculate_change_percentage"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.snapshot_compare.SnapshotCompare.calculate_change_percentage">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">calculate_change_percentage</span><span class="p">(</span>
+        <span class="n">first_value</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">second_value</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">threshold</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span><span class="nb">float</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The static method to compare differences between values against a given threshold.</span>
+
+<span class="sd">        Values to be compared should be the ``int`` or ``str`` representation of ``int``. This method is used when comparing a count of elements so a floating point value here is not expected.</span>
+<span class="sd">        The threshold value, on the other hand, should be the ``float`` or ``str`` representation of ``float``. This is a percentage value.</span>
+
+<span class="sd">        :param first_value: First value to compare.</span>
+<span class="sd">        :type first_value: int, str</span>
+<span class="sd">        :param second_value: Second value to compare.</span>
+<span class="sd">        :type second_value: int, str</span>
+<span class="sd">        :param threshold: Maximal difference between values given as percentage.</span>
+<span class="sd">        :type threshold: float, str</span>
+<span class="sd">        :raises WrongDataTypeException: An exception is raised when the threshold value is not between ``0`` and ``100`` (typical percentage boundaries).</span>
+<span class="sd">        :return: A dictionary with the comparison results.</span>
+
+<span class="sd">            The format is as follows:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    passed: bool, </span>
+<span class="sd">                    change_percentage: float,</span>
+<span class="sd">                    change_threshold: float</span>
+<span class="sd">                }</span>
+<span class="sd">            </span>
+<span class="sd">            Where:</span>
+
+<span class="sd">                * ``passed`` is an information if the test passed:</span>
+<span class="sd">                    * ``True`` if difference is lower or equal to threshold,</span>
+<span class="sd">                    * ``False`` otherwise,</span>
+<span class="sd">                * the actual difference represented as percentage,</span>
+<span class="sd">                * the originally requested threshold (for reporting purposes).</span>
+
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">first_value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">first_value</span><span class="p">)</span>
+        <span class="n">second_value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">second_value</span><span class="p">)</span>
+        <span class="n">threshold</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">threshold</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">passed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">change_percentage</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+            <span class="n">change_threshold</span><span class="o">=</span><span class="n">threshold</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">first_value</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">second_value</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">threshold</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">threshold</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">WrongDataTypeException</span><span class="p">(</span><span class="s1">&#39;The threshold should be a percentage value between 0 and 100.&#39;</span><span class="p">)</span>
+
+            <span class="n">result</span><span class="p">[</span><span class="s1">&#39;change_percentage&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span>
+                <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">first_value</span> <span class="o">-</span> <span class="n">second_value</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">first_value</span> <span class="k">if</span> <span class="n">first_value</span> <span class="o">&gt;=</span> <span class="n">second_value</span> <span class="k">else</span> <span class="n">second_value</span><span class="p">))</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;change_percentage&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">:</span>
+                <span class="n">result</span><span class="p">[</span><span class="s1">&#39;passed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="SnapshotCompare.calculate_diff_on_dicts"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.snapshot_compare.SnapshotCompare.calculate_diff_on_dicts">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">calculate_diff_on_dicts</span><span class="p">(</span>
+            <span class="n">left_side_to_compare</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span><span class="nb">dict</span><span class="p">]],</span>
+            <span class="n">right_side_to_compare</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span><span class="nb">dict</span><span class="p">]],</span>
+            <span class="n">properties</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The static method to calculate a difference between two dictionaries.</span>
+
+
+<span class="sd">        :param left_side_to_compare: 1st dictionary to compare.</span>
+
+<span class="sd">            When this method is triggered by :meth:`.compare_snapshots`, the dictionary comes from the ``self.left_snap`` snapshot.</span>
+
+<span class="sd">        :type left_side_to_compare: dict</span>
+
+<span class="sd">        :param right_side_to_compare: 2nd dictionary to compare, comes from the self.right_snap snapshot.</span>
+
+<span class="sd">            When this method is triggered by :meth:`.compare_snapshots`, the dictionary comes from the ``self.right_snap`` snapshot.</span>
+
+<span class="sd">        :type right_side_to_compare: dict</span>
+
+<span class="sd">        :param properties: The list of properties used to compare two dictionaries.</span>
+<span class="sd">            </span>
+<span class="sd">            This is a list of the bottom most level keys. For example, when comparing route tables snapshots formatted like:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &quot;routes&quot;: {</span>
+<span class="sd">                        &quot;default_0.0.0.0/0_ethernet1/3&quot;: {</span>
+<span class="sd">                            &quot;virtual-router&quot;: &quot;default&quot;,</span>
+<span class="sd">                            &quot;destination&quot;: &quot;0.0.0.0/0&quot;,</span>
+<span class="sd">                            &quot;nexthop&quot;: &quot;10.26.129.129&quot;,</span>
+<span class="sd">                            &quot;metric&quot;: &quot;10&quot;,</span>
+<span class="sd">                            &quot;flags&quot;: &quot;A S&quot;,</span>
+<span class="sd">                            &quot;age&quot;: null,</span>
+<span class="sd">                            &quot;interface&quot;: &quot;ethernet1/3&quot;,</span>
+<span class="sd">                            &quot;route-table&quot;: &quot;unicast&quot;</span>
+<span class="sd">                        },</span>
+<span class="sd">                        ...</span>
+<span class="sd">                    }</span>
+<span class="sd">                }</span>
+
+<span class="sd">            the bottom most level keys are: ``virtual-router``, ``destination``, ``nexthop``, ``metric``, ``flags``, ``age``, ``interface``, ``route-table``.</span>
+<span class="sd">            </span>
+<span class="sd">            This list follows :class:`.ConfigParser` `dialect`_, which means that default ``all`` and negation are supported.</span>
+
+<span class="sd">        :type properties: list(str), optional</span>
+<span class="sd">        :raises WrongDataTypeException: Thrown when one of the ``properties`` elements has a wrong data type.</span>
+<span class="sd">        :return: Summary of the differences between dictionaries.</span>
+
+<span class="sd">            The output has the following format:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &#39;missing&#39;: {</span>
+<span class="sd">                        &#39;passed&#39;: True,</span>
+<span class="sd">                        &#39;missing_keys&#39;: []</span>
+<span class="sd">                    },</span>
+<span class="sd">                    &#39;added&#39;: {</span>
+<span class="sd">                        &#39;passed&#39;: True,</span>
+<span class="sd">                        &#39;added_keys&#39;: []</span>
+<span class="sd">                    },</span>
+<span class="sd">                    &#39;changed&#39;: {</span>
+<span class="sd">                        &#39;passed&#39;: True,</span>
+<span class="sd">                        &#39;changed_raw&#39;: {}</span>
+<span class="sd">                    }</span>
+<span class="sd">                }</span>
+
+<span class="sd">            The difference is calculated from three perspectives:</span>
+
+<span class="sd">                1. are there any keys missing in the 2nd (right) dictionary that are present in the 1st (left) - this is represented under the ``missing`` key in the results.</span>
+<span class="sd">                2. are there any keys in the 2nd (right) dictionary that are not present in the 1st (left) - this is represented under the ``added`` key in the results.</span>
+<span class="sd">                3. for the keys that are present in both dictionaries, are values for these keys the same or different - this is represented under the ``changed`` key in the results.</span>
+
+<span class="sd">            This is the **recursive** method. When calculating the changed values, if a value for the key is ``dict``, we run the method again on that dictionary - we go down one level in the nested structure. We do that to a point where the value is of the ``str`` type. </span>
+<span class="sd">            Therefore, when the final comparison results are presented, the ``changed`` key usually contains a nested results structure. This means it contains a dictionary with the ``missing``, ``added``, and ``changed`` keys.</span>
+<span class="sd">            Each comparison perspective contains the ``passed`` property that immediately informs if this comparison gave any results (``False``) or not (``True``).</span>
+
+<span class="sd">            Example:</span>
+
+<span class="sd">                Let&#39;s assume we want to compare two dictionaries of the following structure:</span>
+
+<span class="sd">                ::</span>
+<span class="sd">                </span>
+<span class="sd">                    left_dict = {</span>
+<span class="sd">                        &#39;root_key1&#39;= {</span>
+<span class="sd">                            &#39;key&#39;= &#39;value&#39;</span>
+<span class="sd">                        }</span>
+<span class="sd">                        &#39;root_key2&#39;= {</span>
+<span class="sd">                            &#39;key&#39;= &#39;value&#39;</span>
+<span class="sd">                        }</span>
+<span class="sd">                    }</span>
+
+<span class="sd">                    right_dict = {</span>
+<span class="sd">                        &#39;root_key2&#39;= {</span>
+<span class="sd">                            &#39;key&#39;= &#39;other_value&#39;</span>
+<span class="sd">                        }</span>
+<span class="sd">                    }</span>
+
+<span class="sd">                The result of this comparison would look like this:</span>
+<span class="sd">                </span>
+<span class="sd">                ::</span>
+
+<span class="sd">                    {</span>
+<span class="sd">                        &quot;missing&quot;: {</span>
+<span class="sd">                            &quot;passed&quot;: false,</span>
+<span class="sd">                            &quot;missing_keys&quot;: [</span>
+<span class="sd">                                &quot;root_key1&quot;</span>
+<span class="sd">                            ]</span>
+<span class="sd">                        },</span>
+<span class="sd">                        &quot;added&quot;: {</span>
+<span class="sd">                            &quot;passed&quot;: true,</span>
+<span class="sd">                            &quot;added_keys&quot;: []</span>
+<span class="sd">                        },</span>
+<span class="sd">                        &quot;changed&quot;: {</span>
+<span class="sd">                            &quot;passed&quot;: false,</span>
+<span class="sd">                            &quot;changed_raw&quot;: {</span>
+<span class="sd">                            &quot;root_key2&quot;: {</span>
+<span class="sd">                                &quot;missing&quot;: {</span>
+<span class="sd">                                    &quot;passed&quot;: true,</span>
+<span class="sd">                                    &quot;missing_keys&quot;: []</span>
+<span class="sd">                                },</span>
+<span class="sd">                                &quot;added&quot;: {</span>
+<span class="sd">                                    &quot;passed&quot;: true,</span>
+<span class="sd">                                    &quot;added_keys&quot;: []</span>
+<span class="sd">                                },</span>
+<span class="sd">                                &quot;changed&quot;: {</span>
+<span class="sd">                                    &quot;passed&quot;: false,</span>
+<span class="sd">                                    &quot;changed_raw&quot;: {</span>
+<span class="sd">                                        &quot;key&quot;: {</span>
+<span class="sd">                                            &quot;left_snap&quot;: &quot;value&quot;,</span>
+<span class="sd">                                            &quot;right_snap&quot;: &quot;other_value&quot;</span>
+<span class="sd">                                        }</span>
+<span class="sd">                                    }</span>
+<span class="sd">                                },</span>
+<span class="sd">                                &quot;passed&quot;: false</span>
+<span class="sd">                            }</span>
+<span class="sd">                        }</span>
+<span class="sd">                    }</span>
+
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">left_side_to_compare</span> <span class="ow">and</span> <span class="n">right_side_to_compare</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">{}</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">missing</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+                <span class="n">passed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">missing_keys</span><span class="o">=</span><span class="p">[]</span>
+            <span class="p">),</span>
+            <span class="n">added</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+                <span class="n">passed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">added_keys</span><span class="o">=</span><span class="p">[]</span>
+            <span class="p">),</span>
+            <span class="n">changed</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+                <span class="n">passed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">changed_raw</span><span class="o">=</span><span class="p">{}</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">missing</span> <span class="o">=</span> <span class="n">left_side_to_compare</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">-</span> <span class="n">right_side_to_compare</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
+            <span class="n">result</span><span class="p">[</span><span class="s1">&#39;missing&#39;</span><span class="p">][</span><span class="s1">&#39;passed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">missing</span><span class="p">:</span>
+                <span class="n">result</span><span class="p">[</span><span class="s1">&#39;missing&#39;</span><span class="p">][</span><span class="s1">&#39;missing_keys&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+        <span class="n">added</span> <span class="o">=</span> <span class="n">right_side_to_compare</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">-</span> <span class="n">left_side_to_compare</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">added</span><span class="p">:</span>
+            <span class="n">result</span><span class="p">[</span><span class="s1">&#39;added&#39;</span><span class="p">][</span><span class="s1">&#39;passed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">added</span><span class="p">:</span>
+                <span class="n">result</span><span class="p">[</span><span class="s1">&#39;added&#39;</span><span class="p">][</span><span class="s1">&#39;added_keys&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+        <span class="n">common_keys</span> <span class="o">=</span> <span class="n">left_side_to_compare</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">&amp;</span> <span class="n">right_side_to_compare</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="n">at_lowest_level</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">right_side_to_compare</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">common_keys</span><span class="p">)[</span><span class="mi">0</span><span class="p">]],</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="kc">False</span>
+        <span class="n">keys_to_check</span> <span class="o">=</span> <span class="n">ConfigParser</span><span class="p">(</span><span class="n">valid_elements</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="n">common_keys</span><span class="p">),</span> <span class="n">requested_config</span><span class="o">=</span><span class="n">properties</span><span class="p">)</span><span class="o">.</span><span class="n">prepare_config</span><span class="p">()</span> <span class="k">if</span> <span class="n">at_lowest_level</span> <span class="k">else</span> <span class="n">common_keys</span>
+
+        <span class="n">item_changed</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys_to_check</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">right_side_to_compare</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">!=</span> <span class="n">left_side_to_compare</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">left_side_to_compare</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="n">result</span><span class="p">[</span><span class="s1">&#39;changed&#39;</span><span class="p">][</span><span class="s1">&#39;changed_raw&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+                        <span class="n">left_snap</span><span class="o">=</span><span class="n">left_side_to_compare</span><span class="p">[</span><span class="n">key</span><span class="p">],</span>
+                        <span class="n">right_snap</span><span class="o">=</span><span class="n">right_side_to_compare</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                    <span class="p">)</span>
+                    <span class="n">item_changed</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">left_side_to_compare</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="n">nested_results</span> <span class="o">=</span> <span class="n">SnapshotCompare</span><span class="o">.</span><span class="n">calculate_diff_on_dicts</span><span class="p">(</span>
+                        <span class="n">left_side_to_compare</span><span class="o">=</span><span class="n">left_side_to_compare</span><span class="p">[</span><span class="n">key</span><span class="p">],</span>
+                        <span class="n">right_side_to_compare</span><span class="o">=</span><span class="n">right_side_to_compare</span><span class="p">[</span><span class="n">key</span><span class="p">],</span>
+                        <span class="n">properties</span><span class="o">=</span><span class="n">properties</span><span class="p">)</span>
+
+                    <span class="n">SnapshotCompare</span><span class="o">.</span><span class="n">calculate_passed</span><span class="p">(</span><span class="n">nested_results</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">nested_results</span><span class="p">[</span><span class="s2">&quot;passed&quot;</span><span class="p">]:</span>
+                        <span class="n">result</span><span class="p">[</span><span class="s1">&#39;changed&#39;</span><span class="p">][</span><span class="s1">&#39;changed_raw&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">nested_results</span>
+                        <span class="n">item_changed</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">WrongDataTypeException</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unknown value format for key </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+            <span class="n">result</span><span class="p">[</span><span class="s1">&#39;changed&#39;</span><span class="p">][</span><span class="s1">&#39;passed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">item_changed</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="SnapshotCompare.calculate_passed"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.snapshot_compare.SnapshotCompare.calculate_passed">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">calculate_passed</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The static method to calculate the upper level ``passed`` value.</span>
+
+<span class="sd">        When two snapshots are compared, a dictionary that is the result of this comparison is structured as in the following :meth:`.get_diff_and_threshold` method: each root key contains a dictionary that has a structure returned by the :meth:`.calculate_diff_on_dicts` method.</span>
+<span class="sd">        </span>
+<span class="sd">        This method takes a dictionary under the root key and calculates the ``passed`` flag based on the all ``passed`` flags in that dictionary. This provides a quick way of finding out if any comparison made on data under a root key failed or not. </span>
+<span class="sd">        </span>
+<span class="sd">        To illustrate that, the ``passed`` flag added by this method is marked with an arrow:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &#39;added&#39;: {</span>
+<span class="sd">                    &#39;added_keys&#39;: [],</span>
+<span class="sd">                    &#39;passed&#39;: True</span>
+<span class="sd">                },</span>
+<span class="sd">                &#39;changed&#39;: {</span>
+<span class="sd">                    &#39;changed_raw&#39;: {},</span>
+<span class="sd">                    &#39;passed&#39;: True</span>
+<span class="sd">                },</span>
+<span class="sd">                &#39;missing&#39;: {</span>
+<span class="sd">                    &#39;missing_keys&#39;: [</span>
+<span class="sd">                        &#39;default_0.0.0.0/0_ethernet1/3&#39;</span>
+<span class="sd">                    ],</span>
+<span class="sd">                    &#39;passed&#39;: False</span>
+<span class="sd">                },</span>
+<span class="sd">                &#39;passed&#39;: False   &lt;-------###</span>
+<span class="sd">            }</span>
+
+<span class="sd">        :param result: The result of snapshot difference comparison.</span>
+<span class="sd">        :type result: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">passed</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">value</span><span class="p">[</span><span class="s1">&#39;passed&#39;</span><span class="p">]:</span>
+                <span class="n">passed</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">result</span><span class="p">[</span><span class="s1">&#39;passed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">passed</span></div>
+
+<div class="viewcode-block" id="SnapshotCompare.get_diff_and_threshold"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.snapshot_compare.SnapshotCompare.get_diff_and_threshold">[docs]</a>    <span class="k">def</span> <span class="nf">get_diff_and_threshold</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+            <span class="n">report_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">properties</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">count_change_threshold</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]]]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The generic snapshot comparison method.</span>
+
+<span class="sd">        The generic method to compare two snapshots of a given type. It is meant to fit most of the comparison cases.</span>
+<span class="sd">        It is capable of calculating both - a difference between two snapshots and the change count in the elements against a given threshold. The 1\ :sup:`st` calculation is done by the :meth:`.calculate_diff_on_dicts` method, the 2\ :sup:`nd` - internally.</span>
+
+<span class="sd">        The changed elements count does not compare the count of elements in each snapshot. This value represents the number of actual changes, so elements added, missing and changed. This is compared against the number of elements in the left snapshot as this one is usually the 1st one taken and it&#39;s treated as a source of truth. </span>
+
+<span class="sd">        The changed elements count is presented as a percentage. In scenarios where the right snapshot has more elements then the left one, it can give values greater than 100%.</span>
+
+<span class="sd">        :param report_type: Name of report (type) that has to be compared.</span>
+<span class="sd">        </span>
+<span class="sd">            Basically this is a snapshot state area, for example ``nics``, ``routes``, etc.</span>
+
+<span class="sd">        :type report_type: str</span>
+<span class="sd">        :param properties: (defaults to ``None``) An optional list of properties to include or exclude when comparing snapshots.</span>
+
+<span class="sd">            This parameter is passed directly to the :meth:`.calculate_diff_on_dicts` method. For details on this method parameters, see the documentation for this method.</span>
+
+<span class="sd">        :type properties: list(str), optional</span>
+<span class="sd">        :param count_change_threshold: (defaults to ``None``) The maximum difference between number of changed elements in each snapshot (as percentage).</span>
+<span class="sd">        :type count_change_threshold: int, float, optional</span>
+<span class="sd">        :return: Comparison results.</span>
+
+<span class="sd">            This method produces a complex set of nested dictionaries. Each level contains the ``passed`` flag indicating if the comparison of a particular type or for a particular level failed or not, and the actual comparison results. </span>
+
+<span class="sd">            An example for the route tables, crafted in a way that almost each level fails:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &quot;added&quot;: {</span>
+<span class="sd">                        &quot;added_keys&quot;: [</span>
+<span class="sd">                            &quot;default_10.26.129.0/25_ethernet1/2&quot;,</span>
+<span class="sd">                            &quot;default_168.63.129.16/32_ethernet1/3&quot;</span>
+<span class="sd">                        ],</span>
+<span class="sd">                        &quot;passed&quot;: &quot;False&quot;</span>
+<span class="sd">                    },</span>
+<span class="sd">                    &quot;missing&quot;: {</span>
+<span class="sd">                        &quot;missing_keys&quot;: [</span>
+<span class="sd">                            &quot;default_0.0.0.0/0_ethernet1/3&quot;</span>
+<span class="sd">                        ],</span>
+<span class="sd">                        &quot;passed&quot;: &quot;False&quot;</span>
+<span class="sd">                    },</span>
+<span class="sd">                    &quot;changed&quot;: {</span>
+<span class="sd">                        &quot;changed_raw&quot;: {</span>
+<span class="sd">                            &quot;default_10.26.130.0/25_ethernet1/2&quot;: {</span>
+<span class="sd">                                &quot;added&quot;: {</span>
+<span class="sd">                                    &quot;added_keys&quot;: [],</span>
+<span class="sd">                                    &quot;passed&quot;: &quot;True&quot;</span>
+<span class="sd">                                },</span>
+<span class="sd">                                &quot;missing&quot;: {</span>
+<span class="sd">                                    &quot;missing_keys&quot;: [],</span>
+<span class="sd">                                    &quot;passed&quot;: &quot;True&quot;</span>
+<span class="sd">                                },</span>
+<span class="sd">                                &quot;changed&quot;: {</span>
+<span class="sd">                                    &quot;changed_raw&quot;: {</span>
+<span class="sd">                                        &quot;flags&quot;: {</span>
+<span class="sd">                                            &quot;left_snap&quot;: &quot;A S&quot;,</span>
+<span class="sd">                                            &quot;right_snap&quot;: &quot;A&quot;</span>
+<span class="sd">                                        }</span>
+<span class="sd">                                    },</span>
+<span class="sd">                                    &quot;passed&quot;: &quot;False&quot;</span>
+<span class="sd">                                },</span>
+<span class="sd">                                &quot;passed&quot;: &quot;False&quot;</span>
+<span class="sd">                            }</span>
+<span class="sd">                        },</span>
+<span class="sd">                        &quot;passed&quot;: &quot;False&quot;</span>
+<span class="sd">                    },</span>
+<span class="sd">                    &quot;count_change_percentage&quot;: {</span>
+<span class="sd">                        &quot;change_percentage&quot;: 33.33,</span>
+<span class="sd">                        &quot;change_threshold&quot;: 1,</span>
+<span class="sd">                        &quot;passed&quot;: &quot;False&quot;</span>
+<span class="sd">                    },</span>
+<span class="sd">                    &quot;passed&quot;: &quot;False&quot;</span>
+<span class="sd">                }</span>
+
+<span class="sd">            In the example above, you can also see a nested dictionary produced by the :meth:`.calculate_diff_on_dicts` method under ``changed.changed_raw``. </span>
+
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">diff</span> <span class="o">=</span> <span class="n">SnapshotCompare</span><span class="o">.</span><span class="n">calculate_diff_on_dicts</span><span class="p">(</span>
+            <span class="n">left_side_to_compare</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left_snap</span><span class="p">[</span><span class="n">report_type</span><span class="p">],</span>
+            <span class="n">right_side_to_compare</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">right_snap</span><span class="p">[</span><span class="n">report_type</span><span class="p">],</span>
+            <span class="n">properties</span><span class="o">=</span><span class="n">properties</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">count_change_threshold</span> <span class="ow">and</span> <span class="n">result</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">count_change_threshold</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">count_change_threshold</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">WrongDataTypeException</span><span class="p">(</span><span class="s1">&#39;The threshold should be a percentage value between 0 and 100.&#39;</span><span class="p">)</span>
+
+            <span class="n">added_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;added&#39;</span><span class="p">][</span><span class="s1">&#39;added_keys&#39;</span><span class="p">])</span>
+            <span class="n">missing_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;missing&#39;</span><span class="p">][</span><span class="s1">&#39;missing_keys&#39;</span><span class="p">])</span>
+            <span class="n">changed_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;changed&#39;</span><span class="p">][</span><span class="s1">&#39;changed_raw&#39;</span><span class="p">])</span>
+            <span class="n">left_total_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">left_snap</span><span class="p">[</span><span class="n">report_type</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="n">right_total_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">right_snap</span><span class="p">[</span><span class="n">report_type</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+            <span class="n">diff</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">left_total_count</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="p">(</span><span class="n">added_count</span> <span class="o">+</span> <span class="n">missing_count</span> <span class="o">+</span> <span class="n">changed_count</span><span class="p">)</span><span class="o">/</span><span class="n">left_total_count</span>
+            <span class="n">diff_percentage</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span><span class="o">*</span><span class="mi">100</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+
+            <span class="n">passed</span> <span class="o">=</span> <span class="n">diff_percentage</span> <span class="o">&lt;=</span> <span class="n">count_change_threshold</span>
+
+            <span class="n">result</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;count_change_percentage&#39;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="n">passed</span><span class="o">=</span><span class="n">passed</span><span class="p">,</span>
+                <span class="n">change_percentage</span><span class="o">=</span><span class="n">diff_percentage</span><span class="p">,</span>
+                <span class="n">change_threshold</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">count_change_threshold</span><span class="p">)</span>
+            <span class="p">)})</span>
+
+        <span class="k">if</span> <span class="n">result</span><span class="p">:</span>
+            <span class="n">SnapshotCompare</span><span class="o">.</span><span class="n">calculate_passed</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+    <span class="c1"># custom compare methods</span>
+<div class="viewcode-block" id="SnapshotCompare.get_count_change_percentage"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.snapshot_compare.SnapshotCompare.get_count_change_percentage">[docs]</a>    <span class="k">def</span> <span class="nf">get_count_change_percentage</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">report_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">thresholds</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The basic value change against a threshold comparison method.</span>
+
+<span class="sd">        The generic method to calculate the change on values and compare them against a given threshold.</span>
+
+<span class="sd">        In opposition to the :meth:`.get_diff_and_threshold` method, this one does not calculate the count change but the actual difference between the numerical values. </span>
+<span class="sd">        A good example is a change in the session count. The snapshot for this area is a dictionary with the keys taking values of different session types and values containing the actual session count:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &quot;session_stats&quot;: {</span>
+<span class="sd">                    &quot;tmo-5gcdelete&quot;: &quot;15&quot;,</span>
+<span class="sd">                    &quot;tmo-sctpshutdown&quot;: &quot;60&quot;,</span>
+<span class="sd">                    &quot;tmo-tcp&quot;: &quot;3600&quot;,</span>
+<span class="sd">                    &quot;tmo-tcpinit&quot;: &quot;5&quot;,</span>
+<span class="sd">                    &quot;pps&quot;: &quot;2&quot;,</span>
+<span class="sd">                    &quot;tmo-tcp-delayed-ack&quot;: &quot;250&quot;,</span>
+<span class="sd">                    &quot;num-max&quot;: &quot;819200&quot;,</span>
+<span class="sd">                    &quot;age-scan-thresh&quot;: &quot;80&quot;,</span>
+<span class="sd">                    &quot;tmo-tcphalfclosed&quot;: &quot;120&quot;,</span>
+<span class="sd">                    &quot;num-active&quot;: &quot;3&quot;,</span>
+<span class="sd">                    &quot;tmo-sctp&quot;: &quot;3600&quot;,</span>
+<span class="sd">                    &quot;dis-def&quot;: &quot;60&quot;,</span>
+<span class="sd">                    &quot;num-tcp&quot;: &quot;1&quot;,</span>
+<span class="sd">                    &quot;num-udp&quot;: &quot;0&quot;,</span>
+<span class="sd">                    ...</span>
+<span class="sd">                }</span>
+<span class="sd">            }</span>
+
+<span class="sd">        This method:</span>
+<span class="sd">        </span>
+<span class="sd">            * sweeps through all the session types provided in the ``thresholds`` variable,</span>
+<span class="sd">            * calculates the actual difference, </span>
+<span class="sd">            * compares the actual difference with the threshold value (percentage) for a particular session type.</span>
+
+<span class="sd">        :param thresholds: (defaults to ``None``) The list of elements to compare.</span>
+<span class="sd">        </span>
+<span class="sd">            This is a list of dictionaries in the form of:</span>
+<span class="sd">            </span>
+<span class="sd">            ::</span>
+<span class="sd">            </span>
+<span class="sd">                {</span>
+<span class="sd">                    element_type: threshold_value</span>
+<span class="sd">                }</span>
+<span class="sd">                </span>
+<span class="sd">            where:</span>
+<span class="sd">            </span>
+<span class="sd">                * ``element_type`` is a key which value we are going to compare,</span>
+<span class="sd">                * ``threshold_value`` is a percentage value provided as either ``int`` or ``float``. If the list is empty, the method will return ``None``. :class:`.ConfigParser` `dialect`_ is **NOT followed** for this variable.</span>
+
+<span class="sd">            Below there is a sample list for the ``sessions_stat`` dictionary shown above that would calculate differences for the TCP and UDP sessions:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                [</span>
+<span class="sd">                    { &#39;num-tcp&#39;: 1.5 },</span>
+<span class="sd">                    { &#39;num-udp&#39;: 15 },</span>
+<span class="sd">                ]</span>
+<span class="sd">                </span>
+<span class="sd">        :type thresholds: list</span>
+<span class="sd">        :raises SnapshotSchemeMismatchException: Thrown when a snapshot element has a different set of properties in both snapshots.</span>
+<span class="sd">        :return: The result of difference compared against a threshold.</span>
+<span class="sd">        </span>
+<span class="sd">            The result for each value is in the same form as returned by the :meth:`.calculate_change_percentage` method. For the examples above, the return value would be:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &#39;num-tcp&#39;: {</span>
+<span class="sd">                        &#39;change_percentage&#39;: 99.0,</span>
+<span class="sd">                        &#39;change_threshold&#39;: 1.5,</span>
+<span class="sd">                        &#39;passed&#39;: False</span>
+<span class="sd">                    },</span>
+<span class="sd">                    &#39;num-udp&#39;: {</span>
+<span class="sd">                        &#39;change_percentage&#39;: 100.0,</span>
+<span class="sd">                        &#39;change_threshold&#39;: 15.0,</span>
+<span class="sd">                        &#39;passed&#39;: False</span>
+<span class="sd">                    },</span>
+<span class="sd">                    &#39;passed&#39;: False</span>
+<span class="sd">                }</span>
+
+<span class="sd">        :rtype: dict, optional</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">thresholds</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">passed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">left_snap</span><span class="p">[</span><span class="n">report_type</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">right_snap</span><span class="p">[</span><span class="n">report_type</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">SnapshotSchemeMismatchException</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Snapshots contain different set of data for </span><span class="si">{</span><span class="n">report_type</span><span class="si">}</span><span class="s1"> report.&#39;</span><span class="p">)</span>
+
+        <span class="n">elements</span> <span class="o">=</span> <span class="n">ConfigParser</span><span class="p">(</span>
+                                    <span class="n">valid_elements</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">left_snap</span><span class="p">[</span><span class="n">report_type</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span>
+                                    <span class="n">requested_config</span><span class="o">=</span><span class="n">thresholds</span><span class="p">,</span>
+                        <span class="p">)</span><span class="o">.</span><span class="n">prepare_config</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">:</span>
+            <span class="n">element_type</span><span class="p">,</span> <span class="n">threshold_value</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">items</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">key_checker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">left_snap</span><span class="p">[</span><span class="n">report_type</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">right_snap</span><span class="p">[</span><span class="n">report_type</span><span class="p">],</span> <span class="n">element_type</span><span class="p">)</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+                <span class="n">element_type</span><span class="p">:</span> <span class="n">SnapshotCompare</span><span class="o">.</span><span class="n">calculate_change_percentage</span><span class="p">(</span>
+                    <span class="n">first_value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">left_snap</span><span class="p">[</span><span class="n">report_type</span><span class="p">][</span><span class="n">element_type</span><span class="p">],</span>
+                    <span class="n">second_value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">right_snap</span><span class="p">[</span><span class="n">report_type</span><span class="p">][</span><span class="n">element_type</span><span class="p">],</span>
+                    <span class="n">threshold</span><span class="o">=</span><span class="n">threshold_value</span>
+                <span class="p">)</span>
+            <span class="p">})</span>
+
+        <span class="n">SnapshotCompare</span><span class="o">.</span><span class="n">calculate_passed</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Palo Alto Networks.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

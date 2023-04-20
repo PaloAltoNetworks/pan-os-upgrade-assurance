@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>panos_upgrade_assurance.firewall_proxy &mdash; PanOS Upgrade Assurance 0.0.1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            PanOS Upgrade Assurance
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration_details.html">Configuration details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../building_docs.html">Building documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PanOS Upgrade Assurance</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">panos_upgrade_assurance.firewall_proxy</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for panos_upgrade_assurance.firewall_proxy</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">xml.etree.ElementTree</span> <span class="k">as</span> <span class="nn">ET</span>
+<span class="kn">from</span> <span class="nn">panos_upgrade_assurance.utils</span> <span class="kn">import</span> <span class="n">interpret_yes_no</span>
+<span class="kn">from</span> <span class="nn">xmltodict</span> <span class="kn">import</span> <span class="n">parse</span> <span class="k">as</span> <span class="n">XMLParse</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">from</span> <span class="nn">panos.firewall</span> <span class="kn">import</span> <span class="n">Firewall</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">floor</span>
+
+<div class="viewcode-block" id="CommandRunFailedException"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.CommandRunFailedException">[docs]</a><span class="k">class</span> <span class="nc">CommandRunFailedException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Used when a command run on a device does not return the ``success`` status.&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="MalformedResponseException"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.MalformedResponseException">[docs]</a><span class="k">class</span> <span class="nc">MalformedResponseException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A generic exception class used when a response does not meet the expected standards.&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="ContentDBVersionsFormatException"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.ContentDBVersionsFormatException">[docs]</a><span class="k">class</span> <span class="nc">ContentDBVersionsFormatException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Used when parsing Content DB versions fail due to an unknown version format (assuming ``XXXX-YYYY``).&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="PanoramaConfigurationMissingException"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.PanoramaConfigurationMissingException">[docs]</a><span class="k">class</span> <span class="nc">PanoramaConfigurationMissingException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Used when checking Panorama connectivity on a device that was not configured with Panorama.&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="WrongDiskSizeFormatException"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.WrongDiskSizeFormatException">[docs]</a><span class="k">class</span> <span class="nc">WrongDiskSizeFormatException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Used when parsing free disk size information.&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="FirewallProxy"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy">[docs]</a><span class="k">class</span> <span class="nc">FirewallProxy</span><span class="p">(</span><span class="n">Firewall</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class representing a Firewall.</span>
+
+<span class="sd">    Proxy in this class means that it is between the *high level* :class:`.CheckFirewall` class and a device itself.</span>
+<span class="sd">    Inherits the Firewall_ class but adds methods to interpret XML API commands. The class constructor is also inherited from the Firewall_ class.</span>
+
+<span class="sd">    All interaction with a device are read-only. Therefore, a less privileged user can be used.</span>
+
+<span class="sd">    All methods starting with ``is_`` check the state, they do not present any data besides simple ``boolean``values.</span>
+
+<span class="sd">    All methods starting with `get_` fetch data from a device by running a command and parsing the output. </span>
+<span class="sd">    The return data type can be different depending on what kind of information is returned from a device.</span>
+
+<span class="sd">    .. _Firewall: https://pan-os-python.readthedocs.io/en/latest/module-firewall.html#module-panos.firewall</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="FirewallProxy.op_parser"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy.op_parser">[docs]</a>    <span class="k">def</span> <span class="nf">op_parser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cmd_in_xml</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">return_xml</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">ET</span><span class="o">.</span><span class="n">Element</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute a command on node, parse, and return response.</span>
+
+<span class="sd">        This is just a wrapper around the `Firewall.op`_ method. It additionally does basic error handling and tries to extract the actual device response.</span>
+
+
+<span class="sd">        :param cmd: The actual XML API command to be run on the device. Can be either a free form or an XML formatted command.</span>
+<span class="sd">        :type cmd: str</span>
+<span class="sd">        :param cmd_in_xml: (defaults to ``False``) Set to ``True`` if the command is XML-formatted.</span>
+<span class="sd">        :type cmd_in_xml: bool</span>
+<span class="sd">        :param return_xml: (defaults to ``False``) When set to ``True``, the return data is an ``XML object``_ instead of a python dictionary. </span>
+<span class="sd">        :type return_xml: bool</span>
+<span class="sd">        :raises CommandRunFailedException: An exception is raised if the command run status returned by a device is not successful.</span>
+<span class="sd">        :raises MalformedResponseException: An exception is raised when a response is not parsable, no ``result`` element is found in the XML response. </span>
+<span class="sd">        :return: The actual command output. A type is defined by the ``return_xml`` parameter.</span>
+<span class="sd">        :rtype: dict, xml.etree.ElementTree.Element</span>
+
+<span class="sd">        .. _Firewall.op: https://pan-os-python.readthedocs.io/en/latest/module-firewall.html#panos.firewall.Firewall.op</span>
+<span class="sd">        .. _XML object: https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">raw_response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">xml</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cmd_xml</span><span class="o">=</span><span class="ow">not</span> <span class="n">cmd_in_xml</span><span class="p">,</span> <span class="n">vsys</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">vsys</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">raw_response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;success&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CommandRunFailedException</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Failed to run command: </span><span class="si">{</span><span class="n">cmd</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+
+        <span class="n">resp_result</span> <span class="o">=</span> <span class="n">raw_response</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;result&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">resp_result</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">MalformedResponseException</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;No result field returned for: </span><span class="si">{</span><span class="n">cmd</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">return_xml</span><span class="p">:</span>
+            <span class="n">resp_result</span> <span class="o">=</span> <span class="n">XMLParse</span><span class="p">(</span><span class="n">ET</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">resp_result</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf8&#39;</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;xml&#39;</span><span class="p">))[</span><span class="s1">&#39;result&#39;</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">resp_result</span></div>
+
+<div class="viewcode-block" id="FirewallProxy.is_pending_changes"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy.is_pending_changes">[docs]</a>    <span class="k">def</span> <span class="nf">is_pending_changes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get information if there is a candidate configuration pending to be committed.</span>
+
+<span class="sd">        The actual API command run is ``check pending-changes``.</span>
+
+<span class="sd">        :return: ``True`` when there are pending changes, ``False`` otherwise.</span>
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">interpret_yes_no</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">op_parser</span><span class="p">(</span><span class="n">cmd</span><span class="o">=</span><span class="s2">&quot;check pending-changes&quot;</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="FirewallProxy.is_full_commit_required"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy.is_full_commit_required">[docs]</a>    <span class="k">def</span> <span class="nf">is_full_commit_required</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get information if a full commit is required, for example, after loading a named config.</span>
+
+<span class="sd">        The actual API command run is ``check full-commit-required``.</span>
+
+<span class="sd">        :return: ``True`` when a full commit is required, ``False`` otherwise.</span>
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">interpret_yes_no</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">op_parser</span><span class="p">(</span><span class="n">cmd</span><span class="o">=</span><span class="s2">&quot;check full-commit-required&quot;</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="FirewallProxy.is_panorama_configured"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy.is_panorama_configured">[docs]</a>    <span class="k">def</span> <span class="nf">is_panorama_configured</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if a device is configured with Panorama.</span>
+
+<span class="sd">        The actual API command run is ``show panorama-status``.</span>
+
+<span class="sd">        :return: ``True`` when Panorama IPs are configured, ``False`` otherwise.</span>
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">False</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_parser</span><span class="p">(</span><span class="n">cmd</span><span class="o">=</span><span class="s2">&quot;show panorama-status&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="FirewallProxy.is_panorama_connected"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy.is_panorama_connected">[docs]</a>    <span class="k">def</span> <span class="nf">is_panorama_connected</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Panorama connectivity status.</span>
+
+<span class="sd">        The actual API command run is ``show panorama-status``.</span>
+<span class="sd">        </span>
+<span class="sd">        An output of this command is usually a string. This method is responsible for parsing this string and trying to extract information if at least one of the Panoramas configured is connected.</span>
+
+<span class="sd">        :raise PanoramaConfigurationMissingException: Exception being raised when this check is run against a device with no Panorama configured.</span>
+<span class="sd">        :raise MalformedResponseException: Exception being raised when response from device does not meet required format.</span>
+
+<span class="sd">            Since the response is a string (that we need to parse) this method expects a strict format. For single Panorama this is:</span>
+
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">            </span>
+<span class="sd">                Panorama Server 1 : 1.2.3.4</span>
+<span class="sd">                    Connected     : no</span>
+<span class="sd">                    HA state      : disconnected</span>
+
+<span class="sd">            For two Panoramas (HA pair for example) those are just two blocks:</span>
+
+<span class="sd">            .. code-block:: python</span>
+<span class="sd">            </span>
+<span class="sd">                Panorama Server 1 : 1.2.3.4</span>
+<span class="sd">                    Connected     : no</span>
+<span class="sd">                    HA state      : disconnected</span>
+<span class="sd">                Panorama Server 2 : 5.6.7.8</span>
+<span class="sd">                    Connected     : yes</span>
+<span class="sd">                    HA state      : disconnected</span>
+
+<span class="sd">            If none of this formats is met, this exception is thrown.</span>
+
+<span class="sd">        :return: ``True`` when connection is up, ``False`` otherwise.</span>
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">pan_status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_parser</span><span class="p">(</span><span class="n">cmd</span><span class="o">=</span><span class="s2">&quot;show panorama-status&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">pan_status</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PanoramaConfigurationMissingException</span><span class="p">(</span><span class="s2">&quot;Device not configured with Panorama.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pan_status</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">MalformedResponseException</span><span class="p">(</span><span class="s2">&quot;Response from device is not type of string.&quot;</span><span class="p">)</span>
+
+        <span class="n">pan_status_list</span> <span class="o">=</span> <span class="n">pan_status</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">pan_status_list_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pan_status_list</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">pan_status_list_length</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">6</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">pan_status_list_length</span><span class="p">,</span><span class="mi">3</span><span class="p">):</span>
+                <span class="n">pan_connected</span> <span class="o">=</span> <span class="n">interpret_yes_no</span><span class="p">(</span>
+                    <span class="p">(</span><span class="n">pan_status_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="n">pan_connected</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">MalformedResponseException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Panorama configuration block does not have typical structure: &lt;</span><span class="si">{</span><span class="n">resp</span><span class="si">}</span><span class="s2">&gt;.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="FirewallProxy.get_ha_configuration"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy.get_ha_configuration">[docs]</a>    <span class="k">def</span> <span class="nf">get_ha_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get high-availability configuration status.</span>
+
+<span class="sd">        The actual API command is ``show high-availability state``.</span>
+
+<span class="sd">        :return: Information about HA pair and its status as retrieved from the current (local) device.</span>
+
+<span class="sd">            Sample output:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &#39;enabled&#39;: &#39;yes&#39;,</span>
+<span class="sd">                    &#39;group&#39;: {</span>
+<span class="sd">                        &#39;link-monitoring&#39;: {</span>
+<span class="sd">                            &#39;enabled&#39;: &#39;yes&#39;,</span>
+<span class="sd">                            &#39;failure-condition&#39;: &#39;any&#39;,</span>
+<span class="sd">                            &#39;groups&#39;: None</span>
+<span class="sd">                        },</span>
+<span class="sd">                        &#39;local-info&#39;: {</span>
+<span class="sd">                            &#39;DLP&#39;: &#39;Match&#39;,</span>
+<span class="sd">                            &#39;VMS&#39;: &#39;Match&#39;,</span>
+<span class="sd">                            &#39;active-passive&#39;: {</span>
+<span class="sd">                                &#39;monitor-fail-holddown&#39;: &#39;1&#39;,</span>
+<span class="sd">                                &#39;passive-link-state&#39;: &#39;shutdown&#39;</span>
+<span class="sd">                            },</span>
+<span class="sd">                            &#39;addon-master-holdup&#39;: &#39;500&#39;,</span>
+<span class="sd">                            &#39;app-compat&#39;: &#39;Match&#39;,</span>
+<span class="sd">                            &#39;app-version&#39;: &#39;xxxx-yyyy&#39;,</span>
+<span class="sd">                            &#39;av-compat&#39;: &#39;Match&#39;,</span>
+<span class="sd">                            &#39;av-version&#39;: &#39;0&#39;,</span>
+<span class="sd">                            &#39;build-compat&#39;: &#39;Match&#39;,</span>
+<span class="sd">                            &#39;build-rel&#39;: &#39;10.2.3&#39;,</span>
+<span class="sd">                            &#39;gpclient-compat&#39;: &#39;Match&#39;,</span>
+<span class="sd">                            &#39;gpclient-version&#39;: &#39;Not Installed&#39;,</span>
+<span class="sd">                            &#39;ha1-encrypt-enable&#39;: &#39;no&#39;,</span>
+<span class="sd">                            &#39;ha1-encrypt-imported&#39;: &#39;no&#39;,</span>
+<span class="sd">                            &#39;ha1-gateway&#39;: &#39;10.0.0.1&#39;,</span>
+<span class="sd">                            &#39;ha1-ipaddr&#39;: &#39;10.0.0.10/24&#39;,</span>
+<span class="sd">                            &#39;ha1-link-mon-intv&#39;: &#39;3000&#39;,</span>
+<span class="sd">                            &#39;ha1-macaddr&#39;: &#39;xx:xx:xx:xx:xx:xx&#39;,</span>
+<span class="sd">                            &#39;ha1-port&#39;: &#39;management&#39;,</span>
+<span class="sd">                            &#39;ha2-gateway&#39;: &#39;10.0.3.1&#39;,</span>
+<span class="sd">                            &#39;ha2-ipaddr&#39;: &#39;10.0.3.10/24&#39;,</span>
+<span class="sd">                            &#39;ha2-macaddr&#39;: &#39;xx:xx:xx:xx:xx:xx&#39;,</span>
+<span class="sd">                            &#39;ha2-port&#39;: &#39;ethernet1/3&#39;,</span>
+<span class="sd">                            &#39;heartbeat-interval&#39;: &#39;10000&#39;,</span>
+<span class="sd">                            &#39;hello-interval&#39;: &#39;10000&#39;,</span>
+<span class="sd">                            &#39;iot-compat&#39;: &#39;Match&#39;,</span>
+<span class="sd">                            &#39;iot-version&#39;: &#39;yy-zzz&#39;,</span>
+<span class="sd">                            &#39;max-flaps&#39;: &#39;3&#39;,</span>
+<span class="sd">                            &#39;mgmt-ip&#39;: &#39;10.0.0.10/24&#39;,</span>
+<span class="sd">                            &#39;mgmt-ipv6&#39;: None,</span>
+<span class="sd">                            &#39;mode&#39;: &#39;Active-Passive&#39;,</span>
+<span class="sd">                            &#39;monitor-fail-holdup&#39;: &#39;0&#39;,</span>
+<span class="sd">                            &#39;nonfunc-flap-cnt&#39;: &#39;0&#39;,</span>
+<span class="sd">                            &#39;platform-model&#39;: &#39;PA-VM&#39;,</span>
+<span class="sd">                            &#39;preempt-flap-cnt&#39;: &#39;0&#39;,</span>
+<span class="sd">                            &#39;preempt-hold&#39;: &#39;1&#39;,</span>
+<span class="sd">                            &#39;preemptive&#39;: &#39;no&#39;,</span>
+<span class="sd">                            &#39;priority&#39;: &#39;100&#39;,</span>
+<span class="sd">                            &#39;promotion-hold&#39;: &#39;20000&#39;,</span>
+<span class="sd">                            &#39;state&#39;: &#39;passive&#39;,</span>
+<span class="sd">                            &#39;state-duration&#39;: &#39;3675&#39;,</span>
+<span class="sd">                            &#39;state-sync&#39;: &#39;Complete&#39;,</span>
+<span class="sd">                            &#39;state-sync-type&#39;: &#39;ip&#39;,</span>
+<span class="sd">                            &#39;threat-compat&#39;: &#39;Match&#39;,</span>
+<span class="sd">                            &#39;threat-version&#39;: &#39;xxxx-yyyy&#39;,</span>
+<span class="sd">                            &#39;url-compat&#39;: &#39;Mismatch&#39;,</span>
+<span class="sd">                            &#39;url-version&#39;: &#39;0000.00.00.000&#39;,</span>
+<span class="sd">                            &#39;version&#39;: &#39;1&#39;,</span>
+<span class="sd">                            &#39;vm-license&#39;: &#39;VM-300&#39;,</span>
+<span class="sd">                            &#39;vm-license-compat&#39;: &#39;Match&#39;,</span>
+<span class="sd">                            &#39;vm-license-type&#39;: &#39;vm300&#39;,</span>
+<span class="sd">                            &#39;vpnclient-compat&#39;: &#39;Match&#39;,</span>
+<span class="sd">                            &#39;vpnclient-version&#39;: &#39;Not Installed&#39;</span>
+<span class="sd">                        },</span>
+<span class="sd">                        &#39;mode&#39;: &#39;Active-Passive&#39;,</span>
+<span class="sd">                        &#39;path-monitoring&#39;: {</span>
+<span class="sd">                            &#39;enabled&#39;: &#39;yes&#39;,</span>
+<span class="sd">                            &#39;failure-condition&#39;: &#39;any&#39;,</span>
+<span class="sd">                            &#39;virtual-router&#39;: None,</span>
+<span class="sd">                            &#39;virtual-wire&#39;: None,</span>
+<span class="sd">                            &#39;vlan&#39;: None</span>
+<span class="sd">                        },</span>
+<span class="sd">                        &#39;peer-info&#39;: {</span>
+<span class="sd">                            &#39;DLP&#39;: &#39;3.0.2&#39;,</span>
+<span class="sd">                            &#39;VMS&#39;: &#39;3.0.3&#39;,</span>
+<span class="sd">                            &#39;app-version&#39;: &#39;xxxx-yyyy&#39;,</span>
+<span class="sd">                            &#39;av-version&#39;: &#39;0&#39;,</span>
+<span class="sd">                            &#39;build-rel&#39;: &#39;10.2.3&#39;,</span>
+<span class="sd">                            &#39;conn-ha1&#39;: {</span>
+<span class="sd">                                &#39;conn-desc&#39;: &#39;heartbeat status&#39;,</span>
+<span class="sd">                                &#39;conn-primary&#39;: &#39;yes&#39;,</span>
+<span class="sd">                                &#39;conn-status&#39;: &#39;up&#39;</span>
+<span class="sd">                            },</span>
+<span class="sd">                            &#39;conn-ha2&#39;: {</span>
+<span class="sd">                                &#39;conn-desc&#39;: &#39;link status&#39;,</span>
+<span class="sd">                                &#39;conn-ka-enbled&#39;: &#39;no&#39;,</span>
+<span class="sd">                                &#39;conn-primary&#39;: &#39;yes&#39;,</span>
+<span class="sd">                                &#39;conn-status&#39;: &#39;up&#39;</span>
+<span class="sd">                            },</span>
+<span class="sd">                            &#39;conn-status&#39;: &#39;up&#39;,</span>
+<span class="sd">                            &#39;gpclient-version&#39;: &#39;Not Installed&#39;,</span>
+<span class="sd">                            &#39;ha1-ipaddr&#39;: &#39;10.0.0.11&#39;,</span>
+<span class="sd">                            &#39;ha1-macaddr&#39;: &#39;xx:xx:xx:xx:xx:xx&#39;,</span>
+<span class="sd">                            &#39;ha2-ipaddr&#39;: &#39;10.0.3.11&#39;,</span>
+<span class="sd">                            &#39;ha2-macaddr&#39;: &#39;xx:xx:xx:xx:xx:xx&#39;,</span>
+<span class="sd">                            &#39;iot-version&#39;: &#39;yy-zzz&#39;,</span>
+<span class="sd">                            &#39;mgmt-ip&#39;: &#39;10.0.0.11/24&#39;,</span>
+<span class="sd">                            &#39;mgmt-ipv6&#39;: None,</span>
+<span class="sd">                            &#39;mode&#39;: &#39;Active-Passive&#39;,</span>
+<span class="sd">                            &#39;platform-model&#39;: &#39;PA-VM&#39;,</span>
+<span class="sd">                            &#39;preemptive&#39;: &#39;no&#39;,</span>
+<span class="sd">                            &#39;priority&#39;: &#39;100&#39;,</span>
+<span class="sd">                            &#39;state&#39;: &#39;active&#39;,</span>
+<span class="sd">                            &#39;state-duration&#39;: &#39;3680&#39;,</span>
+<span class="sd">                            &#39;threat-version&#39;: &#39;xxxx-yyyy&#39;,</span>
+<span class="sd">                            &#39;url-version&#39;: &#39;20230126.20142&#39;,</span>
+<span class="sd">                            &#39;version&#39;: &#39;1&#39;,</span>
+<span class="sd">                            &#39;vm-license&#39;: &#39;VM-300&#39;,</span>
+<span class="sd">                            &#39;vm-license-type&#39;: &#39;vm300&#39;,</span>
+<span class="sd">                            &#39;vpnclient-version&#39;: &#39;Not Installed&#39;</span>
+<span class="sd">                        },</span>
+<span class="sd">                        &#39;running-sync&#39;: &#39;synchronized&#39;,</span>
+<span class="sd">                        &#39;running-sync-enabled&#39;: &#39;yes&#39;</span>
+<span class="sd">                    }</span>
+<span class="sd">                }</span>
+
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_parser</span><span class="p">(</span><span class="n">cmd</span><span class="o">=</span><span class="s2">&quot;show high-availability state&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FirewallProxy.get_nics"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy.get_nics">[docs]</a>    <span class="k">def</span> <span class="nf">get_nics</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get status of the configured network interfaces.</span>
+
+<span class="sd">        The actual API command run is ``show interface &quot;hardware&quot;``.</span>
+
+<span class="sd">        :raises MalformedResponseException: Exception when no ``hw`` entry is available in the response.</span>
+<span class="sd">        :return: Status of the configured network interfaces.</span>
+<span class="sd">            Sample output:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &#39;ethernet1/1&#39;: &#39;down&#39;, </span>
+<span class="sd">                    &#39;ethernet1/2&#39;: &#39;down&#39;, </span>
+<span class="sd">                    &#39;ethernet1/3&#39;: &#39;up&#39;</span>
+<span class="sd">                }</span>
+
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_parser</span><span class="p">(</span><span class="n">cmd</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;show interface &quot;hardware&quot;&#39;</span><span class="p">)</span>
+
+        <span class="n">hardware</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;hw&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">hardware</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">MalformedResponseException</span><span class="p">(</span><span class="s1">&#39;Malformed response from device, no [hw] element present.&#39;</span><span class="p">)</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">entries</span> <span class="o">=</span> <span class="n">hardware</span><span class="p">[</span><span class="s1">&#39;entry&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entries</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">entries</span> <span class="o">=</span> <span class="p">[</span><span class="n">entries</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">nic</span> <span class="ow">in</span> <span class="n">entries</span><span class="p">:</span>
+            <span class="n">results</span><span class="p">[</span><span class="n">nic</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">nic</span><span class="p">[</span><span class="s1">&#39;state&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">results</span></div>
+
+<div class="viewcode-block" id="FirewallProxy.get_licenses"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy.get_licenses">[docs]</a>    <span class="k">def</span> <span class="nf">get_licenses</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get device licenses.</span>
+
+<span class="sd">        The actual API command is ``request license info``.</span>
+
+<span class="sd">        :return: Licenses available on a device.</span>
+
+<span class="sd">            Sample output:</span>
+<span class="sd">            </span>
+<span class="sd">            ::</span>
+<span class="sd">                </span>
+<span class="sd">                {</span>
+<span class="sd">                    &#39;AutoFocus Device License&#39;: {</span>
+<span class="sd">                        &#39;authcode&#39;: &#39;Snnnnnnn&#39;,</span>
+<span class="sd">                        &#39;base-license-name&#39;: &#39;PA-VM&#39;,</span>
+<span class="sd">                        &#39;description&#39;: &#39;AutoFocus Device License&#39;,</span>
+<span class="sd">                        &#39;expired&#39;: &#39;yes&#39;,</span>
+<span class="sd">                        &#39;expires&#39;: &#39;September 25, 2010&#39;,</span>
+<span class="sd">                        &#39;feature&#39;: &#39;AutoFocus Device License&#39;,</span>
+<span class="sd">                        &#39;issued&#39;: &#39;January 12, 2010&#39;,</span>
+<span class="sd">                        &#39;serial&#39;: &#39;xxxxxxxxxxxxxxxx&#39;</span>
+<span class="sd">                    },</span>
+<span class="sd">                    &#39;PA-VM&#39;: {</span>
+<span class="sd">                        &#39;authcode&#39;: None,</span>
+<span class="sd">                        &#39;description&#39;: &#39;Standard VM-300&#39;,</span>
+<span class="sd">                        &#39;expired&#39;: &#39;yes&#39;,</span>
+<span class="sd">                        &#39;expires&#39;: &#39;September 25, 2010&#39;,</span>
+<span class="sd">                        &#39;feature&#39;: &#39;PA-VM&#39;,</span>
+<span class="sd">                        &#39;issued&#39;: &#39;January 12, 2010&#39;,</span>
+<span class="sd">                        &#39;serial&#39;: &#39;xxxxxxxxxxxxxxxx&#39;</span>
+<span class="sd">                    },</span>
+<span class="sd">                    ...</span>
+<span class="sd">                }</span>
+
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_parser</span><span class="p">(</span><span class="n">cmd</span><span class="o">=</span><span class="s2">&quot;request license info&quot;</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">licenses</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;licenses&#39;</span><span class="p">][</span><span class="s1">&#39;entry&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">lic</span> <span class="ow">in</span> <span class="n">licenses</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">licenses</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">licenses</span><span class="p">]:</span>
+            <span class="n">result</span><span class="p">[</span><span class="n">lic</span><span class="p">[</span><span class="s1">&#39;feature&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">lic</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="FirewallProxy.get_routes"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy.get_routes">[docs]</a>    <span class="k">def</span> <span class="nf">get_routes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get route table entries, either retrieved from DHCP or configured manually.</span>
+
+<span class="sd">        The actual API command is ``show routing route``.</span>
+
+<span class="sd">        :return: Routes information.</span>
+
+<span class="sd">            The key in this dictionary is made of three route properties delimited with an underscore (``_``) in the following order:</span>
+<span class="sd">            </span>
+<span class="sd">                * virtual router name,</span>
+<span class="sd">                * destination CIDR,</span>
+<span class="sd">                * network interface name if one is available, empty string otherwise.</span>
+<span class="sd">            </span>
+<span class="sd">            The key does not provide any meaningful information, it&#39;s there only to introduce uniqueness for each entry. All properties that make a key are also available in the value of a dictionary element.</span>
+
+<span class="sd">            Sample output:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                {&#39;</span>
+<span class="sd">                    private_0.0.0.0/0_private/i3&#39;: {</span>
+<span class="sd">                        &#39;age&#39;: None,</span>
+<span class="sd">                        &#39;destination&#39;: &#39;0.0.0.0/0&#39;,</span>
+<span class="sd">                        &#39;flags&#39;: &#39;A S&#39;,</span>
+<span class="sd">                        &#39;interface&#39;: &#39;private/i3&#39;,</span>
+<span class="sd">                        &#39;metric&#39;: &#39;10&#39;,</span>
+<span class="sd">                        &#39;nexthop&#39;: &#39;vr public&#39;,</span>
+<span class="sd">                        &#39;route-table&#39;: &#39;unicast&#39;,</span>
+<span class="sd">                        &#39;virtual-router&#39;: &#39;private&#39;</span>
+<span class="sd">                    },</span>
+<span class="sd">                    &#39;public_10.0.0.0/8_public/i3&#39;: {</span>
+<span class="sd">                        &#39;age&#39;: None,</span>
+<span class="sd">                        &#39;destination&#39;: &#39;10.0.0.0/8&#39;,</span>
+<span class="sd">                        &#39;flags&#39;: &#39;A S&#39;,</span>
+<span class="sd">                        &#39;interface&#39;: &#39;public/i3&#39;,</span>
+<span class="sd">                        &#39;metric&#39;: &#39;10&#39;,</span>
+<span class="sd">                        &#39;nexthop&#39;: &#39;vr private&#39;,</span>
+<span class="sd">                        &#39;route-table&#39;: &#39;unicast&#39;,</span>
+<span class="sd">                        &#39;virtual-router&#39;: &#39;public&#39;</span>
+<span class="sd">                    }</span>
+<span class="sd">                }</span>
+
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_parser</span><span class="p">(</span><span class="n">cmd</span><span class="o">=</span><span class="s2">&quot;show routing route&quot;</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="s1">&#39;entry&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="p">:</span>
+            <span class="n">routes</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;entry&#39;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">route</span> <span class="ow">in</span> <span class="n">routes</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">routes</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">routes</span><span class="p">]:</span>
+                <span class="n">result</span><span class="p">[</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">route</span><span class="p">[</span><span class="s1">&#39;virtual-router&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">route</span><span class="p">[</span><span class="s1">&#39;destination&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">route</span><span class="p">[</span><span class="s1">&#39;interface&#39;</span><span class="p">]</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">route</span><span class="p">[</span><span class="s1">&#39;interface&#39;</span><span class="p">]</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+                    <span class="n">route</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="FirewallProxy.get_arp_table"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy.get_arp_table">[docs]</a>    <span class="k">def</span> <span class="nf">get_arp_table</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the currently available ARP table entries.</span>
+
+<span class="sd">        The actual API command is ``&lt;show&gt;&lt;arp&gt;&lt;entry name = &#39;all&#39;/&gt;&lt;/arp&gt;&lt;/show&gt;``.</span>
+
+<span class="sd">        :return: ARP table entries.</span>
+
+<span class="sd">            The key in this dictionary is made of two properties delimited with an underscore (``_``) in the following order:</span>
+<span class="sd">            </span>
+<span class="sd">                * interface name,</span>
+<span class="sd">                * IP address.</span>
+<span class="sd">            </span>
+<span class="sd">            The key does not provide any meaningful information, it&#39;s there only to introduce uniqueness for each entry. All properties that make a key are also available in the value of a dictionary element.</span>
+
+<span class="sd">            Sample output:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &#39;ethernet1/1_10.0.2.1&#39;: {</span>
+<span class="sd">                        &#39;interface&#39;: &#39;ethernet1/1&#39;,</span>
+<span class="sd">                        &#39;ip&#39;: &#39;10.0.2.1&#39;,</span>
+<span class="sd">                        &#39;mac&#39;: &#39;12:34:56:78:9a:bc&#39;,</span>
+<span class="sd">                        &#39;port&#39;: &#39;ethernet1/1&#39;,</span>
+<span class="sd">                        &#39;status&#39;: &#39;c&#39;,</span>
+<span class="sd">                        &#39;ttl&#39;: &#39;1094&#39;</span>
+<span class="sd">                    },</span>
+<span class="sd">                    &#39;ethernet1/2_10.0.1.1&#39;: {</span>
+<span class="sd">                        &#39;interface&#39;: &#39;ethernet1/2&#39;,</span>
+<span class="sd">                        &#39;ip&#39;: &#39;10.0.1.1&#39;,</span>
+<span class="sd">                        &#39;mac&#39;: &#39;12:34:56:78:9a:bc&#39;,</span>
+<span class="sd">                        &#39;port&#39;: &#39;ethernet1/2&#39;,</span>
+<span class="sd">                        &#39;status&#39;: &#39;c&#39;,</span>
+<span class="sd">                        &#39;ttl&#39;: &#39;1094&#39;</span>
+<span class="sd">                    }</span>
+<span class="sd">                }</span>
+
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_parser</span><span class="p">(</span><span class="n">cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;&lt;show&gt;&lt;arp&gt;&lt;entry name = &#39;all&#39;/&gt;&lt;/arp&gt;&lt;/show&gt;&quot;</span><span class="p">,</span> <span class="n">cmd_in_xml</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;entries&quot;</span><span class="p">,</span> <span class="p">{}):</span>
+            <span class="n">arp_table</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;entries&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;entry&quot;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">arp_table</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arp_table</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">arp_table</span><span class="p">]:</span>
+                <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">entry</span><span class="p">[</span><span class="s2">&quot;interface&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">entry</span><span class="p">[</span><span class="s2">&quot;ip&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="FirewallProxy.get_sessions"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy.get_sessions">[docs]</a>    <span class="k">def</span> <span class="nf">get_sessions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get information about currently running sessions.</span>
+
+<span class="sd">        The actual API command run is ``show session all``.</span>
+
+<span class="sd">        :return: Information about the current sessions.</span>
+
+<span class="sd">            Sample output:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                [</span>
+<span class="sd">                    {</span>
+<span class="sd">                        &#39;application&#39;: &#39;undecided&#39;,</span>
+<span class="sd">                        &#39;decrypt-mirror&#39;: &#39;False&#39;,</span>
+<span class="sd">                        &#39;dport&#39;: &#39;80&#39;,</span>
+<span class="sd">                        &#39;dst&#39;: &#39;10.0.2.11&#39;,</span>
+<span class="sd">                        &#39;dstnat&#39;: &#39;False&#39;,</span>
+<span class="sd">                        &#39;egress&#39;: &#39;ethernet1/1&#39;,</span>
+<span class="sd">                        &#39;flags&#39;: None,</span>
+<span class="sd">                        &#39;from&#39;: &#39;public&#39;,</span>
+<span class="sd">                        &#39;idx&#39;: &#39;1116&#39;,</span>
+<span class="sd">                        &#39;ingress&#39;: &#39;ethernet1/1&#39;,</span>
+<span class="sd">                        &#39;nat&#39;: &#39;False&#39;,</span>
+<span class="sd">                        &#39;proto&#39;: &#39;6&#39;,</span>
+<span class="sd">                        &#39;proxy&#39;: &#39;False&#39;,</span>
+<span class="sd">                        &#39;source&#39;: &#39;168.63.129.16&#39;,</span>
+<span class="sd">                        &#39;sport&#39;: &#39;56670&#39;,</span>
+<span class="sd">                        &#39;srcnat&#39;: &#39;False&#39;,</span>
+<span class="sd">                        &#39;start-time&#39;: &#39;Thu Jan 26 02:46:30 2023&#39;,</span>
+<span class="sd">                        &#39;state&#39;: &#39;ACTIVE&#39;,</span>
+<span class="sd">                        &#39;to&#39;: &#39;public&#39;,</span>
+<span class="sd">                        &#39;total-byte-count&#39;: &#39;296&#39;,</span>
+<span class="sd">                        &#39;type&#39;: &#39;FLOW&#39;,</span>
+<span class="sd">                        &#39;vsys&#39;: &#39;vsys1&#39;,</span>
+<span class="sd">                        &#39;vsys-idx&#39;: &#39;1&#39;,</span>
+<span class="sd">                        &#39;xdport&#39;: &#39;80&#39;,</span>
+<span class="sd">                        &#39;xdst&#39;: &#39;10.0.2.11&#39;,</span>
+<span class="sd">                        &#39;xsource&#39;: &#39;168.63.129.16&#39;,</span>
+<span class="sd">                        &#39;xsport&#39;: &#39;56670&#39;</span>
+<span class="sd">                    },</span>
+<span class="sd">                    ...</span>
+<span class="sd">                ]</span>
+
+<span class="sd">        :rtype: list</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">raw_response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_parser</span><span class="p">(</span><span class="n">cmd</span><span class="o">=</span><span class="s1">&#39;show session all&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">raw_response</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sessions</span> <span class="o">=</span> <span class="n">raw_response</span><span class="p">[</span><span class="s1">&#39;entry&#39;</span><span class="p">]</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">sessions</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sessions</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">sessions</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="FirewallProxy.get_session_stats"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy.get_session_stats">[docs]</a>    <span class="k">def</span> <span class="nf">get_session_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get basic session statistics.</span>
+
+<span class="sd">        The actual API command is ``show session info``.</span>
+
+<span class="sd">        **NOTE**</span>
+<span class="sd">        This is raw output. Names of stats are the same as returned by API. No translation is made on purpose. The output of this command might vary depending on the version of PanOS.</span>
+
+<span class="sd">        For meaning and available statistics, refer to the offical PanOS documentation.</span>
+
+<span class="sd">        :return: Session stats in a form of a dictionary.</span>
+
+<span class="sd">            Sample output:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &#39;age-accel-thresh&#39;: &#39;80&#39;,</span>
+<span class="sd">                    &#39;age-accel-tsf&#39;: &#39;2&#39;,</span>
+<span class="sd">                    &#39;age-scan-ssf&#39;: &#39;8&#39;,</span>
+<span class="sd">                    &#39;age-scan-thresh&#39;: &#39;80&#39;,</span>
+<span class="sd">                    &#39;age-scan-tmo&#39;: &#39;10&#39;,</span>
+<span class="sd">                    &#39;cps&#39;: &#39;0&#39;,</span>
+<span class="sd">                    &#39;dis-def&#39;: &#39;60&#39;,</span>
+<span class="sd">                    &#39;dis-sctp&#39;: &#39;30&#39;,</span>
+<span class="sd">                    &#39;dis-tcp&#39;: &#39;90&#39;,</span>
+<span class="sd">                    &#39;dis-udp&#39;: &#39;60&#39;,</span>
+<span class="sd">                    &#39;icmp-unreachable-rate&#39;: &#39;200&#39;,</span>
+<span class="sd">                    &#39;kbps&#39;: &#39;0&#39;,</span>
+<span class="sd">                    &#39;max-pending-mcast&#39;: &#39;0&#39;,</span>
+<span class="sd">                    &#39;num-active&#39;: &#39;4&#39;,</span>
+<span class="sd">                    &#39;num-bcast&#39;: &#39;0&#39;,</span>
+<span class="sd">                    &#39;num-gtpc&#39;: &#39;0&#39;,</span>
+<span class="sd">                    &#39;num-gtpu-active&#39;: &#39;0&#39;,</span>
+<span class="sd">                    &#39;num-gtpu-pending&#39;: &#39;0&#39;,</span>
+<span class="sd">                    &#39;num-http2-5gc&#39;: &#39;0&#39;,</span>
+<span class="sd">                    &#39;num-icmp&#39;: &#39;0&#39;,</span>
+<span class="sd">                    &#39;num-imsi&#39;: &#39;0&#39;,</span>
+<span class="sd">                    &#39;num-installed&#39;: &#39;1193&#39;,</span>
+<span class="sd">                    &#39;num-max&#39;: &#39;819200&#39;,</span>
+<span class="sd">                    &#39;num-mcast&#39;: &#39;0&#39;,</span>
+<span class="sd">                    &#39;num-pfcpc&#39;: &#39;0&#39;,</span>
+<span class="sd">                    &#39;num-predict&#39;: &#39;0&#39;,</span>
+<span class="sd">                    &#39;num-sctp-assoc&#39;: &#39;0&#39;,</span>
+<span class="sd">                    &#39;num-sctp-sess&#39;: &#39;0&#39;,</span>
+<span class="sd">                    &#39;num-tcp&#39;: &#39;4&#39;,</span>
+<span class="sd">                    &#39;num-udp&#39;: &#39;0&#39;,</span>
+<span class="sd">                    &#39;pps&#39;: &#39;0&#39;,</span>
+<span class="sd">                    &#39;tcp-cong-ctrl&#39;: &#39;3&#39;,</span>
+<span class="sd">                    &#39;tcp-reject-siw-thresh&#39;: &#39;4&#39;,</span>
+<span class="sd">                    &#39;tmo-5gcdelete&#39;: &#39;15&#39;,</span>
+<span class="sd">                    &#39;tmo-cp&#39;: &#39;30&#39;,</span>
+<span class="sd">                    &#39;tmo-def&#39;: &#39;30&#39;,</span>
+<span class="sd">                    &#39;tmo-icmp&#39;: &#39;6&#39;,</span>
+<span class="sd">                    &#39;tmo-sctp&#39;: &#39;3600&#39;,</span>
+<span class="sd">                    &#39;tmo-sctpcookie&#39;: &#39;60&#39;,</span>
+<span class="sd">                    &#39;tmo-sctpinit&#39;: &#39;5&#39;,</span>
+<span class="sd">                    &#39;tmo-sctpshutdown&#39;: &#39;60&#39;,</span>
+<span class="sd">                    &#39;tmo-tcp&#39;: &#39;3600&#39;,</span>
+<span class="sd">                    &#39;tmo-tcp-delayed-ack&#39;: &#39;25&#39;,</span>
+<span class="sd">                    &#39;tmo-tcp-unverif-rst&#39;: &#39;30&#39;,</span>
+<span class="sd">                    &#39;tmo-tcphalfclosed&#39;: &#39;120&#39;,</span>
+<span class="sd">                    &#39;tmo-tcphandshake&#39;: &#39;10&#39;,</span>
+<span class="sd">                    &#39;tmo-tcpinit&#39;: &#39;5&#39;,</span>
+<span class="sd">                    &#39;tmo-tcptimewait&#39;: &#39;15&#39;,</span>
+<span class="sd">                    &#39;tmo-udp&#39;: &#39;30&#39;,</span>
+<span class="sd">                    &#39;vardata-rate&#39;: &#39;10485760&#39;</span>
+<span class="sd">                }</span>
+
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_parser</span><span class="p">(</span><span class="n">cmd</span><span class="o">=</span><span class="s2">&quot;show session info&quot;</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">isnumeric</span><span class="p">()}</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="FirewallProxy.get_tunnels"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy.get_tunnels">[docs]</a>    <span class="k">def</span> <span class="nf">get_tunnels</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get information about the configured tunnels.</span>
+
+<span class="sd">        The actual API command run is ``show running tunnel flow all``.</span>
+
+<span class="sd">        :return: Information about the configured tunnels.</span>
+
+<span class="sd">            Sample output (with only one IPSec tunnel configured):</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &#39;GlobalProtect-Gateway&#39;: {},</span>
+<span class="sd">                    &#39;GlobalProtect-site-to-site&#39;: {},</span>
+<span class="sd">                    &#39;IPSec&#39;: {</span>
+<span class="sd">                        &#39;ipsec_tunnel&#39;: {</span>
+<span class="sd">                            &#39;gwid&#39;: &#39;1&#39;,</span>
+<span class="sd">                            &#39;id&#39;: &#39;1&#39;,</span>
+<span class="sd">                            &#39;inner-if&#39;: &#39;tunnel.1&#39;,</span>
+<span class="sd">                            &#39;localip&#39;: &#39;0.0.0.0&#39;,</span>
+<span class="sd">                            &#39;mon&#39;: &#39;off&#39;,</span>
+<span class="sd">                            &#39;name&#39;: &#39;ipsec_tunnel&#39;,</span>
+<span class="sd">                            &#39;outer-if&#39;: &#39;ethernet1/2&#39;,</span>
+<span class="sd">                            &#39;owner&#39;: &#39;1&#39;,</span>
+<span class="sd">                            &#39;peerip&#39;: &#39;192.168.1.1&#39;,</span>
+<span class="sd">                            &#39;state&#39;: &#39;init&#39;</span>
+<span class="sd">                        }</span>
+<span class="sd">                    },</span>
+<span class="sd">                    &#39;SSL-VPN&#39;: {},</span>
+<span class="sd">                    &#39;hop&#39;: {}</span>
+<span class="sd">                }</span>
+
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_parser</span><span class="p">(</span><span class="n">cmd</span><span class="o">=</span><span class="s1">&#39;show running tunnel flow all&#39;</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">tunnelType</span><span class="p">,</span> <span class="n">tunnelData</span> <span class="ow">in</span> <span class="nb">dict</span><span class="p">(</span><span class="n">response</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">tunnelData</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">result</span><span class="p">[</span><span class="n">tunnelType</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tunnelData</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">result</span><span class="p">[</span><span class="n">tunnelType</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">tunnel</span> <span class="ow">in</span> <span class="n">tunnelData</span><span class="p">[</span><span class="s1">&#39;entry&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tunnelData</span><span class="p">[</span><span class="s1">&#39;entry&#39;</span><span class="p">],</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">tunnelData</span><span class="p">[</span><span class="s1">&#39;entry&#39;</span><span class="p">]]:</span>
+                    <span class="n">result</span><span class="p">[</span><span class="n">tunnelType</span><span class="p">][</span><span class="n">tunnel</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">tunnel</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="FirewallProxy.get_latest_available_content_version"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy.get_latest_available_content_version">[docs]</a>    <span class="k">def</span> <span class="nf">get_latest_available_content_version</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the latest, downloadable content version.</span>
+
+<span class="sd">        The actual API command run is ``request content upgrade check``.</span>
+
+<span class="sd">        Values returned by API are not ordered. This method tries to reorder them and find the highest available Content DB version. </span>
+<span class="sd">        The following assumptions are made:</span>
+
+<span class="sd">            * versions are always increasing,</span>
+<span class="sd">            * both components of the version string are numbers.</span>
+
+<span class="sd">        :raises ContentDBVersionsFormatException: An exception is thrown when the Content DB version does not match the expected format.</span>
+
+<span class="sd">        :return: The latest available content version.</span>
+
+<span class="sd">            Sample output:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                &#39;8670-7824&#39;</span>
+
+<span class="sd">        :rtype: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_parser</span><span class="p">(</span><span class="n">cmd</span><span class="o">=</span><span class="s2">&quot;request content upgrade check&quot;</span><span class="p">,</span> <span class="n">return_xml</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">content_versions</span> <span class="o">=</span> <span class="p">[</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;content-updates&#39;</span><span class="p">][</span><span class="s1">&#39;entry&#39;</span><span class="p">]</span> <span class="p">]</span>
+            <span class="n">majors</span> <span class="o">=</span> <span class="p">[</span> <span class="nb">int</span><span class="p">(</span><span class="n">ver</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">ver</span> <span class="ow">in</span> <span class="n">content_versions</span> <span class="p">]</span>
+            <span class="n">majors</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+            <span class="n">major_minors</span> <span class="o">=</span> <span class="p">[</span> <span class="nb">int</span><span class="p">(</span><span class="n">ver</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">ver</span> <span class="ow">in</span> <span class="n">content_versions</span> <span class="k">if</span> <span class="n">ver</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">majors</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">-&quot;</span><span class="p">)</span> <span class="p">]</span>
+            <span class="n">major_minors</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+            <span class="n">latest</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">majors</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">major_minors</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ContentDBVersionsFormatException</span><span class="p">(</span><span class="s1">&#39;Cannot parse list of available updates for Content DB.&#39;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span>
+
+        <span class="k">return</span> <span class="n">latest</span></div>
+
+<div class="viewcode-block" id="FirewallProxy.get_content_db_version"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy.get_content_db_version">[docs]</a>    <span class="k">def</span> <span class="nf">get_content_db_version</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the currently installed Content DB version.</span>
+
+<span class="sd">        The actual API command is ``show system info``.</span>
+
+<span class="sd">        :return: Current Content DB version.</span>
+
+<span class="sd">            Sample output:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                &#39;8670-7824&#39;</span>
+
+<span class="sd">        :rtype: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_parser</span><span class="p">(</span><span class="n">cmd</span><span class="o">=</span><span class="s2">&quot;show system info&quot;</span><span class="p">,</span> <span class="n">return_xml</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">findtext</span><span class="p">(</span><span class="s1">&#39;./system/app-version&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FirewallProxy.get_ntp_servers"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy.get_ntp_servers">[docs]</a>    <span class="k">def</span> <span class="nf">get_ntp_servers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the NTP synchronization configuration.</span>
+
+<span class="sd">        The actual API command is ``show ntp``.</span>
+
+<span class="sd">        :return: The NTP synchronization configuration.</span>
+
+<span class="sd">            Sample output - no NTP servers configured:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &#39;synched&#39;: &#39;LOCAL&#39;</span>
+<span class="sd">                }</span>
+
+<span class="sd">            Sample output - NTP servers configured:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &#39;ntp-server-1&#39;: {</span>
+<span class="sd">                        &#39;authentication-type&#39;: &#39;none&#39;,</span>
+<span class="sd">                        &#39;name&#39;: &#39;0.pool.ntp.org&#39;,</span>
+<span class="sd">                        &#39;reachable&#39;: &#39;yes&#39;,</span>
+<span class="sd">                        &#39;status&#39;: &#39;available&#39;</span>
+<span class="sd">                    },</span>
+<span class="sd">                    &#39;ntp-server-2&#39;: {</span>
+<span class="sd">                        &#39;authentication-type&#39;: &#39;none&#39;,</span>
+<span class="sd">                        &#39;name&#39;: &#39;1.pool.ntp.org&#39;,</span>
+<span class="sd">                        &#39;reachable&#39;: &#39;yes&#39;,</span>
+<span class="sd">                        &#39;status&#39;: &#39;synched&#39;</span>
+<span class="sd">                    },</span>
+<span class="sd">                    &#39;synched&#39;: &#39;1.pool.ntp.org&#39;</span>
+<span class="sd">                }</span>
+
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">op_parser</span><span class="p">(</span><span class="n">cmd</span><span class="o">=</span><span class="s2">&quot;show ntp&quot;</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="FirewallProxy.get_disk_utilization"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy.get_disk_utilization">[docs]</a>    <span class="k">def</span> <span class="nf">get_disk_utilization</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the disk utilization (in MB) and parse it to a machine readable format.</span>
+
+<span class="sd">        The actual API command is ``show system disk-space``.</span>
+
+<span class="sd">        :return: Disk free space in MBytes.</span>
+
+<span class="sd">            Sample output:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &#39;/&#39;: 2867</span>
+<span class="sd">                    &#39;/dev&#39;: 7065</span>
+<span class="sd">                    &#39;/opt/pancfg&#39;: 14336</span>
+<span class="sd">                    &#39;/opt/panrepo&#39;: 3276</span>
+<span class="sd">                    &#39;/dev/shm&#39;: 1433</span>
+<span class="sd">                    &#39;/cgroup&#39;: 7065</span>
+<span class="sd">                    &#39;/opt/panlogs&#39;: 20480</span>
+<span class="sd">                    &#39;/opt/pancfg/mgmt/ssl/private&#39;: 12</span>
+<span class="sd">                }</span>
+
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="n">disk_space</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_parser</span><span class="p">(</span><span class="n">cmd</span><span class="o">=</span><span class="s2">&quot;show system disk-space&quot;</span><span class="p">)</span>
+        <span class="n">disk_space_list</span> <span class="o">=</span> <span class="n">disk_space</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="c1"># we start with index 1 to skip header</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">disk_space_list</span><span class="p">)):</span>
+            <span class="n">row</span> <span class="o">=</span> <span class="n">disk_space_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">row_items</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+            <span class="n">row_items_trimmed</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">row_items</span> <span class="k">if</span> <span class="n">item</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">]</span>
+                
+            <span class="n">mount_point</span> <span class="o">=</span> <span class="n">row_items_trimmed</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">free_size_short</span> <span class="o">=</span> <span class="n">row_items_trimmed</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+            <span class="n">free_size_name</span> <span class="o">=</span> <span class="n">free_size_short</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">free_size_number</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">free_size_short</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">free_size_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">free_size_name</span> <span class="o">==</span> <span class="s1">&#39;G&#39;</span><span class="p">:</span>
+                    <span class="n">free_size</span> <span class="o">=</span> <span class="n">free_size_number</span><span class="o">*</span><span class="mi">1024</span>
+                <span class="k">elif</span> <span class="n">free_size_name</span> <span class="o">==</span> <span class="s1">&#39;M&#39;</span><span class="p">:</span>
+                    <span class="n">free_size</span> <span class="o">=</span> <span class="n">free_size_number</span>
+                <span class="k">elif</span> <span class="n">free_size_name</span> <span class="o">==</span> <span class="s1">&#39;K&#39;</span><span class="p">:</span>
+                    <span class="n">free_size</span> <span class="o">=</span> <span class="n">free_size_number</span><span class="o">/</span><span class="mi">1024</span>
+
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">free_size_name</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="n">free_size</span> <span class="o">=</span> <span class="n">free_size_short</span><span class="o">/</span><span class="mi">1024</span><span class="o">/</span><span class="mi">1024</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">WrongDiskSizeFormatException</span><span class="p">(</span><span class="s2">&quot;Free disk size has wrong format.&quot;</span><span class="p">)</span>
+
+            <span class="n">result</span><span class="p">[</span><span class="n">mount_point</span><span class="p">]</span> <span class="o">=</span> <span class="n">floor</span><span class="p">(</span><span class="n">free_size</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="FirewallProxy.get_available_image_data"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy.get_available_image_data">[docs]</a>    <span class="k">def</span> <span class="nf">get_available_image_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get information on the available to download PanOS image versions.</span>
+
+<span class="sd">        The actual API command is ``request system software check``.</span>
+
+<span class="sd">        :return: Detailed information on available images.</span>
+
+<span class="sd">            Sample output:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &#39;11.0.1&#39;: {</span>
+<span class="sd">                        &#39;version&#39;: &#39;11.0.1&#39;</span>
+<span class="sd">                        &#39;filename&#39;: &#39;PanOS_vm-11.0.1&#39;</span>
+<span class="sd">                        &#39;size&#39;: &#39;492&#39;</span>
+<span class="sd">                        &#39;size-kb&#39;: &#39;504796&#39;</span>
+<span class="sd">                        &#39;released-on&#39;: &#39;2023/03/29 15:05:25&#39;</span>
+<span class="sd">                        &#39;release-notes&#39;: &#39;https://www.paloaltonetworks.com/documentation/11-0/pan-os/pan-os-release-notes&#39;</span>
+<span class="sd">                        &#39;downloaded&#39;: &#39;no&#39;</span>
+<span class="sd">                        &#39;current&#39;: &#39;no&#39;</span>
+<span class="sd">                        &#39;latest&#39;: &#39;yes&#39;</span>
+<span class="sd">                        &#39;uploaded&#39;: &#39;no&#39;</span>
+<span class="sd">                    }</span>
+<span class="sd">                    &#39;11.0.0&#39;: {</span>
+<span class="sd">                        &#39;version&#39;: &#39;11.0.0&#39;</span>
+<span class="sd">                        &#39;filename&#39;: &#39;PanOS_vm-11.0.0&#39;</span>
+<span class="sd">                        &#39;size&#39;: &#39;1037&#39;</span>
+<span class="sd">                        &#39;size-kb&#39;: &#39;1062271&#39;</span>
+<span class="sd">                        &#39;released-on&#39;: &#39;2022/11/17 08:45:28&#39;</span>
+<span class="sd">                        &#39;release-notes&#39;: &#39;https://www.paloaltonetworks.com/documentation/11-0/pan-os/pan-os-release-notes&#39;</span>
+<span class="sd">                        &#39;downloaded&#39;: &#39;no&#39;</span>
+<span class="sd">                        &#39;current&#39;: &#39;no&#39;</span>
+<span class="sd">                        &#39;latest&#39;: &#39;no&#39;</span>
+<span class="sd">                        &#39;uploaded&#39;: &#39;no&#39;</span>
+<span class="sd">                    }</span>
+<span class="sd">                    ...</span>
+<span class="sd">                }</span>
+
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="n">image_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_parser</span><span class="p">(</span><span class="n">cmd</span><span class="o">=</span><span class="s2">&quot;request system software check&quot;</span><span class="p">)</span>
+        <span class="n">images</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">image_data</span><span class="p">[</span><span class="s1">&#39;sw-updates&#39;</span><span class="p">][</span><span class="s1">&#39;versions&#39;</span><span class="p">])[</span><span class="s1">&#39;entry&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">images</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">images</span><span class="p">]:</span>
+            <span class="n">result</span><span class="p">[</span><span class="n">image</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="FirewallProxy.get_mp_clock"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy.get_mp_clock">[docs]</a>    <span class="k">def</span> <span class="nf">get_mp_clock</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the clock information from management plane.</span>
+
+<span class="sd">        The actual API command is ``show clock``.</span>
+<span class="sd">        :return: The clock information represented as a dictionary.</span>
+
+<span class="sd">            Sample output:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &#39;time&#39;: &#39;00:41:36&#39;,</span>
+<span class="sd">                    &#39;tz&#39;: &#39;PDT&#39;,</span>
+<span class="sd">                    &#39;day&#39;: &#39;19&#39;,</span>
+<span class="sd">                    &#39;month&#39;: &#39;Apr&#39;,</span>
+<span class="sd">                    &#39;year&#39;: &#39;2023&#39;,</span>
+<span class="sd">                    &#39;day_of_week&#39;: &#39;Wed&#39;</span>
+<span class="sd">                }</span>
+
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">time_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_parser</span><span class="p">(</span><span class="n">cmd</span><span class="o">=</span><span class="s2">&quot;show clock&quot;</span><span class="p">)</span>
+        <span class="n">time_dict</span> <span class="o">=</span> <span class="n">time_string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="n">time_dict</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+            <span class="s1">&#39;tz&#39;</span><span class="p">:</span>  <span class="n">time_dict</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span>
+            <span class="s1">&#39;day&#39;</span><span class="p">:</span>  <span class="n">time_dict</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+            <span class="s1">&#39;month&#39;</span><span class="p">:</span>  <span class="n">time_dict</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+            <span class="s1">&#39;year&#39;</span><span class="p">:</span>  <span class="n">time_dict</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span>
+            <span class="s1">&#39;day_of_week&#39;</span><span class="p">:</span>  <span class="n">time_dict</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="p">}</span>
+        
+        <span class="k">return</span><span class="p">(</span><span class="n">result</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FirewallProxy.get_dp_clock"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy.get_dp_clock">[docs]</a>    <span class="k">def</span> <span class="nf">get_dp_clock</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the clock information from data plane.</span>
+
+<span class="sd">        The actual API command is ``show clock more``.</span>
+<span class="sd">        :return: The clock information represented as a dictionary.</span>
+
+<span class="sd">            Sample output:</span>
+
+<span class="sd">            ::</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &#39;time&#39;: &#39;00:41:36&#39;,</span>
+<span class="sd">                    &#39;tz&#39;: &#39;PDT&#39;,</span>
+<span class="sd">                    &#39;day&#39;: &#39;19&#39;,</span>
+<span class="sd">                    &#39;month&#39;: &#39;Apr&#39;,</span>
+<span class="sd">                    &#39;year&#39;: &#39;2023&#39;,</span>
+<span class="sd">                    &#39;day_of_week&#39;: &#39;Wed&#39;</span>
+<span class="sd">                }</span>
+
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_parser</span><span class="p">(</span><span class="n">cmd</span><span class="o">=</span><span class="s2">&quot;show clock more&quot;</span><span class="p">)</span>
+        <span class="n">time_string</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">response</span><span class="p">)[</span><span class="s1">&#39;member&#39;</span><span class="p">]</span>
+        <span class="n">time_dict</span> <span class="o">=</span> <span class="n">time_string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="n">time_dict</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span>
+            <span class="s1">&#39;tz&#39;</span><span class="p">:</span>  <span class="n">time_dict</span><span class="p">[</span><span class="mi">6</span><span class="p">],</span>
+            <span class="s1">&#39;day&#39;</span><span class="p">:</span>  <span class="n">time_dict</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span>
+            <span class="s1">&#39;month&#39;</span><span class="p">:</span>  <span class="n">time_dict</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+            <span class="s1">&#39;year&#39;</span><span class="p">:</span>  <span class="n">time_dict</span><span class="p">[</span><span class="mi">7</span><span class="p">],</span>
+            <span class="s1">&#39;day_of_week&#39;</span><span class="p">:</span>  <span class="n">time_dict</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+        <span class="p">}</span>
+        
+        <span class="k">return</span><span class="p">(</span><span class="n">result</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Palo Alto Networks.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -26,6 +26,7 @@ class CheckType:
     ARP_ENTRY_EXIST = "arp_entry_exist"
     IPSEC_TUNNEL_STATUS = "ip_sec_tunnel_status"
     FREE_DISK_SPACE = "free_disk_space"
+    MP_DP_CLOCK_SYNC = "planes_clock_sync"
 
 class SnapType:
     """Class mapping the snapshot configuration strings to the commonly used variables.

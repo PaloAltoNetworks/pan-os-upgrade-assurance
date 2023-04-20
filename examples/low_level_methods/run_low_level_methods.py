@@ -53,4 +53,8 @@ if __name__ == '__main__':
 
     print(f'\n  available image versions: {proxy.get_available_image_data()}')
 
+    print(f'\n  management plane clock: {proxy.get_mp_clock()}')
+
+    print(f'\n  data plane clock: {proxy.get_dp_clock()}')
+
     print()

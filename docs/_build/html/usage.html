@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Usage &mdash; PanOS Upgrade Assurance 0.0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Configuration details" href="configuration_details.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            PanOS Upgrade Assurance
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#importing-classes">Importing Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#initializing-objects">Initializing objects</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#firewallproxy-class">FirewallProxy class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#checkfirewall-class">CheckFirewall class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#snapshotcompare-class">SnapshotCompare class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#configparser-class-internal">ConfigParser class (internal)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#the-library-in-action-usage-examples">The library in action - usage examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#running-readiness-checks-for-a-single-device">Running readiness checks for a single device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#generating-a-report-based-on-snapshots">Generating a report based on snapshots</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="configuration_details.html">Configuration details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_docs.html">Building documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PanOS Upgrade Assurance</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Usage</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/usage.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="usage">
+<span id="usage-documentation"></span><h1>Usage<a class="headerlink" href="#usage" title="Permalink to this heading"></a></h1>
+<nav class="contents local" id="contents">
+<ul class="simple">
+<li><p><a class="reference internal" href="#importing-classes" id="id1">Importing Classes</a></p></li>
+<li><p><a class="reference internal" href="#initializing-objects" id="id2">Initializing objects</a></p>
+<ul>
+<li><p><a class="reference internal" href="#firewallproxy-class" id="id3">FirewallProxy class</a></p></li>
+<li><p><a class="reference internal" href="#checkfirewall-class" id="id4">CheckFirewall class</a></p></li>
+<li><p><a class="reference internal" href="#snapshotcompare-class" id="id5">SnapshotCompare class</a></p></li>
+<li><p><a class="reference internal" href="#configparser-class-internal" id="id6">ConfigParser class (internal)</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#the-library-in-action-usage-examples" id="id7">The library in action - usage examples</a></p>
+<ul>
+<li><p><a class="reference internal" href="#running-readiness-checks-for-a-single-device" id="id8">Running readiness checks for a single device</a></p></li>
+<li><p><a class="reference internal" href="#generating-a-report-based-on-snapshots" id="id9">Generating a report based on snapshots</a></p></li>
+</ul>
+</li>
+</ul>
+</nav>
+<section id="importing-classes">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">Importing Classes</a><a class="headerlink" href="#importing-classes" title="Permalink to this heading"></a></h2>
+<p>To use <code class="docutils literal notranslate"><span class="pre">upgrade_assurance</span></code> in a project, you may either:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>import the package as a whole:</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">upgrade_assurance</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>or be more specific about which modules you want to import:</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">upgrade_assurance</span> <span class="kn">import</span> <span class="n">firewall_proxy</span>
+<span class="kn">from</span> <span class="nn">upgrade_assurance</span> <span class="kn">import</span> <span class="n">check_firewall</span>
+<span class="kn">from</span> <span class="nn">upgrade_assurance</span> <span class="kn">import</span> <span class="n">snapshot_compare</span>
+<span class="kn">from</span> <span class="nn">upgrade_assurance</span> <span class="kn">import</span> <span class="n">utils</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>or, be even <em>more</em> specific by importing a specific class:</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">upgrade_assurance.check_firewall</span> <span class="kn">import</span> <span class="n">CheckFirewall</span>
+</pre></div>
+</div>
+</div></blockquote>
+</section>
+<section id="initializing-objects">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">Initializing objects</a><a class="headerlink" href="#initializing-objects" title="Permalink to this heading"></a></h2>
+<p>In the following code snippets, we assume the 3<sup>rd</sup> way of importing the classes:</p>
+<section id="firewallproxy-class">
+<h3><a class="toc-backref" href="#id3" role="doc-backlink">FirewallProxy class</a><a class="headerlink" href="#firewallproxy-class" title="Permalink to this heading"></a></h3>
+<p>This class inherits the constructor method from the <a class="reference external" href="https://pandevice.readthedocs.io/en/latest/module-firewall.html">Pan-OS-Python Firewall</a> class. Therefore, objects for this class are initialized in the same way. For details, see documentation for this class. Here we will provide only the most basic way of initializing the <a class="reference internal" href="api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy" title="panos_upgrade_assurance.firewall_proxy.FirewallProxy"><code class="xref py py-class docutils literal notranslate"><span class="pre">FirewallProxy</span></code></a> class that includes a username/password authentication.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">upgrade_assurance.firewall_proxy</span> <span class="kn">import</span> <span class="n">FirewallProxy</span>
+
+<span class="n">firewall</span> <span class="o">=</span> <span class="n">FirewallProxy</span><span class="p">(</span>
+    <span class="n">hostname</span><span class="o">=</span><span class="s1">&#39;FQDN or an IP address of the management interface&#39;</span><span class="p">,</span>
+    <span class="n">api_username</span><span class="o">=</span><span class="s1">&#39;an account name, can be readonly&#39;</span><span class="p">,</span>
+    <span class="n">api_password</span><span class="o">=</span><span class="s1">&#39;a password&#39;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="checkfirewall-class">
+<h3><a class="toc-backref" href="#id4" role="doc-backlink">CheckFirewall class</a><a class="headerlink" href="#checkfirewall-class" title="Permalink to this heading"></a></h3>
+<p>Since this is a <em>high level</em> class, it depends on the <a class="reference internal" href="api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy" title="panos_upgrade_assurance.firewall_proxy.FirewallProxy"><code class="xref py py-class docutils literal notranslate"><span class="pre">FirewallProxy</span></code></a> class for device communication. Hence, the constructor for this class takes an object of the <a class="reference internal" href="api.html#panos_upgrade_assurance.firewall_proxy.FirewallProxy" title="panos_upgrade_assurance.firewall_proxy.FirewallProxy"><code class="xref py py-class docutils literal notranslate"><span class="pre">FirewallProxy</span></code></a> class.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">upgrade_assurance.check_firewall</span> <span class="kn">import</span> <span class="n">CheckFirewall</span>
+<span class="kn">from</span> <span class="nn">upgrade_assurance.firewall_proxy</span> <span class="kn">import</span> <span class="n">FirewallProxy</span>
+
+<span class="n">firewall</span> <span class="o">=</span> <span class="n">FirewallProxy</span><span class="p">(</span><span class="n">hostname</span><span class="o">=</span><span class="s1">&#39;1.2.3.4&#39;</span><span class="p">,</span> <span class="n">api_username</span><span class="o">=</span><span class="s1">&#39;ro_admin&#39;</span><span class="p">,</span> <span class="n">api_password</span><span class="o">=</span><span class="s1">&#39;************&#39;</span><span class="p">)</span>
+<span class="n">checks</span> <span class="o">=</span> <span class="n">CheckFirewall</span><span class="p">(</span><span class="n">firewall</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="snapshotcompare-class">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">SnapshotCompare class</a><a class="headerlink" href="#snapshotcompare-class" title="Permalink to this heading"></a></h3>
+<p>This class provides methods of comparing two snapshots made with the <a class="reference internal" href="api.html#panos_upgrade_assurance.check_firewall.CheckFirewall" title="panos_upgrade_assurance.check_firewall.CheckFirewall"><code class="xref py py-class docutils literal notranslate"><span class="pre">CheckFirewall</span></code></a> class. Therefore, it is an <em>offline</em> class - no communication with a device is made.</p>
+<p>The idea around this class is that an object represents an entity storing two snapshots, for example, a pre-upgrade and a post-upgrade one. Therefore, the constructor takes two snapshots as input parameters. After an object is initialized, one can run reports on it. Each report is configurable but limited to data from both snapshots. In order to compare a different set of snapshots, one has to create a new object.</p>
+<p>In the example above, we implicitly take snapshots for all supported state areas. For more details, see <a class="reference internal" href="api.html#panos_upgrade_assurance.utils.ConfigParser" title="panos_upgrade_assurance.utils.ConfigParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConfigParser</span></code></a> dialect.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">upgrade_assurance.snapshot_compare</span> <span class="kn">import</span> <span class="n">SnapshotCompare</span>
+
+<span class="n">diff_object</span> <span class="o">=</span> <span class="n">SnapshotCompare</span><span class="p">(</span>       <span class="c1"># initialize object storing both snapshots</span>
+    <span class="n">left_snapshot</span><span class="o">=</span><span class="n">snapshot1</span><span class="p">,</span>         <span class="c1"># 1st snapshot</span>
+    <span class="n">right_snapshot</span><span class="o">=</span><span class="n">snapshot2</span>         <span class="c1"># 2nd snapshot</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="configparser-class-internal">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">ConfigParser class (internal)</a><a class="headerlink" href="#configparser-class-internal" title="Permalink to this heading"></a></h3>
+<p>Although this is an internally used class, probably not often used on a daily basis, we provide documentation on how to initialize it as it’s heavily used in the other classes.</p>
+<p>The constructor for this class takes two arguments:</p>
+<ul class="simple">
+<li><p>a valid set of configuration parameters,</p></li>
+<li><p>a configuration provided by a user (the one that will be verified and parsed).</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">upgrade_assurance.utils</span> <span class="kn">import</span> <span class="n">ConfigParser</span>
+
+<span class="n">parser</span> <span class="o">=</span> <span class="n">ConfigParser</span><span class="p">(</span>
+    <span class="n">requested_config</span><span class="o">=</span><span class="p">[]</span>     <span class="c1"># a list of configuration elements</span>
+    <span class="n">valid_elements</span><span class="o">=</span><span class="p">[]</span>       <span class="c1"># a list of all valid elements</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="the-library-in-action-usage-examples">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">The library in action - usage examples</a><a class="headerlink" href="#the-library-in-action-usage-examples" title="Permalink to this heading"></a></h2>
+<p>Please note that the samples below assume the minimum knowledge on available tests and their configurations. Refer to the <a class="reference internal" href="configuration_details.html#configuration-documentation"><span class="std std-ref">Configuration details</span></a> for complete documentation.</p>
+<section id="running-readiness-checks-for-a-single-device">
+<h3><a class="toc-backref" href="#id8" role="doc-backlink">Running readiness checks for a single device</a><a class="headerlink" href="#running-readiness-checks-for-a-single-device" title="Permalink to this heading"></a></h3>
+<p>This is the sample code showing how to run readiness checks. In this example, we run two critical checks on a device after an upgrade is done:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">session_exist</span></code> check makes sure that a session described with <code class="docutils literal notranslate"><span class="pre">source</span></code>, <code class="docutils literal notranslate"><span class="pre">destinations</span></code>, and <code class="docutils literal notranslate"><span class="pre">dest_port</span></code> parameters is present in the device sessions table,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">arp_entry_exist</span></code> check looks for an entry in the ARP table matching a given <code class="docutils literal notranslate"><span class="pre">ip</span></code> address.</p></li>
+</ul>
+<p>If at least one of the tests fail, the script exits immediately.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">upgrade_assurance.check_firewall</span> <span class="kn">import</span> <span class="n">CheckFirewall</span>
+<span class="kn">from</span> <span class="nn">upgrade_assurance.firewall_proxy</span> <span class="kn">import</span> <span class="n">FirewallProxy</span>
+
+<span class="c1"># ... upgrade code goes here</span>
+
+<span class="n">firewall</span> <span class="o">=</span> <span class="n">FirewallProxy</span><span class="p">(</span><span class="n">hostname</span><span class="o">=</span><span class="s1">&#39;1.2.3.4&#39;</span><span class="p">,</span> <span class="n">api_username</span><span class="o">=</span><span class="s1">&#39;ro_admin&#39;</span><span class="p">,</span> <span class="n">api_password</span><span class="o">=</span><span class="s1">&#39;************&#39;</span><span class="p">)</span>
+<span class="n">checks</span> <span class="o">=</span> <span class="n">CheckFirewall</span><span class="p">(</span><span class="n">firewall</span><span class="p">)</span>
+
+<span class="n">checks_configuration</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="s1">&#39;session_exist&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="s1">&#39;123.234.123.234&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;destination&#39;</span><span class="p">:</span> <span class="s1">&#39;10.0.0.1&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;dest_port&#39;</span><span class="p">:</span> <span class="s1">&#39;8080&#39;</span>
+    <span class="p">}},</span>
+    <span class="p">{</span> <span class="s1">&#39;arp_entry_exist&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;ip&#39;</span><span class="p">:</span> <span class="s1">&#39;10.100.0.1&#39;</span>
+    <span class="p">}},</span>
+<span class="p">]</span>
+
+<span class="n">results</span> <span class="o">=</span> <span class="n">checks</span><span class="o">.</span><span class="n">run_readiness_checks</span><span class="p">(</span><span class="n">checks_configuration</span><span class="p">)</span>
+
+<span class="n">passed</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="k">for</span> <span class="n">check</span> <span class="ow">in</span> <span class="n">checks_configuration</span><span class="p">:</span>
+    <span class="n">check_name</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">check</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">passed</span> <span class="o">=</span> <span class="n">passed</span> <span class="o">&amp;</span> <span class="n">results</span><span class="p">[</span><span class="n">check_name</span><span class="p">][</span><span class="s1">&#39;state&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">results</span><span class="p">[</span><span class="n">check_name</span><span class="p">][</span><span class="s1">&#39;state&#39;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;FAILED: </span><span class="si">{</span><span class="n">check_name</span><span class="si">}</span><span class="s1"> - </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="n">check_name</span><span class="p">][</span><span class="s2">&quot;reason&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="ow">not</span> <span class="n">passed</span><span class="p">:</span>
+    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># ... continue script</span>
+</pre></div>
+</div>
+<p>The sample output of this portion of the script (both tests fail):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">FAILED</span><span class="p">:</span> <span class="n">session_exist</span> <span class="o">-</span> <span class="p">[</span><span class="n">FAIL</span><span class="p">]</span> <span class="n">Session</span> <span class="ow">not</span> <span class="n">found</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">session</span> <span class="n">table</span><span class="o">.</span>
+<span class="n">FAILED</span><span class="p">:</span> <span class="n">arp_entry_exist</span> <span class="o">-</span> <span class="p">[</span><span class="n">FAIL</span><span class="p">]</span> <span class="n">Entry</span> <span class="ow">not</span> <span class="n">found</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">ARP</span> <span class="n">table</span><span class="o">.</span>
+</pre></div>
+</div>
+</section>
+<section id="generating-a-report-based-on-snapshots">
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">Generating a report based on snapshots</a><a class="headerlink" href="#generating-a-report-based-on-snapshots" title="Permalink to this heading"></a></h3>
+<p>In this example, we take two snapshots (one for each device in an HA pair) and we use the <a class="reference internal" href="api.html#panos_upgrade_assurance.snapshot_compare.SnapshotCompare" title="panos_upgrade_assurance.snapshot_compare.SnapshotCompare"><code class="xref py py-class docutils literal notranslate"><span class="pre">SnapshotCompare</span></code></a> class to compare licenses. Based on the comparison result, a decision is made whether to continue with the rest of the script.</p>
+<p>The comparison itself is configured to:</p>
+<ul class="simple">
+<li><p>skip two properties (to avoid false-positives):</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">serial</span></code> as serial numbers for both devices are different,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">authcodes</span></code> as two different authcodes were used for licensing devices.</p></li>
+</ul>
+</li>
+<li><p>check only part of the comparison results that compares licenses existing in both snapshots. Licenses missing in each snapshot are not checked.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">upgrade_assurance.check_firewall</span> <span class="kn">import</span> <span class="n">CheckFirewall</span>
+<span class="kn">from</span> <span class="nn">upgrade_assurance.firewall_proxy</span> <span class="kn">import</span> <span class="n">FirewallProxy</span>
+<span class="kn">from</span> <span class="nn">upgrade_assurance.snapshot_compare</span> <span class="kn">import</span> <span class="n">SnapshotCompare</span>
+<span class="kn">from</span> <span class="nn">upgrade_assurance.utils</span> <span class="kn">import</span> <span class="n">printer</span>
+
+
+<span class="n">node_a</span>      <span class="o">=</span> <span class="n">FirewallProxy</span><span class="p">(</span><span class="n">hostname</span><span class="o">=</span><span class="s1">&#39;10.0.0.1&#39;</span><span class="p">,</span> <span class="n">api_username</span><span class="o">=</span><span class="s1">&#39;ro_admin&#39;</span><span class="p">,</span> <span class="n">api_password</span><span class="o">=</span><span class="s1">&#39;************&#39;</span><span class="p">)</span>
+<span class="n">checks_a</span>    <span class="o">=</span> <span class="n">CheckFirewall</span><span class="p">(</span><span class="n">node_a</span><span class="p">)</span>
+
+<span class="n">node_b</span>      <span class="o">=</span> <span class="n">FirewallProxy</span><span class="p">(</span><span class="n">hostname</span><span class="o">=</span><span class="s1">&#39;10.0.0.2&#39;</span><span class="p">,</span> <span class="n">api_username</span><span class="o">=</span><span class="s1">&#39;ro_admin&#39;</span><span class="p">,</span> <span class="n">api_password</span><span class="o">=</span><span class="s1">&#39;************&#39;</span><span class="p">)</span>
+<span class="n">checks_b</span>    <span class="o">=</span> <span class="n">CheckFirewall</span><span class="p">(</span><span class="n">node_b</span><span class="p">)</span>
+
+<span class="n">snapshot_a</span>  <span class="o">=</span> <span class="n">checks_a</span><span class="o">.</span><span class="n">run_snapshots</span><span class="p">([</span><span class="s1">&#39;license&#39;</span><span class="p">])</span>
+<span class="n">snapshot_b</span>  <span class="o">=</span> <span class="n">checks_b</span><span class="o">.</span><span class="n">run_snapshots</span><span class="p">([</span><span class="s1">&#39;license&#39;</span><span class="p">])</span>
+
+<span class="n">diff_obj</span> <span class="o">=</span> <span class="n">SnapshotCompare</span><span class="p">(</span><span class="n">snapshot_a</span><span class="p">,</span> <span class="n">snapshot_b</span><span class="p">)</span>
+<span class="n">license_diff</span> <span class="o">=</span> <span class="n">diff_obj</span><span class="o">.</span><span class="n">compare_snapshots</span><span class="p">([{</span>
+    <span class="s1">&#39;license&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;properties&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;!serial&#39;</span><span class="p">,</span> <span class="s1">&#39;!authcode&#39;</span><span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">}])</span>
+
+<span class="k">if</span> <span class="ow">not</span> <span class="n">license_diff</span><span class="p">[</span><span class="s1">&#39;license&#39;</span><span class="p">][</span><span class="s1">&#39;changed&#39;</span><span class="p">][</span><span class="s1">&#39;passed&#39;</span><span class="p">]:</span>
+    <span class="n">printer</span><span class="p">(</span><span class="n">license_diff</span><span class="p">[</span><span class="s1">&#39;license&#39;</span><span class="p">][</span><span class="s1">&#39;changed&#39;</span><span class="p">][</span><span class="s1">&#39;changed_raw&#39;</span><span class="p">])</span>
+    <span class="c1"># ... code that handles failed check</span>
+</pre></div>
+</div>
+<p>The sample output of the above script:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">GlobalProtect</span> <span class="n">Gateway</span><span class="p">:</span>
+   <span class="o">|</span> <span class="n">passed</span><span class="p">:</span> <span class="kc">True</span>
+<span class="n">WildFire</span> <span class="n">License</span><span class="p">:</span>
+   <span class="o">|</span> <span class="n">passed</span><span class="p">:</span> <span class="kc">True</span>
+<span class="n">DNS</span> <span class="n">Security</span><span class="p">:</span>
+   <span class="o">|</span> <span class="n">passed</span><span class="p">:</span> <span class="kc">True</span>
+<span class="n">AutoFocus</span> <span class="n">Device</span> <span class="n">License</span><span class="p">:</span>
+   <span class="o">|</span> <span class="n">passed</span><span class="p">:</span> <span class="kc">False</span>
+   <span class="o">|</span> <span class="n">missing</span><span class="p">:</span>
+   <span class="o">|</span>   <span class="o">|</span> <span class="n">passed</span><span class="p">:</span> <span class="kc">True</span>
+   <span class="o">|</span> <span class="n">added</span><span class="p">:</span>
+   <span class="o">|</span>   <span class="o">|</span> <span class="n">passed</span><span class="p">:</span> <span class="kc">True</span>
+   <span class="o">|</span> <span class="n">changed</span><span class="p">:</span>
+   <span class="o">|</span>   <span class="o">|</span> <span class="n">passed</span><span class="p">:</span> <span class="kc">False</span>
+   <span class="o">|</span>   <span class="o">|</span> <span class="n">changed_raw</span><span class="p">:</span>
+   <span class="o">|</span>   <span class="o">|</span>   <span class="o">|</span> <span class="n">expires</span><span class="p">:</span>
+   <span class="o">|</span>   <span class="o">|</span>   <span class="o">|</span>   <span class="o">|</span> <span class="n">left_snap</span><span class="p">:</span> <span class="n">September</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">2031</span>
+   <span class="o">|</span>   <span class="o">|</span>   <span class="o">|</span>   <span class="o">|</span> <span class="n">right_snap</span><span class="p">:</span> <span class="n">February</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">2040</span>
+<span class="n">PA</span><span class="o">-</span><span class="n">VM</span><span class="p">:</span>
+   <span class="o">|</span> <span class="n">passed</span><span class="p">:</span> <span class="kc">True</span>
+<span class="n">Premium</span><span class="p">:</span>
+   <span class="o">|</span> <span class="n">passed</span><span class="p">:</span> <span class="kc">True</span>
+<span class="n">PAN</span><span class="o">-</span><span class="n">DB</span> <span class="n">URL</span> <span class="n">Filtering</span><span class="p">:</span>
+   <span class="o">|</span> <span class="n">passed</span><span class="p">:</span> <span class="kc">True</span>
+<span class="n">Threat</span> <span class="n">Prevention</span><span class="p">:</span>
+   <span class="o">|</span> <span class="n">passed</span><span class="p">:</span> <span class="kc">True</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="configuration_details.html" class="btn btn-neutral float-right" title="Configuration details" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Palo Alto Networks.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
