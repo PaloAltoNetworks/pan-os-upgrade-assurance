@@ -7,10 +7,7 @@ configure them properly.
 
 Table of contents
 
-- [Passing configuration in general](#passing-configuration-in-general)
-- [Readiness checks](#readiness-checks)
-- [State snapshots](#state-snapshots)
-- [Reports](#reports)
+[[_TOC_]]
 
 ## Passing configuration in general
 
