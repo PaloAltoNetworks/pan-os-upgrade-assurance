@@ -2,40 +2,77 @@
 
 from panos_upgrade_assurance.check_firewall import CheckFirewall
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
-from panos_upgrade_assurance.utils import  printer, CheckType
-import sys
+from panos_upgrade_assurance.utils import  printer
+from panos.panorama import Panorama
+from argparse import ArgumentParser
+from getpass import getpass
 
 if __name__ == '__main__':
 
+    argparser = ArgumentParser(
+        add_help=True,
+        description="A simple script running upgrade assurance checks on device."
+        )
 
-    # if len(sys.argv) != 4:
-    #     print('Wrong parameters passed.')
-    #     print('This script takes 3 parameters in the following format:')
-    #     print(f'\t{sys.argv[0]} fw_address username password')
-    #     exit(1)
+    argparser.add_argument('-d, --device', type=str, dest='device', metavar='ADDRESS',
+                            help="Device (Panorama or Firewall) address",
+                            required=True )
+    argparser.add_argument('-u, --username', type=str, dest='username', metavar='USER',
+                            help="Username used to connect to a device",
+                            required=True
+                        )
+    argparser.add_argument('-p, --password', type=str, dest='password', metavar='PASS',
+                            help="Password matching the account specified in --username",
+                            default=None
+                        )
+    argparser.add_argument('-s, --serial', type=str, dest='serial', metavar='SERIAL', 
+                            help="Serial number of a device, used when --device is pointing to a Panorama",
+                            default=None
+                        )
+    argparser.add_argument('-v, --vsys', type=str, dest='vsys', metavar='VSYS', 
+                            help="Name of a VSYS to connect to",
+                            default=None
+                        )
 
-    # address = sys.argv[1]
-    # username = sys.argv[2]
-    # password = sys.argv[3]
-    address = "fw1.0001.test.net"
-    username = "panadmin"
-    password = "123QWEasd"
+    args = argparser.parse_args()
+
+
+    address = args.device
+    username = args.username
+    password = args.password
+    if not password:
+        password = getpass(f'{username} password: ')
+
+    serial = args.serial
+    vsys = args.vsys
+
+    if serial:
+        panorama = Panorama(hostname=address, api_password=password, api_username=username)
+        firewall = FirewallProxy(serial=serial)
+        panorama.add(firewall)
+    else:
+        firewall = FirewallProxy(hostname=address, api_password=password, api_username=username, vsys=vsys)
+
+    check_node = CheckFirewall(firewall)
 
     checks = [
-        'all',
+        # 'all',
         'panorama',
         'ha',
         'ntp_sync',
         'candidate_config',
         'expired_licenses',
-        'content_version',
-        # all tests below require config
+        # checks below have optional configuration
+        {'content_version': {
+            'version': '8635-7675'
+        }},
         {'planes_clock_sync': {
-            'diff_threshold': 2000
+            'diff_threshold': 2
         }},
         {'free_disk_space':{
             'image_version': '10.1.6-h6'
         }},
+        # checks below require additional configuration 
         {'session_exist': {
             'source': '134.238.135.137',
             'destination': '10.1.0.4',
@@ -47,13 +84,12 @@ if __name__ == '__main__':
         }}
     ]
 
-    check_node = CheckFirewall(FirewallProxy(address, username, password))
     check_readiness = check_node.run_readiness_checks(
         checks_configuration=checks, 
         # report_style=True
     )
     printer(check_readiness)
-    # node_state = check_node.check_is_ha_active(
-    #     # skip_config_sync=True
-    #     )
-    # print(bool(node_state), node_state)
+    node_state = check_node.check_is_ha_active(
+        # skip_config_sync=True
+        )
+    print(bool(node_state), node_state)

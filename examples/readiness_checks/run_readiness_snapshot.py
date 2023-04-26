@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
+from panos_upgrade_assurance.check_firewall import CheckFirewall
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
+from panos_upgrade_assurance.utils import  printer
 from panos.panorama import Panorama
 from argparse import ArgumentParser
 from getpass import getpass
@@ -9,7 +11,7 @@ if __name__ == '__main__':
 
     argparser = ArgumentParser(
         add_help=True,
-        description="A simple script running all supported low level FirewallProxy class methods."
+        description="A simple script running upgrade assurance snapshot on device."
         )
 
     argparser.add_argument('-d, --device', type=str, dest='device', metavar='ADDRESS',
@@ -51,43 +53,18 @@ if __name__ == '__main__':
     else:
         firewall = FirewallProxy(hostname=address, api_password=password, api_username=username, vsys=vsys)
 
-    p_config = firewall.is_panorama_configured()
-    print(f'\n  panorama configured: {p_config}')
+    check_node = CheckFirewall(firewall)
 
-    if p_config:
-        print(f'\n  panorama connected: {firewall.is_panorama_connected()}')
+    areas = [
+        # 'all',
+        'nics',
+        'routes',
+        'license',
+        'arp_table',
+        'content_version',
+        'session_stats',
+        'ip_sec_tunnels',
+    ]
 
-    print(f'\n  pending changed: {firewall.is_pending_changes()}')
-    print(f'\n  full commit pending: {firewall.is_full_commit_required()}')
-
-    print(f'\n  ha configuration\n{firewall.get_ha_configuration()}')
-
-    print(f'\n  nic statuses\n{firewall.get_nics()}')
-
-    print(f'\n  licenses information\n{firewall.get_licenses()}')
-
-    print(f'\n  routes information\n{firewall.get_routes()}')
-
-    print(f'\n  arp entries information\n{firewall.get_arp_table()}')
-
-    print(f'\n  session information\n{firewall.get_session_stats()}')
-
-    print(f'\n  session information\n{firewall.get_sessions()}')
-
-    print(f'\n  tunnels information\n{firewall.get_tunnels()}')
-
-    print(f'\n  NTP SRVs information\n{firewall.get_ntp_servers()}')
-
-    print(f'\n  content DB version: {firewall.get_content_db_version()}')
-
-    print(f'\n  latest availble content DB version: {firewall.get_latest_available_content_version()}')
-
-    print(f'\n  disk utilization: {firewall.get_disk_utilization()}')
-
-    print(f'\n  available image versions: {firewall.get_available_image_data()}')
-
-    print(f'\n  management plane clock: {firewall.get_mp_clock()}')
-
-    print(f'\n  data plane clock: {firewall.get_dp_clock()}')
-
-    print()
+    snap = check_node.run_snapshots(snapshots_config=areas)
+    printer(snap)
