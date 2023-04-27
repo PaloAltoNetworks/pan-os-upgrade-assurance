@@ -1186,18 +1186,21 @@ This is raw output. Names of stats are the same as returned by API. No translati
 
 <dl class="py method">
 <dt class="sig sig-object py" id="panos_upgrade_assurance.check_firewall.CheckFirewall.check_expired_licenses">
-<span class="sig-name descname"><span class="pre">check_expired_licenses</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#panos_upgrade_assurance.utils.CheckResult" title="panos_upgrade_assurance.utils.CheckResult"><span class="pre">CheckResult</span></a></span></span><a class="reference internal" href="_modules/panos_upgrade_assurance/check_firewall.html#CheckFirewall.check_expired_licenses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panos_upgrade_assurance.check_firewall.CheckFirewall.check_expired_licenses" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">check_expired_licenses</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skip_licenses</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#panos_upgrade_assurance.utils.CheckResult" title="panos_upgrade_assurance.utils.CheckResult"><span class="pre">CheckResult</span></a></span></span><a class="reference internal" href="_modules/panos_upgrade_assurance/check_firewall.html#CheckFirewall.check_expired_licenses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#panos_upgrade_assurance.check_firewall.CheckFirewall.check_expired_licenses" title="Permalink to this definition"></a></dt>
 <dd><p>Check if any license is expired.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><ul class="simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>skip_licenses</strong> (<em>list</em><em>(</em><em>string</em><em>)</em><em>, </em><em>optional</em>) – (defaults to <code class="docutils literal notranslate"><span class="pre">[]</span></code>) List of license names that should be skipped during the check.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
 <li><p><a class="reference internal" href="#panos_upgrade_assurance.utils.CheckStatus.SUCCESS" title="panos_upgrade_assurance.utils.CheckStatus.SUCCESS"><code class="xref py py-attr docutils literal notranslate"><span class="pre">CheckStatus.SUCCESS</span></code></a> if no license is expired,</p></li>
 <li><p><a class="reference internal" href="#panos_upgrade_assurance.utils.CheckStatus.FAIL" title="panos_upgrade_assurance.utils.CheckStatus.FAIL"><code class="xref py py-attr docutils literal notranslate"><span class="pre">CheckStatus.FAIL</span></code></a> otherwise.</p></li>
 </ul>
 </p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#panos_upgrade_assurance.utils.CheckResult" title="panos_upgrade_assurance.utils.CheckResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">CheckResult</span></code></a></p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#panos_upgrade_assurance.utils.CheckResult" title="panos_upgrade_assurance.utils.CheckResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">CheckResult</span></code></a></p>
 </dd>
 </dl>
 </dd></dl>

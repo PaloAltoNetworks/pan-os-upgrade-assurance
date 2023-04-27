@@ -274,8 +274,11 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">ha_status</span></div>
 
-<div class="viewcode-block" id="CheckFirewall.check_expired_licenses"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.check_firewall.CheckFirewall.check_expired_licenses">[docs]</a>    <span class="k">def</span> <span class="nf">check_expired_licenses</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CheckResult</span><span class="p">:</span>
+<div class="viewcode-block" id="CheckFirewall.check_expired_licenses"><a class="viewcode-back" href="../../api.html#panos_upgrade_assurance.check_firewall.CheckFirewall.check_expired_licenses">[docs]</a>    <span class="k">def</span> <span class="nf">check_expired_licenses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skip_licenses</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="p">[])</span> <span class="o">-&gt;</span> <span class="n">CheckResult</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if any license is expired.</span>
+
+<span class="sd">        :param skip_licenses: (defaults to ``[]``) List of license names that should be skipped during the check.</span>
+<span class="sd">        :type skip_licenses: list(string), optional</span>
 
 <span class="sd">        :return:</span>
 
@@ -284,14 +287,17 @@
 
 <span class="sd">        :rtype: :class:`.CheckResult`</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">skip_licenses</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">WrongDataTypeException</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The skip_licenses variable is a </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">skip_licenses</span><span class="p">)</span><span class="si">}</span><span class="s1"> but should be a list&#39;</span><span class="p">)</span>
 
         <span class="n">licenses</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="o">.</span><span class="n">get_licenses</span><span class="p">()</span>
 
         <span class="n">expired_licenses</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">CheckResult</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">lic</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">licenses</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">interpret_yes_no</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="s2">&quot;expired&quot;</span><span class="p">]):</span>
-                <span class="n">expired_licenses</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">lic</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">lic</span> <span class="ow">in</span> <span class="n">skip_licenses</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">interpret_yes_no</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="s2">&quot;expired&quot;</span><span class="p">]):</span>
+                    <span class="n">expired_licenses</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">lic</span><span class="si">}</span><span class="s2">, &quot;</span>
 
         <span class="k">if</span> <span class="n">expired_licenses</span><span class="p">:</span>
             <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Found expired licenses:  </span><span class="si">{</span><span class="n">expired_licenses</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">.&quot;</span>
