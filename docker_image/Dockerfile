@@ -13,4 +13,4 @@ WORKDIR /tmp/examples
 COPY ${tempFiles}/*.py ./
 RUN rm -rf /tmp/prereqs
 
-CMD sleep 600
+ENTRYPOINT [ "python" ]
