@@ -56,15 +56,17 @@ if __name__ == '__main__':
     check_node = CheckFirewall(firewall)
 
     checks = [
-        # 'all',
+        'all',
         'panorama',
         'ha',
         'ntp_sync',
         'candidate_config',
-        'expired_licenses',
         # checks below have optional configuration
         {'content_version': {
             'version': '8635-7675'
+        }},
+        {'expired_licenses': {
+            'skip_licenses': ['Threat Preventon']
         }},
         {'planes_clock_sync': {
             'diff_threshold': 2
@@ -89,7 +91,7 @@ if __name__ == '__main__':
         # report_style=True
     )
     printer(check_readiness)
-    node_state = check_node.check_is_ha_active(
-        # skip_config_sync=True
-        )
-    print(bool(node_state), node_state)
+    # node_state = check_node.check_is_ha_active(
+    #     # skip_config_sync=True
+    #     )
+    # print(bool(node_state), node_state)
