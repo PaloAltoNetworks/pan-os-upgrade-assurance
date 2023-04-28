@@ -190,11 +190,27 @@ Sample configuration
 
 Checks and reports expired licenses.
 
-Does not require configuration.
-
 Method
 ^^^^^^
 :meth:`.CheckFirewall.check_expired_licenses`
+
+Configuration parameters
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+================== ===========
+paramter           description
+================== ===========
+``skip_licenses``  (optional) a list of license names that should be excluded from verification
+================== ===========
+
+Sample configuration
+^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: python
+
+    {
+        'skip_licenses': ['WildFire License', 'Threat Prevention']
+    }
 
 
 

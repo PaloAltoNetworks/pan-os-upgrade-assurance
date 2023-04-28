@@ -197,8 +197,11 @@ class CheckFirewall:
         else:
             return ha_status
 
-    def check_expired_licenses(self) -> CheckResult:
+    def check_expired_licenses(self, skip_licenses: Optional[list] = []) -> CheckResult:
         """Check if any license is expired.
+
+        :param skip_licenses: (defaults to ``[]``) List of license names that should be skipped during the check.
+        :type skip_licenses: list(string), optional
 
         :return:
 
@@ -207,14 +210,17 @@ class CheckFirewall:
 
         :rtype: :class:`.CheckResult`
         """
+        if not isinstance(skip_licenses, list):
+            raise WrongDataTypeException(f'The skip_licenses variable is a {type(skip_licenses)} but should be a list')
 
         licenses = self._node.get_licenses()
 
         expired_licenses = ""
         result = CheckResult()
         for lic, value in licenses.items():
-            if interpret_yes_no(value["expired"]):
-                expired_licenses += f"{lic}, "
+            if not lic in skip_licenses:
+                if interpret_yes_no(value["expired"]):
+                    expired_licenses += f"{lic}, "
 
         if expired_licenses:
             result.reason = f"Found expired licenses:  {expired_licenses[:-2]}."
