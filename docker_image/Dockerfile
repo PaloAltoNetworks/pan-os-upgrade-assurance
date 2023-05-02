@@ -1,4 +1,4 @@
-FROM python:3.10-slim-bullseye
+FROM python:3.10
 
 ARG tempFiles=files
 ARG distPrefix=panos_upgrade_assurance
@@ -12,5 +12,3 @@ RUN python -m pip install ${distPrefix}*.tar.gz
 WORKDIR /tmp/examples
 COPY ${tempFiles}/*.py ./
 RUN rm -rf /tmp/prereqs
-
-ENTRYPOINT [ "python" ]
