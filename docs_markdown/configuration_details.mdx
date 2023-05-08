@@ -10,7 +10,7 @@ keywords:
   - api
 ---
 
-# Configuration details {#configuration_documentation}
+# Configuration details
 
 This documentation represents the current state of the available checks
 and snapshot state areas, along with the instructions on how to
@@ -53,7 +53,7 @@ covered:
 *Note:* Each entity is documented under its own section where the
 section name is the entity name.
 
-## Readiness checks {#readiness_docs}
+## Readiness checks
 
 Readiness checks represent checks that are `boolean` in nature. A result
 of such checks always presents a `True`/`False` value with some
@@ -319,7 +319,7 @@ device upgrade/reboot.
 }
 ```
 
-## State snapshots {#snapshot_docs}
+## State snapshots
 
 State snapshots store information about the state of a particular device
 area. They do not take any configurations. They store every possible
@@ -375,7 +375,7 @@ device.
 
 Method used: `FirewallProxy.get_licenses()`.
 
-### `nics` {#nics_snapshot}
+### `nics` 
 
 Takes a snapshot of a state of all configured (not installed) network
 interfaces.
@@ -396,7 +396,7 @@ count per a session type (TCP, UDP, etc).
 
 Method used: `FirewallProxy.get_session_stats()`.
 
-## Reports {#report_docs}
+## Reports
 
 The reporting part is actually the result of comparison of two
 snapshots. It is advised to run reports using the common method as some
