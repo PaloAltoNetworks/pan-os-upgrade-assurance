@@ -45,7 +45,13 @@ class SnapType:
 class CheckStatus(Enum):
     """Class containing possible statuses for the check results.
 
-    Its main purpose is to extend the simple `True`/`False` logic in a way that would provide more details/explanation in case a check fails. 
+    Its main purpose is to extend the simple `True`/`False` logic in a way that would provide more details/explanation in case a check fails. It provides the following statuses:
+
+    * `SUCCESS`
+    * `FAIL`
+    * `ERROR`
+    * `SKIPPED`
+
     """
     SUCCESS = 0
     FAIL = 1

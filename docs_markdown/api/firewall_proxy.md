@@ -3,51 +3,27 @@ sidebar_label: firewall_proxy
 title: firewall_proxy
 ---
 
-## CommandRunFailedException
-
-```python
-class CommandRunFailedException(Exception)
-```
+## class `CommandRunFailedException`
 
 Used when a command run on a device does not return the ``success`` status.
 
-## MalformedResponseException
-
-```python
-class MalformedResponseException(Exception)
-```
+## class `MalformedResponseException`
 
 A generic exception class used when a response does not meet the expected standards.
 
-## ContentDBVersionsFormatException
-
-```python
-class ContentDBVersionsFormatException(Exception)
-```
+## class `ContentDBVersionsFormatException`
 
 Used when parsing Content DB versions fail due to an unknown version format (assuming ``XXXX-YYYY``).
 
-## PanoramaConfigurationMissingException
-
-```python
-class PanoramaConfigurationMissingException(Exception)
-```
+## class `PanoramaConfigurationMissingException`
 
 Used when checking Panorama connectivity on a device that was not configured with Panorama.
 
-## WrongDiskSizeFormatException
-
-```python
-class WrongDiskSizeFormatException(Exception)
-```
+## class `WrongDiskSizeFormatException`
 
 Used when parsing free disk size information.
 
-## FirewallProxy
-
-```python
-class FirewallProxy(Firewall)
-```
+## class `FirewallProxy`
 
 Class representing a Firewall.
 
@@ -63,7 +39,7 @@ The return data type can be different depending on what kind of information is r
 
 .. _Firewall: https://pan-os-python.readthedocs.io/en/latest/module-firewall.html#module-panos.firewall
 
-### op\_parser
+### `FirewallProxy.op_parser`
 
 ```python
 def op_parser(cmd: str,
@@ -92,7 +68,7 @@ This is just a wrapper around the `Firewall.op`_ method. It additionally does ba
 .. _Firewall.op: https://pan-os-python.readthedocs.io/en/latest/module-firewall.html#panos.firewall.Firewall.op
 .. _XML object: https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element`: The actual command output. A type is defined by the ``return_xml`` parameter.
 
-### is\_pending\_changes
+### `FirewallProxy.is_pending_changes`
 
 ```python
 def is_pending_changes() -> bool
@@ -106,7 +82,7 @@ The actual API command run is ``check pending-changes``.
 
 `bool`: ``True`` when there are pending changes, ``False`` otherwise.
 
-### is\_full\_commit\_required
+### `FirewallProxy.is_full_commit_required`
 
 ```python
 def is_full_commit_required() -> bool
@@ -120,7 +96,7 @@ The actual API command run is ``check full-commit-required``.
 
 `bool`: ``True`` when a full commit is required, ``False`` otherwise.
 
-### is\_panorama\_configured
+### `FirewallProxy.is_panorama_configured`
 
 ```python
 def is_panorama_configured() -> bool
@@ -134,7 +110,7 @@ The actual API command run is ``show panorama-status``.
 
 `bool`: ``True`` when Panorama IPs are configured, ``False`` otherwise.
 
-### is\_panorama\_connected
+### `FirewallProxy.is_panorama_connected`
 
 ```python
 def is_panorama_connected() -> bool
@@ -175,7 +151,7 @@ If none of this formats is met, this exception is thrown.
 
 `bool`: ``True`` when connection is up, ``False`` otherwise.
 
-### get\_ha\_configuration
+### `FirewallProxy.get_ha_configuration`
 
 ```python
 def get_ha_configuration() -> dict
@@ -193,124 +169,124 @@ Sample output:
 ::
 
     {
-        &#x27;enabled&#x27;: &#x27;yes&#x27;,
-        &#x27;group&#x27;: {
-            &#x27;link-monitoring&#x27;: {
-                &#x27;enabled&#x27;: &#x27;yes&#x27;,
-                &#x27;failure-condition&#x27;: &#x27;any&#x27;,
-                &#x27;groups&#x27;: None
+        'enabled': 'yes',
+        'group': {
+            'link-monitoring': {
+                'enabled': 'yes',
+                'failure-condition': 'any',
+                'groups': None
             },
-            &#x27;local-info&#x27;: {
-                &#x27;DLP&#x27;: &#x27;Match&#x27;,
-                &#x27;VMS&#x27;: &#x27;Match&#x27;,
-                &#x27;active-passive&#x27;: {
-                    &#x27;monitor-fail-holddown&#x27;: &#x27;1&#x27;,
-                    &#x27;passive-link-state&#x27;: &#x27;shutdown&#x27;
+            'local-info': {
+                'DLP': 'Match',
+                'VMS': 'Match',
+                'active-passive': {
+                    'monitor-fail-holddown': '1',
+                    'passive-link-state': 'shutdown'
                 },
-                &#x27;addon-master-holdup&#x27;: &#x27;500&#x27;,
-                &#x27;app-compat&#x27;: &#x27;Match&#x27;,
-                &#x27;app-version&#x27;: &#x27;xxxx-yyyy&#x27;,
-                &#x27;av-compat&#x27;: &#x27;Match&#x27;,
-                &#x27;av-version&#x27;: &#x27;0&#x27;,
-                &#x27;build-compat&#x27;: &#x27;Match&#x27;,
-                &#x27;build-rel&#x27;: &#x27;10.2.3&#x27;,
-                &#x27;gpclient-compat&#x27;: &#x27;Match&#x27;,
-                &#x27;gpclient-version&#x27;: &#x27;Not Installed&#x27;,
-                &#x27;ha1-encrypt-enable&#x27;: &#x27;no&#x27;,
-                &#x27;ha1-encrypt-imported&#x27;: &#x27;no&#x27;,
-                &#x27;ha1-gateway&#x27;: &#x27;10.0.0.1&#x27;,
-                &#x27;ha1-ipaddr&#x27;: &#x27;10.0.0.10/24&#x27;,
-                &#x27;ha1-link-mon-intv&#x27;: &#x27;3000&#x27;,
-                &#x27;ha1-macaddr&#x27;: &#x27;xx:xx:xx:xx:xx:xx&#x27;,
-                &#x27;ha1-port&#x27;: &#x27;management&#x27;,
-                &#x27;ha2-gateway&#x27;: &#x27;10.0.3.1&#x27;,
-                &#x27;ha2-ipaddr&#x27;: &#x27;10.0.3.10/24&#x27;,
-                &#x27;ha2-macaddr&#x27;: &#x27;xx:xx:xx:xx:xx:xx&#x27;,
-                &#x27;ha2-port&#x27;: &#x27;ethernet1/3&#x27;,
-                &#x27;heartbeat-interval&#x27;: &#x27;10000&#x27;,
-                &#x27;hello-interval&#x27;: &#x27;10000&#x27;,
-                &#x27;iot-compat&#x27;: &#x27;Match&#x27;,
-                &#x27;iot-version&#x27;: &#x27;yy-zzz&#x27;,
-                &#x27;max-flaps&#x27;: &#x27;3&#x27;,
-                &#x27;mgmt-ip&#x27;: &#x27;10.0.0.10/24&#x27;,
-                &#x27;mgmt-ipv6&#x27;: None,
-                &#x27;mode&#x27;: &#x27;Active-Passive&#x27;,
-                &#x27;monitor-fail-holdup&#x27;: &#x27;0&#x27;,
-                &#x27;nonfunc-flap-cnt&#x27;: &#x27;0&#x27;,
-                &#x27;platform-model&#x27;: &#x27;PA-VM&#x27;,
-                &#x27;preempt-flap-cnt&#x27;: &#x27;0&#x27;,
-                &#x27;preempt-hold&#x27;: &#x27;1&#x27;,
-                &#x27;preemptive&#x27;: &#x27;no&#x27;,
-                &#x27;priority&#x27;: &#x27;100&#x27;,
-                &#x27;promotion-hold&#x27;: &#x27;20000&#x27;,
-                &#x27;state&#x27;: &#x27;passive&#x27;,
-                &#x27;state-duration&#x27;: &#x27;3675&#x27;,
-                &#x27;state-sync&#x27;: &#x27;Complete&#x27;,
-                &#x27;state-sync-type&#x27;: &#x27;ip&#x27;,
-                &#x27;threat-compat&#x27;: &#x27;Match&#x27;,
-                &#x27;threat-version&#x27;: &#x27;xxxx-yyyy&#x27;,
-                &#x27;url-compat&#x27;: &#x27;Mismatch&#x27;,
-                &#x27;url-version&#x27;: &#x27;0000.00.00.000&#x27;,
-                &#x27;version&#x27;: &#x27;1&#x27;,
-                &#x27;vm-license&#x27;: &#x27;VM-300&#x27;,
-                &#x27;vm-license-compat&#x27;: &#x27;Match&#x27;,
-                &#x27;vm-license-type&#x27;: &#x27;vm300&#x27;,
-                &#x27;vpnclient-compat&#x27;: &#x27;Match&#x27;,
-                &#x27;vpnclient-version&#x27;: &#x27;Not Installed&#x27;
+                'addon-master-holdup': '500',
+                'app-compat': 'Match',
+                'app-version': 'xxxx-yyyy',
+                'av-compat': 'Match',
+                'av-version': '0',
+                'build-compat': 'Match',
+                'build-rel': '10.2.3',
+                'gpclient-compat': 'Match',
+                'gpclient-version': 'Not Installed',
+                'ha1-encrypt-enable': 'no',
+                'ha1-encrypt-imported': 'no',
+                'ha1-gateway': '10.0.0.1',
+                'ha1-ipaddr': '10.0.0.10/24',
+                'ha1-link-mon-intv': '3000',
+                'ha1-macaddr': 'xx:xx:xx:xx:xx:xx',
+                'ha1-port': 'management',
+                'ha2-gateway': '10.0.3.1',
+                'ha2-ipaddr': '10.0.3.10/24',
+                'ha2-macaddr': 'xx:xx:xx:xx:xx:xx',
+                'ha2-port': 'ethernet1/3',
+                'heartbeat-interval': '10000',
+                'hello-interval': '10000',
+                'iot-compat': 'Match',
+                'iot-version': 'yy-zzz',
+                'max-flaps': '3',
+                'mgmt-ip': '10.0.0.10/24',
+                'mgmt-ipv6': None,
+                'mode': 'Active-Passive',
+                'monitor-fail-holdup': '0',
+                'nonfunc-flap-cnt': '0',
+                'platform-model': 'PA-VM',
+                'preempt-flap-cnt': '0',
+                'preempt-hold': '1',
+                'preemptive': 'no',
+                'priority': '100',
+                'promotion-hold': '20000',
+                'state': 'passive',
+                'state-duration': '3675',
+                'state-sync': 'Complete',
+                'state-sync-type': 'ip',
+                'threat-compat': 'Match',
+                'threat-version': 'xxxx-yyyy',
+                'url-compat': 'Mismatch',
+                'url-version': '0000.00.00.000',
+                'version': '1',
+                'vm-license': 'VM-300',
+                'vm-license-compat': 'Match',
+                'vm-license-type': 'vm300',
+                'vpnclient-compat': 'Match',
+                'vpnclient-version': 'Not Installed'
             },
-            &#x27;mode&#x27;: &#x27;Active-Passive&#x27;,
-            &#x27;path-monitoring&#x27;: {
-                &#x27;enabled&#x27;: &#x27;yes&#x27;,
-                &#x27;failure-condition&#x27;: &#x27;any&#x27;,
-                &#x27;virtual-router&#x27;: None,
-                &#x27;virtual-wire&#x27;: None,
-                &#x27;vlan&#x27;: None
+            'mode': 'Active-Passive',
+            'path-monitoring': {
+                'enabled': 'yes',
+                'failure-condition': 'any',
+                'virtual-router': None,
+                'virtual-wire': None,
+                'vlan': None
             },
-            &#x27;peer-info&#x27;: {
-                &#x27;DLP&#x27;: &#x27;3.0.2&#x27;,
-                &#x27;VMS&#x27;: &#x27;3.0.3&#x27;,
-                &#x27;app-version&#x27;: &#x27;xxxx-yyyy&#x27;,
-                &#x27;av-version&#x27;: &#x27;0&#x27;,
-                &#x27;build-rel&#x27;: &#x27;10.2.3&#x27;,
-                &#x27;conn-ha1&#x27;: {
-                    &#x27;conn-desc&#x27;: &#x27;heartbeat status&#x27;,
-                    &#x27;conn-primary&#x27;: &#x27;yes&#x27;,
-                    &#x27;conn-status&#x27;: &#x27;up&#x27;
+            'peer-info': {
+                'DLP': '3.0.2',
+                'VMS': '3.0.3',
+                'app-version': 'xxxx-yyyy',
+                'av-version': '0',
+                'build-rel': '10.2.3',
+                'conn-ha1': {
+                    'conn-desc': 'heartbeat status',
+                    'conn-primary': 'yes',
+                    'conn-status': 'up'
                 },
-                &#x27;conn-ha2&#x27;: {
-                    &#x27;conn-desc&#x27;: &#x27;link status&#x27;,
-                    &#x27;conn-ka-enbled&#x27;: &#x27;no&#x27;,
-                    &#x27;conn-primary&#x27;: &#x27;yes&#x27;,
-                    &#x27;conn-status&#x27;: &#x27;up&#x27;
+                'conn-ha2': {
+                    'conn-desc': 'link status',
+                    'conn-ka-enbled': 'no',
+                    'conn-primary': 'yes',
+                    'conn-status': 'up'
                 },
-                &#x27;conn-status&#x27;: &#x27;up&#x27;,
-                &#x27;gpclient-version&#x27;: &#x27;Not Installed&#x27;,
-                &#x27;ha1-ipaddr&#x27;: &#x27;10.0.0.11&#x27;,
-                &#x27;ha1-macaddr&#x27;: &#x27;xx:xx:xx:xx:xx:xx&#x27;,
-                &#x27;ha2-ipaddr&#x27;: &#x27;10.0.3.11&#x27;,
-                &#x27;ha2-macaddr&#x27;: &#x27;xx:xx:xx:xx:xx:xx&#x27;,
-                &#x27;iot-version&#x27;: &#x27;yy-zzz&#x27;,
-                &#x27;mgmt-ip&#x27;: &#x27;10.0.0.11/24&#x27;,
-                &#x27;mgmt-ipv6&#x27;: None,
-                &#x27;mode&#x27;: &#x27;Active-Passive&#x27;,
-                &#x27;platform-model&#x27;: &#x27;PA-VM&#x27;,
-                &#x27;preemptive&#x27;: &#x27;no&#x27;,
-                &#x27;priority&#x27;: &#x27;100&#x27;,
-                &#x27;state&#x27;: &#x27;active&#x27;,
-                &#x27;state-duration&#x27;: &#x27;3680&#x27;,
-                &#x27;threat-version&#x27;: &#x27;xxxx-yyyy&#x27;,
-                &#x27;url-version&#x27;: &#x27;20230126.20142&#x27;,
-                &#x27;version&#x27;: &#x27;1&#x27;,
-                &#x27;vm-license&#x27;: &#x27;VM-300&#x27;,
-                &#x27;vm-license-type&#x27;: &#x27;vm300&#x27;,
-                &#x27;vpnclient-version&#x27;: &#x27;Not Installed&#x27;
+                'conn-status': 'up',
+                'gpclient-version': 'Not Installed',
+                'ha1-ipaddr': '10.0.0.11',
+                'ha1-macaddr': 'xx:xx:xx:xx:xx:xx',
+                'ha2-ipaddr': '10.0.3.11',
+                'ha2-macaddr': 'xx:xx:xx:xx:xx:xx',
+                'iot-version': 'yy-zzz',
+                'mgmt-ip': '10.0.0.11/24',
+                'mgmt-ipv6': None,
+                'mode': 'Active-Passive',
+                'platform-model': 'PA-VM',
+                'preemptive': 'no',
+                'priority': '100',
+                'state': 'active',
+                'state-duration': '3680',
+                'threat-version': 'xxxx-yyyy',
+                'url-version': '20230126.20142',
+                'version': '1',
+                'vm-license': 'VM-300',
+                'vm-license-type': 'vm300',
+                'vpnclient-version': 'Not Installed'
             },
-            &#x27;running-sync&#x27;: &#x27;synchronized&#x27;,
-            &#x27;running-sync-enabled&#x27;: &#x27;yes&#x27;
+            'running-sync': 'synchronized',
+            'running-sync-enabled': 'yes'
         }
     }
 
-### get\_nics
+### `FirewallProxy.get_nics`
 
 ```python
 def get_nics() -> dict
@@ -318,7 +294,7 @@ def get_nics() -> dict
 
 Get status of the configured network interfaces.
 
-The actual API command run is ``show interface &quot;hardware&quot;``.
+The actual API command run is ``show interface "hardware"``.
 
 **Raises**:
 
@@ -332,12 +308,12 @@ Sample output:
 ::
 
     {
-        &#x27;ethernet1/1&#x27;: &#x27;down&#x27;, 
-        &#x27;ethernet1/2&#x27;: &#x27;down&#x27;, 
-        &#x27;ethernet1/3&#x27;: &#x27;up&#x27;
+        'ethernet1/1': 'down', 
+        'ethernet1/2': 'down', 
+        'ethernet1/3': 'up'
     }
 
-### get\_licenses
+### `FirewallProxy.get_licenses`
 
 ```python
 def get_licenses() -> dict
@@ -355,29 +331,29 @@ Sample output:
 ::
 
     {
-        &#x27;AutoFocus Device License&#x27;: {
-            &#x27;authcode&#x27;: &#x27;Snnnnnnn&#x27;,
-            &#x27;base-license-name&#x27;: &#x27;PA-VM&#x27;,
-            &#x27;description&#x27;: &#x27;AutoFocus Device License&#x27;,
-            &#x27;expired&#x27;: &#x27;yes&#x27;,
-            &#x27;expires&#x27;: &#x27;September 25, 2010&#x27;,
-            &#x27;feature&#x27;: &#x27;AutoFocus Device License&#x27;,
-            &#x27;issued&#x27;: &#x27;January 12, 2010&#x27;,
-            &#x27;serial&#x27;: &#x27;xxxxxxxxxxxxxxxx&#x27;
+        'AutoFocus Device License': {
+            'authcode': 'Snnnnnnn',
+            'base-license-name': 'PA-VM',
+            'description': 'AutoFocus Device License',
+            'expired': 'yes',
+            'expires': 'September 25, 2010',
+            'feature': 'AutoFocus Device License',
+            'issued': 'January 12, 2010',
+            'serial': 'xxxxxxxxxxxxxxxx'
         },
-        &#x27;PA-VM&#x27;: {
-            &#x27;authcode&#x27;: None,
-            &#x27;description&#x27;: &#x27;Standard VM-300&#x27;,
-            &#x27;expired&#x27;: &#x27;yes&#x27;,
-            &#x27;expires&#x27;: &#x27;September 25, 2010&#x27;,
-            &#x27;feature&#x27;: &#x27;PA-VM&#x27;,
-            &#x27;issued&#x27;: &#x27;January 12, 2010&#x27;,
-            &#x27;serial&#x27;: &#x27;xxxxxxxxxxxxxxxx&#x27;
+        'PA-VM': {
+            'authcode': None,
+            'description': 'Standard VM-300',
+            'expired': 'yes',
+            'expires': 'September 25, 2010',
+            'feature': 'PA-VM',
+            'issued': 'January 12, 2010',
+            'serial': 'xxxxxxxxxxxxxxxx'
         },
         ...
     }
 
-### get\_routes
+### `FirewallProxy.get_routes`
 
 ```python
 def get_routes() -> dict
@@ -396,36 +372,36 @@ The key in this dictionary is made of three route properties delimited with an u
     * destination CIDR,
     * network interface name if one is available, empty string otherwise.
 
-The key does not provide any meaningful information, it&#x27;s there only to introduce uniqueness for each entry. All properties that make a key are also available in the value of a dictionary element.
+The key does not provide any meaningful information, it's there only to introduce uniqueness for each entry. All properties that make a key are also available in the value of a dictionary element.
 
 Sample output:
 
 ::
 
-    {&#x27;
-        private_0.0.0.0/0_private/i3&#x27;: {
-            &#x27;age&#x27;: None,
-            &#x27;destination&#x27;: &#x27;0.0.0.0/0&#x27;,
-            &#x27;flags&#x27;: &#x27;A S&#x27;,
-            &#x27;interface&#x27;: &#x27;private/i3&#x27;,
-            &#x27;metric&#x27;: &#x27;10&#x27;,
-            &#x27;nexthop&#x27;: &#x27;vr public&#x27;,
-            &#x27;route-table&#x27;: &#x27;unicast&#x27;,
-            &#x27;virtual-router&#x27;: &#x27;private&#x27;
+    {'
+        private_0.0.0.0/0_private/i3': {
+            'age': None,
+            'destination': '0.0.0.0/0',
+            'flags': 'A S',
+            'interface': 'private/i3',
+            'metric': '10',
+            'nexthop': 'vr public',
+            'route-table': 'unicast',
+            'virtual-router': 'private'
         },
-        &#x27;public_10.0.0.0/8_public/i3&#x27;: {
-            &#x27;age&#x27;: None,
-            &#x27;destination&#x27;: &#x27;10.0.0.0/8&#x27;,
-            &#x27;flags&#x27;: &#x27;A S&#x27;,
-            &#x27;interface&#x27;: &#x27;public/i3&#x27;,
-            &#x27;metric&#x27;: &#x27;10&#x27;,
-            &#x27;nexthop&#x27;: &#x27;vr private&#x27;,
-            &#x27;route-table&#x27;: &#x27;unicast&#x27;,
-            &#x27;virtual-router&#x27;: &#x27;public&#x27;
+        'public_10.0.0.0/8_public/i3': {
+            'age': None,
+            'destination': '10.0.0.0/8',
+            'flags': 'A S',
+            'interface': 'public/i3',
+            'metric': '10',
+            'nexthop': 'vr private',
+            'route-table': 'unicast',
+            'virtual-router': 'public'
         }
     }
 
-### get\_arp\_table
+### `FirewallProxy.get_arp_table`
 
 ```python
 def get_arp_table() -> dict
@@ -433,7 +409,7 @@ def get_arp_table() -> dict
 
 Get the currently available ARP table entries.
 
-The actual API command is ``&lt;show&gt;&lt;arp&gt;&lt;entry name = &#x27;all&#x27;/&gt;&lt;/arp&gt;&lt;/show&gt;``.
+The actual API command is ``<show><arp><entry name = 'all'/></arp></show>``.
 
 **Returns**:
 
@@ -443,32 +419,32 @@ The key in this dictionary is made of two properties delimited with an underscor
     * interface name,
     * IP address.
 
-The key does not provide any meaningful information, it&#x27;s there only to introduce uniqueness for each entry. All properties that make a key are also available in the value of a dictionary element.
+The key does not provide any meaningful information, it's there only to introduce uniqueness for each entry. All properties that make a key are also available in the value of a dictionary element.
 
 Sample output:
 
 ::
 
     {
-        &#x27;ethernet1/1_10.0.2.1&#x27;: {
-            &#x27;interface&#x27;: &#x27;ethernet1/1&#x27;,
-            &#x27;ip&#x27;: &#x27;10.0.2.1&#x27;,
-            &#x27;mac&#x27;: &#x27;12:34:56:78:9a:bc&#x27;,
-            &#x27;port&#x27;: &#x27;ethernet1/1&#x27;,
-            &#x27;status&#x27;: &#x27;c&#x27;,
-            &#x27;ttl&#x27;: &#x27;1094&#x27;
+        'ethernet1/1_10.0.2.1': {
+            'interface': 'ethernet1/1',
+            'ip': '10.0.2.1',
+            'mac': '12:34:56:78:9a:bc',
+            'port': 'ethernet1/1',
+            'status': 'c',
+            'ttl': '1094'
         },
-        &#x27;ethernet1/2_10.0.1.1&#x27;: {
-            &#x27;interface&#x27;: &#x27;ethernet1/2&#x27;,
-            &#x27;ip&#x27;: &#x27;10.0.1.1&#x27;,
-            &#x27;mac&#x27;: &#x27;12:34:56:78:9a:bc&#x27;,
-            &#x27;port&#x27;: &#x27;ethernet1/2&#x27;,
-            &#x27;status&#x27;: &#x27;c&#x27;,
-            &#x27;ttl&#x27;: &#x27;1094&#x27;
+        'ethernet1/2_10.0.1.1': {
+            'interface': 'ethernet1/2',
+            'ip': '10.0.1.1',
+            'mac': '12:34:56:78:9a:bc',
+            'port': 'ethernet1/2',
+            'status': 'c',
+            'ttl': '1094'
         }
     }
 
-### get\_sessions
+### `FirewallProxy.get_sessions`
 
 ```python
 def get_sessions() -> list
@@ -487,38 +463,38 @@ Sample output:
 
     [
         {
-            &#x27;application&#x27;: &#x27;undecided&#x27;,
-            &#x27;decrypt-mirror&#x27;: &#x27;False&#x27;,
-            &#x27;dport&#x27;: &#x27;80&#x27;,
-            &#x27;dst&#x27;: &#x27;10.0.2.11&#x27;,
-            &#x27;dstnat&#x27;: &#x27;False&#x27;,
-            &#x27;egress&#x27;: &#x27;ethernet1/1&#x27;,
-            &#x27;flags&#x27;: None,
-            &#x27;from&#x27;: &#x27;public&#x27;,
-            &#x27;idx&#x27;: &#x27;1116&#x27;,
-            &#x27;ingress&#x27;: &#x27;ethernet1/1&#x27;,
-            &#x27;nat&#x27;: &#x27;False&#x27;,
-            &#x27;proto&#x27;: &#x27;6&#x27;,
-            &#x27;proxy&#x27;: &#x27;False&#x27;,
-            &#x27;source&#x27;: &#x27;168.63.129.16&#x27;,
-            &#x27;sport&#x27;: &#x27;56670&#x27;,
-            &#x27;srcnat&#x27;: &#x27;False&#x27;,
-            &#x27;start-time&#x27;: &#x27;Thu Jan 26 02:46:30 2023&#x27;,
-            &#x27;state&#x27;: &#x27;ACTIVE&#x27;,
-            &#x27;to&#x27;: &#x27;public&#x27;,
-            &#x27;total-byte-count&#x27;: &#x27;296&#x27;,
-            &#x27;type&#x27;: &#x27;FLOW&#x27;,
-            &#x27;vsys&#x27;: &#x27;vsys1&#x27;,
-            &#x27;vsys-idx&#x27;: &#x27;1&#x27;,
-            &#x27;xdport&#x27;: &#x27;80&#x27;,
-            &#x27;xdst&#x27;: &#x27;10.0.2.11&#x27;,
-            &#x27;xsource&#x27;: &#x27;168.63.129.16&#x27;,
-            &#x27;xsport&#x27;: &#x27;56670&#x27;
+            'application': 'undecided',
+            'decrypt-mirror': 'False',
+            'dport': '80',
+            'dst': '10.0.2.11',
+            'dstnat': 'False',
+            'egress': 'ethernet1/1',
+            'flags': None,
+            'from': 'public',
+            'idx': '1116',
+            'ingress': 'ethernet1/1',
+            'nat': 'False',
+            'proto': '6',
+            'proxy': 'False',
+            'source': '168.63.129.16',
+            'sport': '56670',
+            'srcnat': 'False',
+            'start-time': 'Thu Jan 26 02:46:30 2023',
+            'state': 'ACTIVE',
+            'to': 'public',
+            'total-byte-count': '296',
+            'type': 'FLOW',
+            'vsys': 'vsys1',
+            'vsys-idx': '1',
+            'xdport': '80',
+            'xdst': '10.0.2.11',
+            'xsource': '168.63.129.16',
+            'xsport': '56670'
         },
         ...
     ]
 
-### get\_session\_stats
+### `FirewallProxy.get_session_stats`
 
 ```python
 def get_session_stats() -> dict
@@ -541,59 +517,59 @@ Sample output:
 ::
 
     {
-        &#x27;age-accel-thresh&#x27;: &#x27;80&#x27;,
-        &#x27;age-accel-tsf&#x27;: &#x27;2&#x27;,
-        &#x27;age-scan-ssf&#x27;: &#x27;8&#x27;,
-        &#x27;age-scan-thresh&#x27;: &#x27;80&#x27;,
-        &#x27;age-scan-tmo&#x27;: &#x27;10&#x27;,
-        &#x27;cps&#x27;: &#x27;0&#x27;,
-        &#x27;dis-def&#x27;: &#x27;60&#x27;,
-        &#x27;dis-sctp&#x27;: &#x27;30&#x27;,
-        &#x27;dis-tcp&#x27;: &#x27;90&#x27;,
-        &#x27;dis-udp&#x27;: &#x27;60&#x27;,
-        &#x27;icmp-unreachable-rate&#x27;: &#x27;200&#x27;,
-        &#x27;kbps&#x27;: &#x27;0&#x27;,
-        &#x27;max-pending-mcast&#x27;: &#x27;0&#x27;,
-        &#x27;num-active&#x27;: &#x27;4&#x27;,
-        &#x27;num-bcast&#x27;: &#x27;0&#x27;,
-        &#x27;num-gtpc&#x27;: &#x27;0&#x27;,
-        &#x27;num-gtpu-active&#x27;: &#x27;0&#x27;,
-        &#x27;num-gtpu-pending&#x27;: &#x27;0&#x27;,
-        &#x27;num-http2-5gc&#x27;: &#x27;0&#x27;,
-        &#x27;num-icmp&#x27;: &#x27;0&#x27;,
-        &#x27;num-imsi&#x27;: &#x27;0&#x27;,
-        &#x27;num-installed&#x27;: &#x27;1193&#x27;,
-        &#x27;num-max&#x27;: &#x27;819200&#x27;,
-        &#x27;num-mcast&#x27;: &#x27;0&#x27;,
-        &#x27;num-pfcpc&#x27;: &#x27;0&#x27;,
-        &#x27;num-predict&#x27;: &#x27;0&#x27;,
-        &#x27;num-sctp-assoc&#x27;: &#x27;0&#x27;,
-        &#x27;num-sctp-sess&#x27;: &#x27;0&#x27;,
-        &#x27;num-tcp&#x27;: &#x27;4&#x27;,
-        &#x27;num-udp&#x27;: &#x27;0&#x27;,
-        &#x27;pps&#x27;: &#x27;0&#x27;,
-        &#x27;tcp-cong-ctrl&#x27;: &#x27;3&#x27;,
-        &#x27;tcp-reject-siw-thresh&#x27;: &#x27;4&#x27;,
-        &#x27;tmo-5gcdelete&#x27;: &#x27;15&#x27;,
-        &#x27;tmo-cp&#x27;: &#x27;30&#x27;,
-        &#x27;tmo-def&#x27;: &#x27;30&#x27;,
-        &#x27;tmo-icmp&#x27;: &#x27;6&#x27;,
-        &#x27;tmo-sctp&#x27;: &#x27;3600&#x27;,
-        &#x27;tmo-sctpcookie&#x27;: &#x27;60&#x27;,
-        &#x27;tmo-sctpinit&#x27;: &#x27;5&#x27;,
-        &#x27;tmo-sctpshutdown&#x27;: &#x27;60&#x27;,
-        &#x27;tmo-tcp&#x27;: &#x27;3600&#x27;,
-        &#x27;tmo-tcp-delayed-ack&#x27;: &#x27;25&#x27;,
-        &#x27;tmo-tcp-unverif-rst&#x27;: &#x27;30&#x27;,
-        &#x27;tmo-tcphalfclosed&#x27;: &#x27;120&#x27;,
-        &#x27;tmo-tcphandshake&#x27;: &#x27;10&#x27;,
-        &#x27;tmo-tcpinit&#x27;: &#x27;5&#x27;,
-        &#x27;tmo-tcptimewait&#x27;: &#x27;15&#x27;,
-        &#x27;tmo-udp&#x27;: &#x27;30&#x27;,
-        &#x27;vardata-rate&#x27;: &#x27;10485760&#x27;
+        'age-accel-thresh': '80',
+        'age-accel-tsf': '2',
+        'age-scan-ssf': '8',
+        'age-scan-thresh': '80',
+        'age-scan-tmo': '10',
+        'cps': '0',
+        'dis-def': '60',
+        'dis-sctp': '30',
+        'dis-tcp': '90',
+        'dis-udp': '60',
+        'icmp-unreachable-rate': '200',
+        'kbps': '0',
+        'max-pending-mcast': '0',
+        'num-active': '4',
+        'num-bcast': '0',
+        'num-gtpc': '0',
+        'num-gtpu-active': '0',
+        'num-gtpu-pending': '0',
+        'num-http2-5gc': '0',
+        'num-icmp': '0',
+        'num-imsi': '0',
+        'num-installed': '1193',
+        'num-max': '819200',
+        'num-mcast': '0',
+        'num-pfcpc': '0',
+        'num-predict': '0',
+        'num-sctp-assoc': '0',
+        'num-sctp-sess': '0',
+        'num-tcp': '4',
+        'num-udp': '0',
+        'pps': '0',
+        'tcp-cong-ctrl': '3',
+        'tcp-reject-siw-thresh': '4',
+        'tmo-5gcdelete': '15',
+        'tmo-cp': '30',
+        'tmo-def': '30',
+        'tmo-icmp': '6',
+        'tmo-sctp': '3600',
+        'tmo-sctpcookie': '60',
+        'tmo-sctpinit': '5',
+        'tmo-sctpshutdown': '60',
+        'tmo-tcp': '3600',
+        'tmo-tcp-delayed-ack': '25',
+        'tmo-tcp-unverif-rst': '30',
+        'tmo-tcphalfclosed': '120',
+        'tmo-tcphandshake': '10',
+        'tmo-tcpinit': '5',
+        'tmo-tcptimewait': '15',
+        'tmo-udp': '30',
+        'vardata-rate': '10485760'
     }
 
-### get\_tunnels
+### `FirewallProxy.get_tunnels`
 
 ```python
 def get_tunnels() -> dict
@@ -611,27 +587,27 @@ Sample output (with only one IPSec tunnel configured):
 ::
 
     {
-        &#x27;GlobalProtect-Gateway&#x27;: {},
-        &#x27;GlobalProtect-site-to-site&#x27;: {},
-        &#x27;IPSec&#x27;: {
-            &#x27;ipsec_tunnel&#x27;: {
-                &#x27;gwid&#x27;: &#x27;1&#x27;,
-                &#x27;id&#x27;: &#x27;1&#x27;,
-                &#x27;inner-if&#x27;: &#x27;tunnel.1&#x27;,
-                &#x27;localip&#x27;: &#x27;0.0.0.0&#x27;,
-                &#x27;mon&#x27;: &#x27;off&#x27;,
-                &#x27;name&#x27;: &#x27;ipsec_tunnel&#x27;,
-                &#x27;outer-if&#x27;: &#x27;ethernet1/2&#x27;,
-                &#x27;owner&#x27;: &#x27;1&#x27;,
-                &#x27;peerip&#x27;: &#x27;192.168.1.1&#x27;,
-                &#x27;state&#x27;: &#x27;init&#x27;
+        'GlobalProtect-Gateway': {},
+        'GlobalProtect-site-to-site': {},
+        'IPSec': {
+            'ipsec_tunnel': {
+                'gwid': '1',
+                'id': '1',
+                'inner-if': 'tunnel.1',
+                'localip': '0.0.0.0',
+                'mon': 'off',
+                'name': 'ipsec_tunnel',
+                'outer-if': 'ethernet1/2',
+                'owner': '1',
+                'peerip': '192.168.1.1',
+                'state': 'init'
             }
         },
-        &#x27;SSL-VPN&#x27;: {},
-        &#x27;hop&#x27;: {}
+        'SSL-VPN': {},
+        'hop': {}
     }
 
-### get\_latest\_available\_content\_version
+### `FirewallProxy.get_latest_available_content_version`
 
 ```python
 def get_latest_available_content_version() -> str
@@ -658,9 +634,9 @@ Sample output:
 
 ::
 
-    &#x27;8670-7824&#x27;
+    '8670-7824'
 
-### get\_content\_db\_version
+### `FirewallProxy.get_content_db_version`
 
 ```python
 def get_content_db_version() -> str
@@ -677,9 +653,9 @@ Sample output:
 
 ::
 
-    &#x27;8670-7824&#x27;
+    '8670-7824'
 
-### get\_ntp\_servers
+### `FirewallProxy.get_ntp_servers`
 
 ```python
 def get_ntp_servers() -> dict
@@ -697,7 +673,7 @@ Sample output - no NTP servers configured:
 ::
 
     {
-        &#x27;synched&#x27;: &#x27;LOCAL&#x27;
+        'synched': 'LOCAL'
     }
 
 Sample output - NTP servers configured:
@@ -705,22 +681,22 @@ Sample output - NTP servers configured:
 ::
 
     {
-        &#x27;ntp-server-1&#x27;: {
-            &#x27;authentication-type&#x27;: &#x27;none&#x27;,
-            &#x27;name&#x27;: &#x27;0.pool.ntp.org&#x27;,
-            &#x27;reachable&#x27;: &#x27;yes&#x27;,
-            &#x27;status&#x27;: &#x27;available&#x27;
+        'ntp-server-1': {
+            'authentication-type': 'none',
+            'name': '0.pool.ntp.org',
+            'reachable': 'yes',
+            'status': 'available'
         },
-        &#x27;ntp-server-2&#x27;: {
-            &#x27;authentication-type&#x27;: &#x27;none&#x27;,
-            &#x27;name&#x27;: &#x27;1.pool.ntp.org&#x27;,
-            &#x27;reachable&#x27;: &#x27;yes&#x27;,
-            &#x27;status&#x27;: &#x27;synched&#x27;
+        'ntp-server-2': {
+            'authentication-type': 'none',
+            'name': '1.pool.ntp.org',
+            'reachable': 'yes',
+            'status': 'synched'
         },
-        &#x27;synched&#x27;: &#x27;1.pool.ntp.org&#x27;
+        'synched': '1.pool.ntp.org'
     }
 
-### get\_disk\_utilization
+### `FirewallProxy.get_disk_utilization`
 
 ```python
 def get_disk_utilization() -> dict
@@ -738,17 +714,17 @@ Sample output:
 ::
 
     {
-        &#x27;/&#x27;: 2867
-        &#x27;/dev&#x27;: 7065
-        &#x27;/opt/pancfg&#x27;: 14336
-        &#x27;/opt/panrepo&#x27;: 3276
-        &#x27;/dev/shm&#x27;: 1433
-        &#x27;/cgroup&#x27;: 7065
-        &#x27;/opt/panlogs&#x27;: 20480
-        &#x27;/opt/pancfg/mgmt/ssl/private&#x27;: 12
+        '/': 2867
+        '/dev': 7065
+        '/opt/pancfg': 14336
+        '/opt/panrepo': 3276
+        '/dev/shm': 1433
+        '/cgroup': 7065
+        '/opt/panlogs': 20480
+        '/opt/pancfg/mgmt/ssl/private': 12
     }
 
-### get\_available\_image\_data
+### `FirewallProxy.get_available_image_data`
 
 ```python
 def get_available_image_data() -> dict
@@ -766,34 +742,34 @@ Sample output:
 ::
 
     {
-        &#x27;11.0.1&#x27;: {
-            &#x27;version&#x27;: &#x27;11.0.1&#x27;
-            &#x27;filename&#x27;: &#x27;PanOS_vm-11.0.1&#x27;
-            &#x27;size&#x27;: &#x27;492&#x27;
-            &#x27;size-kb&#x27;: &#x27;504796&#x27;
-            &#x27;released-on&#x27;: &#x27;2023/03/29 15:05:25&#x27;
-            &#x27;release-notes&#x27;: &#x27;https://www.paloaltonetworks.com/documentation/11-0/pan-os/pan-os-release-notes&#x27;
-            &#x27;downloaded&#x27;: &#x27;no&#x27;
-            &#x27;current&#x27;: &#x27;no&#x27;
-            &#x27;latest&#x27;: &#x27;yes&#x27;
-            &#x27;uploaded&#x27;: &#x27;no&#x27;
+        '11.0.1': {
+            'version': '11.0.1'
+            'filename': 'PanOS_vm-11.0.1'
+            'size': '492'
+            'size-kb': '504796'
+            'released-on': '2023/03/29 15:05:25'
+            'release-notes': 'https://www.paloaltonetworks.com/documentation/11-0/pan-os/pan-os-release-notes'
+            'downloaded': 'no'
+            'current': 'no'
+            'latest': 'yes'
+            'uploaded': 'no'
         }
-        &#x27;11.0.0&#x27;: {
-            &#x27;version&#x27;: &#x27;11.0.0&#x27;
-            &#x27;filename&#x27;: &#x27;PanOS_vm-11.0.0&#x27;
-            &#x27;size&#x27;: &#x27;1037&#x27;
-            &#x27;size-kb&#x27;: &#x27;1062271&#x27;
-            &#x27;released-on&#x27;: &#x27;2022/11/17 08:45:28&#x27;
-            &#x27;release-notes&#x27;: &#x27;https://www.paloaltonetworks.com/documentation/11-0/pan-os/pan-os-release-notes&#x27;
-            &#x27;downloaded&#x27;: &#x27;no&#x27;
-            &#x27;current&#x27;: &#x27;no&#x27;
-            &#x27;latest&#x27;: &#x27;no&#x27;
-            &#x27;uploaded&#x27;: &#x27;no&#x27;
+        '11.0.0': {
+            'version': '11.0.0'
+            'filename': 'PanOS_vm-11.0.0'
+            'size': '1037'
+            'size-kb': '1062271'
+            'released-on': '2022/11/17 08:45:28'
+            'release-notes': 'https://www.paloaltonetworks.com/documentation/11-0/pan-os/pan-os-release-notes'
+            'downloaded': 'no'
+            'current': 'no'
+            'latest': 'no'
+            'uploaded': 'no'
         }
         ...
     }
 
-### get\_mp\_clock
+### `FirewallProxy.get_mp_clock`
 
 ```python
 def get_mp_clock() -> dict
@@ -811,15 +787,15 @@ Sample output:
 ::
 
     {
-        &#x27;time&#x27;: &#x27;00:41:36&#x27;,
-        &#x27;tz&#x27;: &#x27;PDT&#x27;,
-        &#x27;day&#x27;: &#x27;19&#x27;,
-        &#x27;month&#x27;: &#x27;Apr&#x27;,
-        &#x27;year&#x27;: &#x27;2023&#x27;,
-        &#x27;day_of_week&#x27;: &#x27;Wed&#x27;
+        'time': '00:41:36',
+        'tz': 'PDT',
+        'day': '19',
+        'month': 'Apr',
+        'year': '2023',
+        'day_of_week': 'Wed'
     }
 
-### get\_dp\_clock
+### `FirewallProxy.get_dp_clock`
 
 ```python
 def get_dp_clock() -> dict
@@ -837,11 +813,11 @@ Sample output:
 ::
 
     {
-        &#x27;time&#x27;: &#x27;00:41:36&#x27;,
-        &#x27;tz&#x27;: &#x27;PDT&#x27;,
-        &#x27;day&#x27;: &#x27;19&#x27;,
-        &#x27;month&#x27;: &#x27;Apr&#x27;,
-        &#x27;year&#x27;: &#x27;2023&#x27;,
-        &#x27;day_of_week&#x27;: &#x27;Wed&#x27;
+        'time': '00:41:36',
+        'tz': 'PDT',
+        'day': '19',
+        'month': 'Apr',
+        'year': '2023',
+        'day_of_week': 'Wed'
     }
 

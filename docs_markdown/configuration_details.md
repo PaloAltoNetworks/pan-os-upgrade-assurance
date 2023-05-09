@@ -1,0 +1,1 @@
+configuration_details.mdx

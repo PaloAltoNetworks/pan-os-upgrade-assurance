@@ -23,11 +23,11 @@ For most use cases, all checks, snapshots and reports (entities in
 general) are triggered by a common method, which:
 
 -   takes a list of checks, snapshots, reports (entities) that one would
-    like to run,
+  like to run,
 -   does initial list verification,
 -   picks up a proper method to run a specific entity,
 -   aggregates and presents the results in a form of a dictionary, where
-    keys represent requested entities.
+  keys represent requested entities.
 
 The list of entities can be just a list, but it can also follow the
 `ConfigParser` dialect. For more
@@ -36,55 +36,124 @@ is that this dialect supports two types of elements in the list: `str`
 and `dict`, where:
 
 -   `str` represents just an entity name such as a check, snapshot or
-    report to run,
+  report to run,
 -   `dict` (always single key:value pair allowed) represents the element
-    name (key) and additional configuration (value) that will be passed
-    to the method matching the particular element. This configuration is
-    also passed as `dict`.
+  name (key) and additional configuration (value) that will be passed
+  to the method matching the particular element. This configuration is
+  also passed as `dict`.
 
 In the next sections of this documentation, the following aspects are
 covered:
 
 -   a common method with full configuration (where applicable),
 -   each entity available in a particular section with some basic
-    information and a link to a method that is actually run. For
-    details, see documentation for methods.
+  information and a link to a method that is actually run. For
+  details, see documentation for methods.
 
 *Note:* Each entity is documented under its own section where the
 section name is the entity name.
 
 ## Readiness checks
 
-Readiness checks represent checks that are `boolean` in nature. A result
-of such checks always presents a `True`/`False` value with some
-explanation in case of check fails. They can be triggered with a common
-method: `CheckFirewall.run_readiness_checks`. For the format of a returned value, see documentation for
-methods.
+Readiness checks represent checks that are `boolean` in nature. A result of such checks always presents a `True`/`False` value with some explanation in case of check fails. They can be triggered with a common method: [`CheckFirewall.run_readiness_checks()`](./api/check_firewall.md#checkfirewallrun_readiness_checks). When running this method, a list of readiness checks to run (with an optional configuration) is provided using the `checks_configuration` parameter. This list is defined using the [`ConfigParser`](#utils.md#class-configparser) class [`dialect`](./dialect.mdx). For details, refer to the documentation for this class.
 
-The list of checks to run is passed using the `checks_configuraton`
-parameter and it looks as follows:
+Elements of this list can be either of the `str` or `dict` type:
 
-``` python
+- `str` - the element simply specifies the name of a check to run.
+- `dict` - the element contains the check name and a configuration (if a particular check requires one); the dictionary format is as follows:
+
+  ```yaml
+  {
+    'check_name': {
+      'config_name': 'config_value'
+      'config2_name': 'config2_value'
+    }
+  }
+  ```
+
+Following [`ConfigParser's`](#utils.md#class-configparser) [`dialect`](dialect.mdx), when no configuration is provided, **all** checks are triggered. *Notice* that in this situation checks that require configuration to run will return [`CheckStatus.SKIPPED`](utils.md#class-checkstatus).
+
+Example of the `checks_configuration` parameter:
+
+``` yaml
 [
-    'panorama',
-    'ntp_sync',
-    'candidate_config',
-    'expired_licenses',
-    # tests below have optional configuration
-    {'content_version': {'version': '8634-7678'}},
-    {'free_disk_space': {'image_version': '10.1.6-h6'}},
-    {'ha': {'skip_config_sync': True}},
-    {'planes_clock_sync': {'diff_threshold': 30}}
-    # tests below require additional configuration
-    {'session_exist': {
-        'source': '134.238.135.137',
-        'destination': '10.1.0.4',
-        'dest_port': '80'
-    }},
-    {'arp_entry_exist': {'ip': '10.0.1.1'} },
-    {'ip_sec_tunnel_status': {
-        'tunnel_name': 'ipsec_tun'
-    }}
+  'all',
+  '!ha',
+  {'content_version': {'version': '8634-7678'}}
+]
+```
+
+This is interpreted as:
+
+- run all checks
+- except for the HA status verification
+- override the Content DB version check to check for the minimum version of `8634-7678`.
+
+The [`CheckFirewall.run_readiness_checks()`](./api/check_firewall.md#checkfirewallrun_readiness_checks) take one more parameter: `report_style`. Format of the returned data depends on the value of this parameter. If the value is:
+
+- `False` (default): results of executed checks are formatted as `dict`, where keys are check names as passed in `checks_configuration` and values are dictionaries containing two keys:
+
+  - `state`: a `bool` representation of the [`CheckResult`](#utils.md#class-checkresult) class for a particular check.
+  - `reason`:  a `str` representation of the [`CheckResult`](#utils.md#class-checkresult) class for a particular check.
+
+    Assuming that we run the checks with the following configuration:
+
+    ``` yaml
+    [
+        'ha',
+        'panorama',
+    ]
+    ```
+
+    The return `dict` should look as follows:
+
+    ``` yaml
+    {
+        'ha': {
+            'state': False
+            'reason': '[FAIL] Device configuration is not synchronized between the nodes.'
+        }
+        'candidate_config': {
+            'state': True
+            'reason': '[SUCCESS]'
+        }
+    }
+    ```
+
+- `True`: results are also formatted as `dict` with the keys corresponding to checks names, but values are a string representations of the [`CheckResult`](#utils.md#class-checkresult) class.
+
+  For the above example of checks, the result would be similar to:
+
+  ``` yaml
+  {
+      'ha': '[FAIL] Device configuration is not synchronized between the nodes.'
+      'candidate_config': '[SUCCESS].'
+  }
+  ```
+
+The list of checks to run looks as follows:
+
+```python
+[
+  'panorama',
+  'ntp_sync',
+  'candidate_config',
+  'expired_licenses',
+  # tests below have optional configuration
+  {'content_version': {'version': '8634-7678'}},
+  {'free_disk_space': {'image_version': '10.1.6-h6'}},
+  {'ha': {'skip_config_sync': True}},
+  {'planes_clock_sync': {'diff_threshold': 30}}
+  # tests below require additional configuration
+  {'session_exist': {
+    'source': '134.238.135.137',
+    'destination': '10.1.0.4',
+    'dest_port': '80'
+  }},
+  {'arp_entry_exist': {'ip': '10.0.1.1'} },
+  {'ip_sec_tunnel_status': {
+    'tunnel_name': 'ipsec_tun'
+  }}
 ]
 ```
 
@@ -100,9 +169,9 @@ Checks if a specified ARP entry exists.
 
 #### Configuration parameters
 
-  paramter      | description
+  paramter    | description
   ------------- | ------------------------------------------------------------------------
-  `ip`          | IP address we look for
+  `ip`      | IP address we look for
   `interface`   | (optional) network interface name we would like to limit the search to
 
 #### Sample configuration
@@ -110,13 +179,13 @@ Checks if a specified ARP entry exists.
 ``` python
 # with lookup limited to a single interface
 {
-    'ip': '10.0.1.1'
-    'interface': 'ethernet1/1'
+  'ip': '10.0.1.1'
+  'interface': 'ethernet1/1'
 }
 
 # with a lookup in all ARP entries
 {
-    'ip': '10.0.0.6'
+  'ip': '10.0.0.6'
 }
 ```
 
@@ -145,7 +214,7 @@ Compares currently installed Content DB version against either:
 
 #### Configuration parameters
 
-  paramter    | description
+  paramter  | description
   ----------- | ----------------------------------------------------------------------
   `version`   | (optional) a minimum Content DB version that would satisfy the check
 
@@ -153,7 +222,7 @@ Compares currently installed Content DB version against either:
 
 ``` python
 {
-    'version': '6453-5673'
+  'version': '6453-5673'
 }
 ```
 
@@ -168,7 +237,7 @@ download a PanOS image before an upgrade.
 
 #### Configuration parameters
 
-  paramter          | description
+  paramter      | description
   ----------------- | ------------------------------------------------------------------------------------------------------
   `image_version`   | (optional) target PanOS version to calculate required free space, when skipped arbitrary 3GB is used
 
@@ -176,7 +245,7 @@ download a PanOS image before an upgrade.
 
 ``` python
 {
-    'image_version': '10.1.6-h3'
+  'image_version': '10.1.6-h3'
 }
 ```
 
@@ -190,7 +259,7 @@ Checks and reports expired licenses.
 
 #### Configuration parameters
 
-  paramter          | description
+  paramter      | description
   ----------------- | ------------------------------------------------------------------------------
   `skip_licenses`   | (optional) a list of license names that should be excluded from verification
 
@@ -198,7 +267,7 @@ Checks and reports expired licenses.
 
 ``` python
 {
-    'skip_licenses': ['WildFire License', 'Threat Prevention']
+  'skip_licenses': ['WildFire License', 'Threat Prevention']
 }
 ```
 
@@ -213,7 +282,7 @@ configuration is supported at the moment.
 
 #### Configuration parameters
 
-  paramter             | description
+  paramter       | description
   -------------------- | -----------------------------------------------------------------------
   `skip_config_sync`   | Flag to skip (`True`) configuration sync state between HA pair nodes.
 
@@ -221,7 +290,7 @@ configuration is supported at the moment.
 
 ``` python
 {
-    'skip_config_sync': True
+  'skip_config_sync': True
 }
 ```
 
@@ -235,7 +304,7 @@ Verifies if a given IPSec tunnel is in active state.
 
 #### Configuration parameters
 
-  paramter        | description
+  paramter    | description
   --------------- | ----------------------------------------------------------------
   `tunnel_name`   | A name of an IPSec tunnel which status we would like to verify
 
@@ -243,7 +312,7 @@ Verifies if a given IPSec tunnel is in active state.
 
 ``` python
 {
-    'tunnel_name': 'ipsec_tunnel'
+  'tunnel_name': 'ipsec_tunnel'
 }
 ```
 
@@ -279,7 +348,7 @@ Checks difference between clocks for Management and Data planes.
 
 #### Configuration parameters
 
-  paramter           | description
+  paramter       | description
   ------------------ | -----------------------------------------------------------------------------------------
   `diff_threshold`   | (optional) Maximum difference in seconds between clocks for management and data planes.
 
@@ -287,7 +356,7 @@ Checks difference between clocks for Management and Data planes.
 
 ``` python
 {
-    'diff_threshold': 25
+  'diff_threshold': 25
 }
 ```
 
@@ -303,51 +372,97 @@ device upgrade/reboot.
 
 #### Configuration parameters
 
-  paramter        | description
+  paramter    | description
   --------------- | ---------------------------------------------------
-  `source`        | IP address from which the session was established
+  `source`    | IP address from which the session was established
   `destination`   | IP address to which the session was established
-  `dest_port`     | Target destination port
+  `dest_port`   | Target destination port
 
 #### Sample configuration
 
 ``` python
 {
-    'source': '134.238.135.137',
-    'destination': '10.1.0.4',
-    'dest_port': '80'
+  'source': '134.238.135.137',
+  'destination': '10.1.0.4',
+  'dest_port': '80'
 }
 ```
 
 ## State snapshots
 
-State snapshots store information about the state of a particular device
-area. They do not take any configurations. They store every possible
-information about an area. Use reports or custom code to extract a
-subset of information if required.
+State snapshots store information about the state of a particular device area. They do not take any configurations. They store every possible information about an area. Use reports or custom code to extract a subset of information if required.
 
-They can be triggered using a common method:
-`CheckFirewall.run_snapshots`. For the
-format of a returned value, see documentation for methods.
+They can be triggered using a common method: [`CheckFirewall.run_snapshots()`](./api/check_firewall.md#checkfirewallrun_snapshots). When running this method a list of state areas is provided using the `snapshot_config` paramter. This list is specified in [`ConfigParser`](#utils.md#class-configparser) class [`dialect`](./dialect.mdx). For details, refer to the documentation for this class.
 
-The state areas to take snapshots of are passed using the
-`snapshots_config` parameter. As no additional configuration is passed,
-it makes that parameter simply a list of state areas:
+Following that [`dialect`](./dialect.mdx), when no list is passed, **all** state snapshots are made.
 
-``` python
+The output of the [`CheckFirewall.run_snapshots()`](./api/check_firewall.md#checkfirewallrun_snapshots) method is formatted as a dictionary where:
+
+- keys are state areas as passed in `snapshot_config` parameter,
+- values are dictionaries with the actual data.
+
+  Each dictionary can have a different structure. The structure depends on the nature of data we want to capture (see sections below for details).
+
+The sample output containing a snapshot for *route tables*, *licenses*, and *IPSec tunnels* is shown below (one element per each area):
+
+```json
+{
+  "ip_sec_tunnels": {
+    "ipsec_tun": {
+      "peerip": "10.26.129.5",
+      "name": "ipsec_tun",
+      "outer-if": "ethernet1/2",
+      "gwid": "1",
+      "localip": "0.0.0.0",
+      "state": "init",
+      "inner-if": "tunnel.1",
+      "mon": "off",
+      "owner": "1",
+      "id": "1"
+    },
+  }.
+  "routes": {
+    "default_0.0.0.0/0_ethernet1/3": {
+      "virtual-router": "default",
+      "destination": "0.0.0.0/0",
+      "nexthop": "10.26.129.129",
+      "metric": "10",
+      "flags": "A S",
+      "age": null,
+      "interface": "ethernet1/3",
+      "route-table": "unicast"
+    },
+  },
+  "license": {
+    "DNS Security": {
+      "feature": "DNS Security",
+      "description": "Palo Alto Networks DNS Security License",
+      "serial": "007257000334668",
+      "issued": "November 08, 2022",
+      "expires": "November 01, 2023",
+      "expired": "no",
+      "base-license-name": "PA-VM",
+      "authcode": null
+    },
+  }
+}
+```
+
+Following state areas are available:
+
+```yaml
 [
-    'nics',
-    'routes',
-    'license',
-    'arp_table',
-    'content_version',
-    'session_stats',
-    'ip_sec_tunnels',
+  'nics',
+  'routes',
+  'license',
+  'arp_table',
+  'content_version',
+  'session_stats',
+  'ip_sec_tunnels',
 ]
 ```
 
 Please see the sections below for details of each state snapshot:
-
 
 ### `arp_table`
 
@@ -409,30 +524,30 @@ applicable):
 
 ``` python
 [
-    {'ip_sec_tunnels: {
-        'properties': ['state']
-    }},
-    {'arp_table': {
-        'properties': ['!ttl'],
-        'count_change_threshold': 10
-    }},
-    {'nics': {
-        'count_change_threshold': 10
-    }},
-    {'license': {
-        'properties': ['!serial']
-    }},
-    {'routes: {
-        'properties': ['!flags'],
-        'count_change_threshold': 10
-    }},
-    'content_version',
-    {'session_stats': {
-        'thresholds': [
-            {'num-max': 10},
-            {'num-tcp': 10},
-        ]
-    }}
+  {'ip_sec_tunnels: {
+    'properties': ['state']
+  }},
+  {'arp_table': {
+    'properties': ['!ttl'],
+    'count_change_threshold': 10
+  }},
+  {'nics': {
+    'count_change_threshold': 10
+  }},
+  {'license': {
+    'properties': ['!serial']
+  }},
+  {'routes: {
+    'properties': ['!flags'],
+    'count_change_threshold': 10
+  }},
+  'content_version',
+  {'session_stats': {
+    'thresholds': [
+      {'num-max': 10},
+      {'num-tcp': 10},
+    ]
+  }}
 ]
 ```
 
@@ -457,10 +572,10 @@ Runs comparison of ARP tables snapshots.
 
 #### Configuration parameters
 
- parameter                        | description  
- -------------------------------- | ---------------------------------------------------                                 
- `properties`                     | (optional) a set of properties to skip when comparing two ARP table entries, all properties are checked when this parameter is skipped                                      
- `count_change_threshold`         | (optional) maximum difference percentage of changed entries in ARP table in both snapshots, skipped when this property is not specified                                
+ parameter            | description  
+ -------------------------------- | ---------------------------------------------------                 
+ `properties`           | (optional) a set of properties to skip when comparing two ARP table entries, all properties are checked when this parameter is skipped                    
+ `count_change_threshold`     | (optional) maximum difference percentage of changed entries in ARP table in both snapshots, skipped when this property is not specified                
 
 
 #### Sample configuration
@@ -468,18 +583,18 @@ Runs comparison of ARP tables snapshots.
 The following configuration:
 
 -   compares ARP table entries between both snapshots, but when
-    comparing two entries the `ttl` parameter is not taken into
-    consideration,
+  comparing two entries the `ttl` parameter is not taken into
+  consideration,
 -   calculates the count of changed ARP table entries from both
-    snapshots and marks comparison as failed if the difference is bigger
-    than 10%.
+  snapshots and marks comparison as failed if the difference is bigger
+  than 10%.
 
 This report produces the standardized dictionary.
 
 ``` python
 {
-    'properties': ['!ttl'],
-    'count_change_threshold': 10
+  'properties': ['!ttl'],
+  'count_change_threshold': 10
 }
 ```
 
@@ -503,10 +618,10 @@ Compares configuration and the state of IPSec tunnels.
 
 #### Configuration parameters
 
- parameter                        | description  
- -------------------------------- | ---------------------------------------------------                                 
- `properties`                     | (optional) a set of properties to skip when comparing two IPSec tunnels, all properties are checked when this parameter is skipped                                      
- `count_change_threshold`         | (optional) maximum difference percentage of changed entries in IPSec tunnels in both snapshots, skipped when this property is not specified                                
+ parameter            | description  
+ -------------------------------- | ---------------------------------------------------                 
+ `properties`           | (optional) a set of properties to skip when comparing two IPSec tunnels, all properties are checked when this parameter is skipped                    
+ `count_change_threshold`     | (optional) maximum difference percentage of changed entries in IPSec tunnels in both snapshots, skipped when this property is not specified                
 
 
 #### Sample configuration
@@ -518,7 +633,7 @@ This report produces the standardized dictionary.
 
 ``` python
 {
-    'properties': ['state']
+  'properties': ['state']
 }
 ```
 
@@ -534,10 +649,10 @@ details, such as expiration date, etc.
 
 #### Configuration parameters
 
- parameter                        | description  
- -------------------------------- | ---------------------------------------------------                                 
- `properties`                     | (optional) a set of properties to skip when comparing two licenses, all properties are checked when this parameter is skipped                                      
- `count_change_threshold`         | (optional) maximum difference percentage of changed licenses in both snapshots, skipped when this property is not specified                                
+ parameter            | description  
+ -------------------------------- | ---------------------------------------------------                 
+ `properties`           | (optional) a set of properties to skip when comparing two licenses, all properties are checked when this parameter is skipped                    
+ `count_change_threshold`     | (optional) maximum difference percentage of changed licenses in both snapshots, skipped when this property is not specified                
 
 
 #### Sample configuration
@@ -549,7 +664,7 @@ This report produces the standardized dictionary.
 
 ``` python
 {
-    'properties': ['!serial']
+  'properties': ['!serial']
 }
 ```
 
@@ -571,9 +686,9 @@ is `count_change_threshold`.
 
 #### Configuration parameters
 
- parameter                        | description  
- -------------------------------- | ---------------------------------------------------                                 
- `count_change_threshold`         | (optional) maximum difference percentage of changed network interfaces in both snapshots, skipped when this property is not specified                                
+ parameter            | description  
+ -------------------------------- | ---------------------------------------------------                 
+ `count_change_threshold`     | (optional) maximum difference percentage of changed network interfaces in both snapshots, skipped when this property is not specified                
 
 
 #### Sample configuration
@@ -586,7 +701,7 @@ This report produces the standardized dictionary.
 
 ``` python
 {
-    'count_change_threshold': 10
+  'count_change_threshold': 10
 }
 ```
 
@@ -597,7 +712,7 @@ includes:
 
 -   availability of a route in one of the snapshots,
 -   for routes available in two snapshots, difference in route
-    properties, such as age, next hop, etc.
+  properties, such as age, next hop, etc.
 
 #### Method
 
@@ -605,10 +720,10 @@ includes:
 
 #### Configuration parameters
 
- parameter                        | description  
- -------------------------------- | ---------------------------------------------------                                 
- `properties`                     | (optional) a set of properties to skip when comparing two routes, all properties are checked when this parameter is skipped                                      
- `count_change_threshold`         | (optional) maximum difference percentage of changed entries routes in both snapshots, skipped when this property is not specified                                
+ parameter            | description  
+ -------------------------------- | ---------------------------------------------------                 
+ `properties`           | (optional) a set of properties to skip when comparing two routes, all properties are checked when this parameter is skipped                    
+ `count_change_threshold`     | (optional) maximum difference percentage of changed entries routes in both snapshots, skipped when this property is not specified                
 
 
 #### Sample configuration
@@ -616,18 +731,18 @@ includes:
 The following configuration:
 
 -   compares Route Table entries between both snapshots, but when
-    comparing two entries the `flags` parameter is not taken into
-    consideration,
+  comparing two entries the `flags` parameter is not taken into
+  consideration,
 -   calculates the count of changed Route Table entries from both
-    snapshots and marks comparison as failed if the difference is bigger
-    than 10%.
+  snapshots and marks comparison as failed if the difference is bigger
+  than 10%.
 
 This report produces the standardized dictionary.
 
 ``` python
 {
-    'properties': ['!flags'],
-    'count_change_threshold': 10
+  'properties': ['!flags'],
+  'count_change_threshold': 10
 }
 ```
 
@@ -652,9 +767,9 @@ not have a default value - when skipped the report gives no results.
 #### Configuration parameters
 
 
-  parameter       | description
+  parameter     | description
   --------------- | -------------------------------------------------------
-  `thresholds`    | a list of sessions with change threshold value to analyze
+  `thresholds`  | a list of sessions with change threshold value to analyze
 
 
 #### Sample configuration
@@ -667,9 +782,9 @@ This report produces a `dict` as documented in the
 
 ``` python
 {
-    'thresholds': [
-        {'num-max': 10},
-        {'num-tcp': 10},
-    ]
+  'thresholds': [
+    {'num-max': 10},
+    {'num-tcp': 10},
+  ]
 }
 ```

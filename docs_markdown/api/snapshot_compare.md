@@ -3,35 +3,19 @@ sidebar_label: snapshot_compare
 title: snapshot_compare
 ---
 
-## MissingKeyException
-
-```python
-class MissingKeyException(Exception)
-```
+## class `MissingKeyException`
 
 Used when an exception about the missing keys in a dictionary is thrown.
 
-## WrongDataTypeException
-
-```python
-class WrongDataTypeException(Exception)
-```
+## class `WrongDataTypeException`
 
 Used when a variable does not meet the data type requirements.
 
-## SnapshotSchemeMismatchException
-
-```python
-class SnapshotSchemeMismatchException(Exception)
-```
+## class `SnapshotSchemeMismatchException`
 
 Used when a snapshot element contains different properties in both snapshots.
 
-## SnapshotCompare
-
-```python
-class SnapshotCompare()
-```
+## class `SnapshotCompare`
 
 Class comparing snapshots of Firewall Nodes.
 
@@ -41,8 +25,8 @@ Its main purpose is to compare two snapshots made with the :class:`.CheckFirewal
 ::
 
     {
-        &#x27;root_key&#x27;: {
-            &#x27;key&#x27;: value
+        'root_key': {
+            'key': value
         }
     }
 
@@ -56,7 +40,7 @@ Where:
     This mapping is used to verify the requested report and to map the report to an actual method that will eventually run. Keys in this dictionary are report names as defined in the :class:`.SnapType` class. Essentially, these are the same values that one would specify when creating a snapshot with the :meth:`.CheckFirewall.run_snapshots` method. Values are references to the methods that will run.
 :vartype _functions_mapping: dict
 
-### \_\_init\_\_
+### `SnapshotCompare.__init__`
 
 ```python
 def __init__(left_snapshot: Dict[str, Union[str, dict]],
@@ -72,7 +56,7 @@ Initializes an object by storing both snapshots to be compared.
 - `left_snapshot` (`dict`): First snapshot dictionary to be compared, usually the older one, for example a pre-upgrade snapshot.
 - `right_snapshot` (`dict`): Second snapshot dictionary to be compared, usually the newer one, for example a post-upgrade snapshot.
 
-### compare\_snapshots
+### `SnapshotCompare.compare_snapshots`
 
 ```python
 def compare_snapshots(
@@ -104,7 +88,7 @@ Refer to the :ref:`report_docs` documentation for details on the currently avail
 `dict`: Result of comparison in a form of the Python dictionary.
 Keys in this dictionary are again state areas where values depend on the actual comparison method that was run. Again, refer to the :ref:`report_docs` documentation for details.
 
-### key\_checker
+### `SnapshotCompare.key_checker`
 
 ```python
 @staticmethod
@@ -125,7 +109,7 @@ This method looks for a given key in two dictionaries. Its main purpose is to as
 
 - `MissingKeyException`: when key is not available in at least one snapshot.
 
-### calculate\_change\_percentage
+### `SnapshotCompare.calculate_change_percentage`
 
 ```python
 @staticmethod
@@ -170,7 +154,7 @@ Where:
     * the actual difference represented as percentage,
     * the originally requested threshold (for reporting purposes).
 
-### calculate\_diff\_on\_dicts
+### `SnapshotCompare.calculate_diff_on_dicts`
 
 ```python
 @staticmethod
@@ -194,16 +178,16 @@ This is a list of the bottom most level keys. For example, when comparing route 
 ::
 
     {
-        &quot;routes&quot;: {
-            &quot;default_0.0.0.0/0_ethernet1/3&quot;: {
-                &quot;virtual-router&quot;: &quot;default&quot;,
-                &quot;destination&quot;: &quot;0.0.0.0/0&quot;,
-                &quot;nexthop&quot;: &quot;10.26.129.129&quot;,
-                &quot;metric&quot;: &quot;10&quot;,
-                &quot;flags&quot;: &quot;A S&quot;,
-                &quot;age&quot;: null,
-                &quot;interface&quot;: &quot;ethernet1/3&quot;,
-                &quot;route-table&quot;: &quot;unicast&quot;
+        "routes": {
+            "default_0.0.0.0/0_ethernet1/3": {
+                "virtual-router": "default",
+                "destination": "0.0.0.0/0",
+                "nexthop": "10.26.129.129",
+                "metric": "10",
+                "flags": "A S",
+                "age": null,
+                "interface": "ethernet1/3",
+                "route-table": "unicast"
             },
             ...
         }
@@ -225,17 +209,17 @@ The output has the following format:
 ::
 
     {
-        &#x27;missing&#x27;: {
-            &#x27;passed&#x27;: True,
-            &#x27;missing_keys&#x27;: []
+        'missing': {
+            'passed': True,
+            'missing_keys': []
         },
-        &#x27;added&#x27;: {
-            &#x27;passed&#x27;: True,
-            &#x27;added_keys&#x27;: []
+        'added': {
+            'passed': True,
+            'added_keys': []
         },
-        &#x27;changed&#x27;: {
-            &#x27;passed&#x27;: True,
-            &#x27;changed_raw&#x27;: {}
+        'changed': {
+            'passed': True,
+            'changed_raw': {}
         }
     }
 
@@ -251,22 +235,22 @@ Each comparison perspective contains the ``passed`` property that immediately in
 
 Example:
 
-    Let&#x27;s assume we want to compare two dictionaries of the following structure:
+    Let's assume we want to compare two dictionaries of the following structure:
 
     ::
 
         left_dict = {
-            &#x27;root_key1&#x27;= {
-                &#x27;key&#x27;= &#x27;value&#x27;
+            'root_key1'= {
+                'key'= 'value'
             }
-            &#x27;root_key2&#x27;= {
-                &#x27;key&#x27;= &#x27;value&#x27;
+            'root_key2'= {
+                'key'= 'value'
             }
         }
 
         right_dict = {
-            &#x27;root_key2&#x27;= {
-                &#x27;key&#x27;= &#x27;other_value&#x27;
+            'root_key2'= {
+                'key'= 'other_value'
             }
         }
 
@@ -275,43 +259,43 @@ Example:
     ::
 
         {
-            &quot;missing&quot;: {
-                &quot;passed&quot;: false,
-                &quot;missing_keys&quot;: [
-                    &quot;root_key1&quot;
+            "missing": {
+                "passed": false,
+                "missing_keys": [
+                    "root_key1"
                 ]
             },
-            &quot;added&quot;: {
-                &quot;passed&quot;: true,
-                &quot;added_keys&quot;: []
+            "added": {
+                "passed": true,
+                "added_keys": []
             },
-            &quot;changed&quot;: {
-                &quot;passed&quot;: false,
-                &quot;changed_raw&quot;: {
-                &quot;root_key2&quot;: {
-                    &quot;missing&quot;: {
-                        &quot;passed&quot;: true,
-                        &quot;missing_keys&quot;: []
+            "changed": {
+                "passed": false,
+                "changed_raw": {
+                "root_key2": {
+                    "missing": {
+                        "passed": true,
+                        "missing_keys": []
                     },
-                    &quot;added&quot;: {
-                        &quot;passed&quot;: true,
-                        &quot;added_keys&quot;: []
+                    "added": {
+                        "passed": true,
+                        "added_keys": []
                     },
-                    &quot;changed&quot;: {
-                        &quot;passed&quot;: false,
-                        &quot;changed_raw&quot;: {
-                            &quot;key&quot;: {
-                                &quot;left_snap&quot;: &quot;value&quot;,
-                                &quot;right_snap&quot;: &quot;other_value&quot;
+                    "changed": {
+                        "passed": false,
+                        "changed_raw": {
+                            "key": {
+                                "left_snap": "value",
+                                "right_snap": "other_value"
                             }
                         }
                     },
-                    &quot;passed&quot;: false
+                    "passed": false
                 }
             }
         }
 
-### calculate\_passed
+### `SnapshotCompare.calculate_passed`
 
 ```python
 @staticmethod
@@ -330,7 +314,7 @@ To illustrate that, the ``passed`` flag added by this method is marked with an a
 
 - `result` (`dict`): The result of snapshot difference comparison.
 
-### get\_diff\_and\_threshold
+### `SnapshotCompare.get_diff_and_threshold`
 
 ```python
 def get_diff_and_threshold(
@@ -345,7 +329,7 @@ The generic snapshot comparison method.
 The generic method to compare two snapshots of a given type. It is meant to fit most of the comparison cases.
 It is capable of calculating both - a difference between two snapshots and the change count in the elements against a given threshold. The 1\ :sup:`st` calculation is done by the :meth:`.calculate_diff_on_dicts` method, the 2\ :sup:`nd` - internally.
 
-The changed elements count does not compare the count of elements in each snapshot. This value represents the number of actual changes, so elements added, missing and changed. This is compared against the number of elements in the left snapshot as this one is usually the 1st one taken and it&#x27;s treated as a source of truth. 
+The changed elements count does not compare the count of elements in each snapshot. This value represents the number of actual changes, so elements added, missing and changed. This is compared against the number of elements in the left snapshot as this one is usually the 1st one taken and it's treated as a source of truth. 
 
 The changed elements count is presented as a percentage. In scenarios where the right snapshot has more elements then the left one, it can give values greater than 100%.
 
@@ -367,55 +351,55 @@ An example for the route tables, crafted in a way that almost each level fails:
 ::
 
     {
-        &quot;added&quot;: {
-            &quot;added_keys&quot;: [
-                &quot;default_10.26.129.0/25_ethernet1/2&quot;,
-                &quot;default_168.63.129.16/32_ethernet1/3&quot;
+        "added": {
+            "added_keys": [
+                "default_10.26.129.0/25_ethernet1/2",
+                "default_168.63.129.16/32_ethernet1/3"
             ],
-            &quot;passed&quot;: &quot;False&quot;
+            "passed": "False"
         },
-        &quot;missing&quot;: {
-            &quot;missing_keys&quot;: [
-                &quot;default_0.0.0.0/0_ethernet1/3&quot;
+        "missing": {
+            "missing_keys": [
+                "default_0.0.0.0/0_ethernet1/3"
             ],
-            &quot;passed&quot;: &quot;False&quot;
+            "passed": "False"
         },
-        &quot;changed&quot;: {
-            &quot;changed_raw&quot;: {
-                &quot;default_10.26.130.0/25_ethernet1/2&quot;: {
-                    &quot;added&quot;: {
-                        &quot;added_keys&quot;: [],
-                        &quot;passed&quot;: &quot;True&quot;
+        "changed": {
+            "changed_raw": {
+                "default_10.26.130.0/25_ethernet1/2": {
+                    "added": {
+                        "added_keys": [],
+                        "passed": "True"
                     },
-                    &quot;missing&quot;: {
-                        &quot;missing_keys&quot;: [],
-                        &quot;passed&quot;: &quot;True&quot;
+                    "missing": {
+                        "missing_keys": [],
+                        "passed": "True"
                     },
-                    &quot;changed&quot;: {
-                        &quot;changed_raw&quot;: {
-                            &quot;flags&quot;: {
-                                &quot;left_snap&quot;: &quot;A S&quot;,
-                                &quot;right_snap&quot;: &quot;A&quot;
+                    "changed": {
+                        "changed_raw": {
+                            "flags": {
+                                "left_snap": "A S",
+                                "right_snap": "A"
                             }
                         },
-                        &quot;passed&quot;: &quot;False&quot;
+                        "passed": "False"
                     },
-                    &quot;passed&quot;: &quot;False&quot;
+                    "passed": "False"
                 }
             },
-            &quot;passed&quot;: &quot;False&quot;
+            "passed": "False"
         },
-        &quot;count_change_percentage&quot;: {
-            &quot;change_percentage&quot;: 33.33,
-            &quot;change_threshold&quot;: 1,
-            &quot;passed&quot;: &quot;False&quot;
+        "count_change_percentage": {
+            "change_percentage": 33.33,
+            "change_threshold": 1,
+            "passed": "False"
         },
-        &quot;passed&quot;: &quot;False&quot;
+        "passed": "False"
     }
 
 In the example above, you can also see a nested dictionary produced by the :meth:`.calculate_diff_on_dicts` method under ``changed.changed_raw``.
 
-### get\_count\_change\_percentage
+### `SnapshotCompare.get_count_change_percentage`
 
 ```python
 def get_count_change_percentage(
@@ -452,8 +436,8 @@ Below there is a sample list for the ``sessions_stat`` dictionary shown above th
 ::
 
     [
-        { &#x27;num-tcp&#x27;: 1.5 },
-        { &#x27;num-udp&#x27;: 15 },
+        { 'num-tcp': 1.5 },
+        { 'num-udp': 15 },
     ]
 
 **Raises**:
@@ -468,16 +452,16 @@ The result for each value is in the same form as returned by the :meth:`.calcula
 ::
 
     {
-        &#x27;num-tcp&#x27;: {
-            &#x27;change_percentage&#x27;: 99.0,
-            &#x27;change_threshold&#x27;: 1.5,
-            &#x27;passed&#x27;: False
+        'num-tcp': {
+            'change_percentage': 99.0,
+            'change_threshold': 1.5,
+            'passed': False
         },
-        &#x27;num-udp&#x27;: {
-            &#x27;change_percentage&#x27;: 100.0,
-            &#x27;change_threshold&#x27;: 15.0,
-            &#x27;passed&#x27;: False
+        'num-udp': {
+            'change_percentage': 100.0,
+            'change_threshold': 15.0,
+            'passed': False
         },
-        &#x27;passed&#x27;: False
+        'passed': False
     }
 
