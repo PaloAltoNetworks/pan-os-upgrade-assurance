@@ -9,21 +9,23 @@ processors:
 renderer:
   type: docusaurus
   docs_base_path: docs_markdown
-  # markdown:
-  #   header_level_by_type:
-  #       Class: 2
-  #       Function: 3
-  #       Method: 3
-  #       Module: 1
-  #       Data: 3
+  relative_output_path: api
+
+  markdown:
+    header_level_by_type:
+      Class: 2
+      Function: 3
+      Method: 3
+      Module: 1
+      Data: 3
   #   code_headers: false
-  #   descriptive_class_title: false
-  #   descriptive_module_title: false
-  #   add_module_prefix: false
-  #   add_method_class_prefix: false
-  #   add_member_class_prefix: false
-  #   add_full_prefix: false
-  #   data_code_block: true
+    descriptive_class_title: false
+    descriptive_module_title: false
+    # add_module_prefix: false
+    # add_method_class_prefix: false
+    # add_member_class_prefix: false
+    # add_full_prefix: false
+    # data_code_block: true
   #   classdef_code_block: false
   #   classdef_with_decorators: false
   #   signature_in_header: false
