@@ -9,6 +9,5 @@ COPY ${tempFiles}/${distPrefix}* ./
 RUN python -m pip install -r requirements.txt
 RUN python -m pip install ${distPrefix}*.tar.gz
 
-WORKDIR /tmp/examples
-COPY ${tempFiles}/*.py ./
+WORKDIR /
 RUN rm -rf /tmp/prereqs
