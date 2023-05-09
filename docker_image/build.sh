@@ -1,7 +1,10 @@
 #!/bin/bash
 
 DIST_PREFIX=panos_upgrade_assurance
+IMAGE_PREFIX="${IMAGE_PREFIX:-panos_upgrade_assurance}" 
 TEMP_FILES=files
+
+echo $IMAGE_PREFIX
 
 if [ -d ${TEMP_FILES} ]; then rm ${TEMP_FILES}/*
 else mkdir ${TEMP_FILES}
@@ -21,4 +24,4 @@ cp ../dist/${DIST_PREFIX}* ./${TEMP_FILES}
 find ../examples -name \*.py -exec cp '{}' ./${TEMP_FILES} \;
 
 # build the image
-docker build -t ${DIST_PREFIX}:$(poetry version -s) .
+docker build -t ${IMAGE_PREFIX}:$(poetry version -s) .
