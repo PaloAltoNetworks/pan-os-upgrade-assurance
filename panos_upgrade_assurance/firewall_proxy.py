@@ -374,6 +374,16 @@ class FirewallProxy(Firewall):
             result[lic['feature']] = dict(lic)
         return result
 
+    def get_support_license(self) -> dict:
+        """Get support license information from update servers.
+        """
+        result = {}
+        response = self.op_parser(cmd="request support check", return_xml=True)
+
+        result['support_expiry_date'] = response.findtext('./SupportInfoResponse/Support/ExpiryDate')
+        result['support_level'] = response.findtext('./SupportInfoResponse/Support/SupportLevel')
+        return result
+
     def get_routes(self) -> dict:
         """Get route table entries, either retrieved from DHCP or configured manually.
 
