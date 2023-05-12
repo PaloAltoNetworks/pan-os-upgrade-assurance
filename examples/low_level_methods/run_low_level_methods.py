@@ -66,6 +66,8 @@ if __name__ == '__main__':
 
     print(f'\n  licenses information\n{firewall.get_licenses()}')
 
+    print(f'\n  support license information\n{firewall.get_support_license()}')
+
     print(f'\n  routes information\n{firewall.get_routes()}')
 
     print(f'\n  arp entries information\n{firewall.get_arp_table()}')

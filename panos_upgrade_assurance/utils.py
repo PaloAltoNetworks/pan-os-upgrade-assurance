@@ -21,6 +21,7 @@ class CheckType:
     NTP_SYNC = "ntp_sync"
     CANDIDATE_CONFIG = "candidate_config"
     EXPIRED_LICENSES = "expired_licenses"
+    ACTIVE_SUPPORT = "active_support"
     CONTENT_VERSION = "content_version"
     SESSION_EXIST = "session_exist"
     ARP_ENTRY_EXIST = "arp_entry_exist"
