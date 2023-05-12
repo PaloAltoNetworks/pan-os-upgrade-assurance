@@ -20,7 +20,7 @@ class ImageVersionNotAvailableException(Exception):
     pass
 
 class UpdateServerConnectivityException(Exception):
-    """Exception connecting to Update Servers."""
+    """Used when connection to the Update Server cannot be established."""
     pass
 
 class CheckFirewall:
@@ -252,7 +252,22 @@ class CheckFirewall:
         return result
 
     def check_active_support_license(self) -> CheckResult:
-        """Check active support license with update server"""
+        """Check active support license with update server.
+        
+        # Raises
+
+        UpdateServerConnectivityException: Thrown when a connection to an update server cannot be established during support license verification.
+
+        # Returns
+
+        dict: Object of [`CheckResult`](/panos-upgrade-assurance/docs/api/utils#class-checkresult) class taking value of:
+
+        - [`CheckStatus.SUCCESS`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) if the support license is not expired,
+        - [`CheckStatus.FAIL`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) otherwise,
+        - [`CheckStatus.ERROR`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) when no information about the support license expiration date can be found in response from the firewall.
+
+        """
+
         result = CheckResult()
 
         try:
