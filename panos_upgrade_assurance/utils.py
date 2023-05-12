@@ -14,7 +14,7 @@ class WrongDataTypeException(Exception):
 class CheckType:
     """Class mapping check configuration strings for commonly used variables.
 
-    Readiness checks configuration passed to the [`CheckFirewall`](./check_firewall.md#class-checkfirewall) class is in a form of a list of strings. These strings are compared in several places to parse the configuration and set the proper checks. This class is used to avoid hardcoding these strings. It maps the actual configuration string to a variable that can be referenced in the code.
+    Readiness checks configuration passed to the [`CheckFirewall`](/panos-upgrade-assurance/docs/api/check-firewall#class-checkfirewall) class is in a form of a list of strings. These strings are compared in several places to parse the configuration and set the proper checks. This class is used to avoid hardcoding these strings. It maps the actual configuration string to a variable that can be referenced in the code.
     """
     PANORAMA = "panorama"
     HA = "ha"
@@ -31,7 +31,7 @@ class CheckType:
 class SnapType:
     """Class mapping the snapshot configuration strings to the commonly used variables.
 
-    Snapshot configuration passed to the [`CheckFirewall`](./check_firewall.md#class-checkfirewall) class is in a form of a list of strings. These strings are compared in several places to parse the configuration and set proper snapshots.
+    Snapshot configuration passed to the [`CheckFirewall`](/panos-upgrade-assurance/docs/api/check-firewall#class-checkfirewall) class is in a form of a list of strings. These strings are compared in several places to parse the configuration and set proper snapshots.
     This class is used to avoid hardcoding these strings. It maps the actual configuration string to a variable that can be referenced in the code.
     """
     NICS = "nics"
@@ -67,7 +67,7 @@ class CheckResult:
     * `status` which represents information about the check outcome,
     * `reason` a reason behind the particular outcome, this comes in handy when a check fails.
 
-    Most of the [`CheckFirewall`](./check_firewall.md#class-checkfirewall) methods use this class to store the return values, but mostly internally. The [`CheckFirewall.run_readiness_checks()`](./check_firewall.md#checkfirewallrun_readiness_checks) method translates this class into the python primitives: `str` and `bool`.
+    Most of the [`CheckFirewall`](/panos-upgrade-assurance/docs/api/check-firewall#class-checkfirewall) methods use this class to store the return values, but mostly internally. The [`CheckFirewall.run_readiness_checks()`](/panos-upgrade-assurance/docs/api/check-firewall#checkfirewallrun_readiness_checks) method translates this class into the python primitives: `str` and `bool`.
 
     # Attributes
 
@@ -105,7 +105,7 @@ class ConfigParser:
     """Class responsible for parsing the provided configuration.
     
     This class is universal, meaning it parses configuration provided as the list of strings or dictionaries and verifies it against the list of valid configuration items. 
-    There are no hardcoded items against which the configuration is checked. This class is used in many places in this package and it uses a specific [`dialect`](../dialect.mdx).
+    There are no hardcoded items against which the configuration is checked. This class is used in many places in this package and it uses a specific [`dialect`](/panos-upgrade-assurance/docs/dialect).
 
     # Attributes
 
@@ -119,7 +119,7 @@ class ConfigParser:
         Introduces some initial verification logic:
 
         * `valid_elements` is converted to `set` - this way we get rid of all duplicates,
-        * if `requested_config` is `None` we immediately treat it as if `all`  was passed implicitly (see [`dialect`](../dialect.mdx)) - it's expanded to `valid_elements`
+        * if `requested_config` is `None` we immediately treat it as if `all`  was passed implicitly (see [`dialect`](/panos-upgrade-assurance/docs/dialect)) - it's expanded to `valid_elements`
         * `_requested_config_names` is introduced as `requested_config` stripped of any element configurations. Additionally, we do verification if elements of this variable match `valid_elements`. An exception is thrown if not.
 
         # Parameters
@@ -147,7 +147,7 @@ class ConfigParser:
     def _is_element_included(self, element: str) -> bool:
         """Method verifying if a config element is a correct (supported) value.
 
-        This method can also handle `not-elements` (see [`dialect`](../dialect.mdx)).
+        This method can also handle `not-elements` (see [`dialect`](/panos-upgrade-assurance/docs/dialect)).
 
         # Parameters
 
@@ -197,8 +197,7 @@ class ConfigParser:
     def _expand_all(self) -> None:
         """Expand key word `'all'` to  `self.valid_elements`.
         
-        During expansion, elements from `self.valid_elements` which are already available in `self.requested_config` are skipped.
-        This way we do not introduce duplicates for elements that were provided explicitly. 
+        During expansion, elements from `self.valid_elements` which are already available in `self.requested_config` are skipped. This way we do not introduce duplicates for elements that were provided explicitly. 
 
         This method directly operates on `self.requested_config`.
         """
@@ -213,7 +212,7 @@ class ConfigParser:
 
         The parsed configuration retains element types. This means that an element of a dictionary type will remain a dictionary in the parsed config.
 
-        This method handles most of the [`dialect`](../dialect.mdx)'s logic.
+        This method handles most of the [`dialect`](/panos-upgrade-assurance/docs/dialect)'s logic.
 
         # Returns
         list: The parsed configuration.

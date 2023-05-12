@@ -28,7 +28,7 @@ class WrongDiskSizeFormatException(Exception):
 class FirewallProxy(Firewall):
     """Class representing a Firewall.
 
-    Proxy in this class means that it is between the *high level* [`CheckFirewall`](./check_firewall.md#class-checkfirewall) class and a device itself.
+    Proxy in this class means that it is between the *high level* [`CheckFirewall`](/panos-upgrade-assurance/docs/api/check-firewall#class-checkfirewall) class and a device itself.
     Inherits the [Firewall][fw] class but adds methods to interpret XML API commands. The class constructor is also inherited from the [Firewall][fw] class.
 
     All interaction with a device are read-only. Therefore, a less privileged user can be used.
@@ -392,9 +392,7 @@ class FirewallProxy(Firewall):
 
         The actual API command is `show routing route`.
 
-        # Returns
-        
-        dict: Routes information. The key in this dictionary is made of three route properties delimited with an underscore (`_`) in the following order:
+        In the returned `dict` the key is made of three route properties delimited with an underscore (`_`) in the following order:
         
         * virtual router name,
         * destination CIDR,
@@ -427,6 +425,10 @@ class FirewallProxy(Firewall):
         }
         ```
 
+        # Returns
+        
+        dict: Routes information.
+
         """
 
         response = self.op_parser(cmd="show routing route")
@@ -446,16 +448,14 @@ class FirewallProxy(Firewall):
 
         The actual API command is `<show><arp><entry name = 'all'/></arp></show>`.
 
-        # Returns
-        
-        dict: ARP table entries. The key in this dictionary is made of two properties delimited with an underscore (`_`) in the following order:
+        In the returned `dict` the key is made of two properties delimited with an underscore (`_`) in the following order:
             
         * interface name,
         * IP address.
             
         The key does not provide any meaningful information, it's there only to introduce uniqueness for each entry. All properties that make a key are also available in the value of a dictionary element. Sample output:
 
-        ``yaml
+        ```yaml
         {
             'ethernet1/1_10.0.2.1': {
                 'interface': 'ethernet1/1',
@@ -475,6 +475,10 @@ class FirewallProxy(Firewall):
             }
         }
         ```
+
+        # Returns
+        
+        dict: ARP table entries. 
 
         """
         result = {}
@@ -528,6 +532,7 @@ class FirewallProxy(Firewall):
             },
             ...
         ]
+        ```
 
         """
         result = []

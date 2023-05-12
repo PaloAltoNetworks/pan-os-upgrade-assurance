@@ -18,8 +18,8 @@ class SnapshotSchemeMismatchException(Exception):
 class SnapshotCompare:
     """Class comparing snapshots of Firewall Nodes.
 
-    This object can be used to compare two Firewall snapshots made with the [CheckFirewall.run_snapshots()](./check_firewall.md#check_firewallrun_snapshots) method and present results of this comparison.
-    Its main purpose is to compare two snapshots made with the [`CheckFirewall`](./check_firewall.md#class-checkfirewall) class. However, the code is generic enough to compare any two dictionaries as long as they follow the schema below:
+    This object can be used to compare two Firewall snapshots made with the [CheckFirewall.run_snapshots()](/panos-upgrade-assurance/docs/api/check-firewall#checkfirewallrun_snapshots) method and present results of this comparison.
+    Its main purpose is to compare two snapshots made with the [`CheckFirewall`](/panos-upgrade-assurance/docs/api/check-firewall#class-checkfirewall) class. However, the code is generic enough to compare any two dictionaries as long as they follow the schema below:
 
     ```yaml
     {
@@ -38,7 +38,7 @@ class SnapshotCompare:
 
     _functions_mapping (dict): Internal variable containing the map of all valid report types mapped to the specific methods.
         
-    This mapping is used to verify the requested report and to map the report to an actual method that will eventually run. Keys in this dictionary are report names as defined in the [`SnapType`](./utils.md#class-snaptype) class. Essentially, these are the same values that one would specify when creating a snapshot with the [CheckFirewall.run_snapshots()](./check_firewall.md#check_firewallrun_snapshots) method. Values are references to the methods that will run.
+    This mapping is used to verify the requested report and to map the report to an actual method that will eventually run. Keys in this dictionary are report names as defined in the [`SnapType`](/panos-upgrade-assurance/docs/api/utils#class-snaptype) class. Essentially, these are the same values that one would specify when creating a snapshot with the [CheckFirewall.run_snapshots()](/panos-upgrade-assurance/docs/api/check-firewall#checkfirewallrun_snapshots) method. Values are references to the methods that will run.
 
     """
     def __init__(
@@ -78,16 +78,16 @@ class SnapshotCompare:
 
         # Parameters
 
-        reports (list, optional): A list of reports - snapshot state areas with optional configuration. This parameter follows the  [`dialect`](../dialect.mdx) of [`ConfigParser`](./api/utils.md#class-configparser) class.
+        reports (list, optional): A list of reports - snapshot state areas with optional configuration. This parameter follows the  [`dialect`](/panos-upgrade-assurance/docs/dialect) of [`ConfigParser`](/panos-upgrade-assurance/docs/api/utils#class-configparser) class.
 
-            The reports list is essentially the list of keys present in the snapshots. These keys, however, are the state areas specified when the snapshot is made with the [CheckFirewall.run_snapshots()](./check_firewall.md#check_firewallrun_snapshots) method. This means that the reports list is basically the list of state areas. The only difference is that for reports, it is possible to specify an additional configuration. This means that the list can be specified in two ways, as `str` or `dict` (in the same manner as for [`CheckFirewall.run_readiness_checks()`](./check_firewall.md#check_firewallrun_readiness_checks)).
+            The reports list is essentially the list of keys present in the snapshots. These keys, however, are the state areas specified when the snapshot is made with the [`CheckFirewall.run_snapshots()`](/panos-upgrade-assurance/docs/api/check-firewall#checkfirewallrun_snapshots) method. This means that the reports list is basically the list of state areas. The only difference is that for reports, it is possible to specify an additional configuration. This means that the list can be specified in two ways, as `str` or `dict` (in the same manner as for [`CheckFirewall.run_readiness_checks()`](/panos-upgrade-assurance/docs/api/check-firewall#checkfirewallrun_readiness_checks)).
 
             For the elements specified as
 
             * `str` - the element value is the name of the report (state area),
             * `dict` - the element contains the report name (state area) and the key value and report configuration as the element value.
 
-            Refer to the [documentation on reporting](../configuration_details.mdx#reports) for details on the currently available snapshot areas and optional parameters that can be configured for them.
+            Refer to the [documentation on reporting](/panos-upgrade-assurance/docs/configuration-details#reports) for details on the currently available snapshot areas and optional parameters that can be configured for them.
 
         # Raises
 
@@ -236,7 +236,7 @@ class SnapshotCompare:
         }
         ```
 
-        The bottom most level keys are: `virtual-router`, `destination`, `nexthop`, `metric`, `flags`, `age`, `interface`, `route-table`. This list follows [`ConfigParser`](./api/utils.md#class-configparser) [`dialect`](../dialect.mdx).
+        The bottom most level keys are: `virtual-router`, `destination`, `nexthop`, `metric`, `flags`, `age`, `interface`, `route-table`. This list follows [`ConfigParser`](/panos-upgrade-assurance/docs/api/utils#class-configparser) [`dialect`](/panos-upgrade-assurance/docs/dialect).
 
         The difference between dictionaries is calculated from three perspectives:
 
@@ -613,7 +613,11 @@ class SnapshotCompare:
         Where:
         
         - `element_type` is a key which value we are going to compare,
-        - `threshold_value` is a percentage value provided as either `int` or `float`. If the list is empty, the method will return `None`. [`ConfigParser`](./api/utils.md#class-configparser) [`dialect`](../dialect.mdx) is **NOT followed** for this variable.
+        - `threshold_value` is a percentage value provided as either `int` or `float`. If the list is empty, the method will return `None`.
+        
+        :::warning
+        This list **does not support** [`ConfigParser`](/panos-upgrade-assurance/docs/api/utils#class-configparser) [`dialect`](/panos-upgrade-assurance/docs/dialect).
+        :::
 
         Below there is a sample list for the `sessions_stat` dictionary shown above that would calculate differences for the TCP and UDP sessions:
 

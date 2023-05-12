@@ -9,7 +9,7 @@ processors:
   - type: crossref
 renderer:
   type: docusaurus
-  docs_base_path: docs_markdown
+  docs_base_path: docs/docs
   relative_output_path: api
 
   markdown:
@@ -22,22 +22,7 @@ renderer:
     code_headers: true
     descriptive_class_title: 'class '
     descriptive_module_title: false
-    # add_module_prefix: false
     add_method_class_prefix: true
-    # add_member_class_prefix: false
-    # add_full_prefix: false
-    # data_code_block: false
     classdef_code_block: false
     signature_with_decorators: true
-    # source_linker: true
-    # signature_in_header: true
-  #   signature_with_vertical_bar: false
-  #   signature_with_def: false
-  #   signature_class_prefix: false
-    # docstrings_as_blockquote: true
-  #   render_module_header: true
-  #   classdef_render_init_signature_if_needed: false
     escape_html_in_docstring: false
-# hooks:
-#   post-render:
-#     - ./docs/post_render.py

@@ -23,14 +23,14 @@ class CheckFirewall:
 
     This class is designed to:
 
-    * run one or more [`FirewallProxy`](./firewall_proxy.md#class-firewallproxy) class methods,
+    * run one or more [`FirewallProxy`](/panos-upgrade-assurance/docs/api/firewall-proxy#class-firewallproxy) class methods,
     * gather and interpret results,
     * present results.
     
     It is split into two parts responsible for:
 
     1. running readiness checks, all methods related to this functionality are prefixed with `check_`,
-    2. running state snapshots, all methods related to this functionality are prefixed with `get_`, although usually the [`FirewallProxy`](./firewall_proxy.md#class-firewallproxy) methods are run directly.
+    2. running state snapshots, all methods related to this functionality are prefixed with `get_`, although usually the [`FirewallProxy`](/panos-upgrade-assurance/docs/api/firewall-proxy#class-firewallproxy) methods are run directly.
 
     Although it is possible to run the methods directly, the preferred way is to run them through one of the following `run` methods:
 
@@ -41,9 +41,9 @@ class CheckFirewall:
 
     _snapshot_method_mapping (dict): Internal variable containing a map of all valid snapshot types mapped to the specific methods.
     
-    This mapping is used to verify the requested snapshot types and to map the snapshot with an actual method that will eventually run. Keys in this dictionary are snapshot names as defined in the [`SnapType`](utils.md#class-snaptype) class, values are references to methods that will be run.
+    This mapping is used to verify the requested snapshot types and to map the snapshot with an actual method that will eventually run. Keys in this dictionary are snapshot names as defined in the [`SnapType`](/panos-upgrade-assurance/docs/api/utils#class-snaptype) class, values are references to methods that will be run.
 
-    _check_method_mapping (dict): Internal variable containing the map of all valid check types mapped to the specific methods. This mapping is used to verify requested check types and to map a check with an actual method that will be eventually run. Keys in this dictionary are check names as defined in the [`CheckType`](utils.md#class-checktype) class, values are references to methods that will be run.
+    _check_method_mapping (dict): Internal variable containing the map of all valid check types mapped to the specific methods. This mapping is used to verify requested check types and to map a check with an actual method that will be eventually run. Keys in this dictionary are check names as defined in the [`CheckType`](/panos-upgrade-assurance/docs/api/utils#class-checktype) class, values are references to methods that will be run.
 
     """
 
@@ -52,7 +52,7 @@ class CheckFirewall:
 
         # Parameters
 
-        node (FirewallProxy): Object representing a device against which checks and/or snapshots are run. See [`FirewallProxy`](./firewall_proxy.md#class-firewallproxy) class' documentation.
+        node (FirewallProxy): Object representing a device against which checks and/or snapshots are run. See [`FirewallProxy`](/panos-upgrade-assurance/docs/api/firewall-proxy#class-firewallproxy) class' documentation.
 
         """
         self._node = node
@@ -90,10 +90,10 @@ class CheckFirewall:
 
         # Returns
 
-        CheckResult: Object of [`CheckResult`](utils.md#class-checkresult) class representing the result of the content version check:
+        CheckResult: Object of [`CheckResult`](/panos-upgrade-assurance/docs/api/utils#class-checkresult) class representing the result of the content version check:
 
-        * [`CheckStatus.SUCCESS`](utils.md#class-checkstatus) if there is no pending configuration,
-        * [`CheckStatus.FAIL`](utils.md#class-checkstatus) otherwise.
+        * [`CheckStatus.SUCCESS`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) if there is no pending configuration,
+        * [`CheckStatus.FAIL`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) otherwise.
 
         """
         if self._node.is_full_commit_required():
@@ -109,11 +109,11 @@ class CheckFirewall:
 
         # Returns
 
-        CheckResult: Object of [`CheckResult`](utils.md#class-checkresult) class representing a state of Panorama connection:
+        CheckResult: Object of [`CheckResult`](/panos-upgrade-assurance/docs/api/utils#class-checkresult) class representing a state of Panorama connection:
 
-        * [`CheckStatus.SUCCESS`](utils.md#class-checkstatus) when device is connected to Panorama,
-        * [`CheckStatus.FAIL`](utils.md#class-checkstatus) otherwise,
-        * [`CheckStatus.ERROR`](utils.md#class-checkstatus) is returned when no Panorama configuration is found.
+        * [`CheckStatus.SUCCESS`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) when device is connected to Panorama,
+        * [`CheckStatus.FAIL`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) otherwise,
+        * [`CheckStatus.ERROR`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) is returned when no Panorama configuration is found.
 
         """
 
@@ -136,11 +136,11 @@ class CheckFirewall:
 
         # Returns
 
-        CheckResult: Object of [`CheckResult`](utils.md#class-checkresult) class representing results of HA pair status inspection:
+        CheckResult: Object of [`CheckResult`](/panos-upgrade-assurance/docs/api/utils#class-checkresult) class representing results of HA pair status inspection:
 
-        * [`CheckStatus.SUCCESS`](utils.md#class-checkstatus) when pair is configured correctly,
-        * [`CheckStatus.FAIL`](utils.md#class-checkstatus) otherwise,
-        * [`CheckStatus.ERROR`](utils.md#class-checkstatus) is returned when device is not a member of an HA pair or the pair is not in Active-Passive configuration.
+        * [`CheckStatus.SUCCESS`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) when pair is configured correctly,
+        * [`CheckStatus.FAIL`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) otherwise,
+        * [`CheckStatus.ERROR`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) is returned when device is not a member of an HA pair or the pair is not in Active-Passive configuration.
 
         """
         states = ("active", "passive")
@@ -180,7 +180,15 @@ class CheckFirewall:
     def check_is_ha_active(self, skip_config_sync: Optional[bool] = False) -> CheckResult:
         """Checks whether this is an active node of an HA pair.
 
-        Before checking the state of the current device, the [`check_ha_status()`](#checkfirewallcheck_ha_status) method is run. If this method does not end with [`CheckStatus.SUCCESS`](utils.md#class-checkstatus), its return value is passed as the result of [`check_is_ha_active()`](#checkfirewallcheck_is_ha_active).
+        Before checking the state of the current device, the [`check_ha_status()`](#checkfirewallcheck_ha_status) method is run. If this method does not end with [`CheckStatus.SUCCESS`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus), its return value is passed as the result of [`check_is_ha_active()`](#checkfirewallcheck_is_ha_active).
+
+        Detailed results matrix looks like this:
+
+        * [`CheckStatus.SUCCESS`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) the actual state of the device in an HA pair is checked, if the state is:
+            * active - [`CheckStatus.SUCCESS`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) is returned,
+            * passive - [`CheckStatus.FAIL`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) is returned,
+        * anything else than [`CheckStatus.SUCCESS`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus), the [`check_ha_status()`](#checkfirewallcheck_ha_status) return value is passed as a return value of this method.
+
 
         # Parameters
 
@@ -188,12 +196,7 @@ class CheckFirewall:
         
         # Returns
 
-        CheckResult: Object of [`CheckResult`](utils.md#class-checkresult), the return value depends on the results of running [`check_ha_status()`](#checkfirewallcheck_ha_status) method. If the method returns:
-
-        * [`CheckStatus.SUCCESS`](utils.md#class-checkstatus) the actual state of the device in an HA pair is checked, if the state is:
-            * active - [`CheckStatus.SUCCESS`](utils.md#class-checkstatus) is returned,
-            * passive - [`CheckStatus.FAIL`](utils.md#class-checkstatus) is returned,
-        * anything else than [`CheckStatus.SUCCESS`](utils.md#class-checkstatus), the [`check_ha_status()`](#checkfirewallcheck_ha_status) return value is passed as a return value of this method.
+        CheckResult: Boolean information reflecting the state of the device.
 
         """
         ha_status = self.check_ha_status(skip_config_sync=skip_config_sync)
@@ -217,10 +220,10 @@ class CheckFirewall:
 
         # Returns
 
-        CheckResult: Object of [`CheckResult`](utils.md#class-checkresult) class taking value of:
+        CheckResult: Object of [`CheckResult`](/panos-upgrade-assurance/docs/api/utils#class-checkresult) class taking value of:
 
-        * [`CheckStatus.SUCCESS`](utils.md#class-checkstatus) if no license is expired,
-        * [`CheckStatus.FAIL`](utils.md#class-checkstatus) otherwise.
+        * [`CheckStatus.SUCCESS`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) if no license is expired,
+        * [`CheckStatus.FAIL`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) otherwise.
 
         """
         if not isinstance(skip_licenses, list):
@@ -257,12 +260,12 @@ class CheckFirewall:
 
         # Returns
 
-        CheckResult: Object of [`CheckResult`](utils.md#class-checkresult) class taking value of:
+        CheckResult: Object of [`CheckResult`](/panos-upgrade-assurance/docs/api/utils#class-checkresult) class taking value of:
 
-        * [`CheckStatus.SUCCESS`](utils.md#class-checkstatus) if a session is found in the sessions table,
-        * [`CheckStatus.FAIL`](utils.md#class-checkstatus) otherwise,
-        * [`CheckStatus.SKIPPED`](utils.md#class-checkstatus) when no config is passed,
-        * [`CheckStatus.ERROR`](utils.md#class-checkstatus) if the session table is empty.
+        * [`CheckStatus.SUCCESS`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) if a session is found in the sessions table,
+        * [`CheckStatus.FAIL`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) otherwise,
+        * [`CheckStatus.SKIPPED`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) when no config is passed,
+        * [`CheckStatus.ERROR`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) if the session table is empty.
 
         """
 
@@ -307,14 +310,10 @@ class CheckFirewall:
         ContentDBVersionInFutureException: If the data returned from a device is newer than the latest version available.
 
         # Returns
-        CheckResult: Object of [`CheckResult`](utils.md#class-checkresult) class, the return value meaning depends on the `version` parameter. If it was:
+        CheckResult: Object of [`CheckResult`](/panos-upgrade-assurance/docs/api/utils#class-checkresult) class taking value off:
 
-        * defined:
-            * :py[`CheckStatus.SUCCESS`](utils.md#class-checkstatus) when the installed Content DB is at least the same as the version passed as a parameter.
-            * :py[`CheckStatus.FAIL`](utils.md#class-checkstatus) when the installed Content DB version is lower than the version passed as a parameter.
-        * not defined:
-            * :py[`CheckStatus.SUCCESS`](utils.md#class-checkstatus) when the installed Content DB is the latest one.
-            * :py[`CheckStatus.FAIL`](utils.md#class-checkstatus) when the installed Content DB is not the latest one.
+        * [`CheckStatus.SUCCESS`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) when the installed Content DB met the requirements.
+        * [`CheckStatus.FAIL`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) when it did not.
 
         """
         result = CheckResult()
@@ -360,11 +359,11 @@ class CheckFirewall:
 
         # Returns
 
-        CheckResult: Object of [`CheckResult`](utils.md#class-checkresult) class taking value of:
+        CheckResult: Object of [`CheckResult`](/panos-upgrade-assurance/docs/api/utils#class-checkresult) class taking value of:
 
-        * [`CheckStatus.SUCCESS`](utils.md#class-checkstatus) when a device is synchronized with the NTP server.
-        * [`CheckStatus.FAIL`](utils.md#class-checkstatus) when a device is not synchronized with the NTP server.
-        * [`CheckStatus.ERROR`](utils.md#class-checkstatus) when a device is not configured for NTP synchronization.
+        * [`CheckStatus.SUCCESS`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) when a device is synchronized with the NTP server.
+        * [`CheckStatus.FAIL`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) when a device is not synchronized with the NTP server.
+        * [`CheckStatus.ERROR`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) when a device is not configured for NTP synchronization.
 
         """
 
@@ -402,12 +401,12 @@ class CheckFirewall:
 
         # Returns
 
-        CheckResult: Object of [`CheckResult`](utils.md#class-checkresult) class taking value of:
+        CheckResult: Object of [`CheckResult`](/panos-upgrade-assurance/docs/api/utils#class-checkresult) class taking value of:
         
-        * [`CheckStatus.SUCCESS`](utils.md#class-checkstatus) when the ARP entry is found.
-        * [`CheckStatus.FAIL`](utils.md#class-checkstatus) when the ARP entry is not found.
-        * [`CheckStatus.SKIPPED`](utils.md#class-checkstatus) when `ip` is not provided.
-        * [`CheckStatus.ERROR`](utils.md#class-checkstatus) when the ARP table is empty.
+        * [`CheckStatus.SUCCESS`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) when the ARP entry is found.
+        * [`CheckStatus.FAIL`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) when the ARP entry is not found.
+        * [`CheckStatus.SKIPPED`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) when `ip` is not provided.
+        * [`CheckStatus.ERROR`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) when the ARP table is empty.
 
         """
 
@@ -447,12 +446,12 @@ class CheckFirewall:
 
         # Returns
 
-        CheckResult: Object of [`CheckResult`](utils.md#class-checkresult) class taking value of:
+        CheckResult: Object of [`CheckResult`](/panos-upgrade-assurance/docs/api/utils#class-checkresult) class taking value of:
  
-        * [`CheckStatus.SUCCESS`](utils.md#class-checkstatus) when a tunnel is found and is in active state.
-        * [`CheckStatus.FAIL`](utils.md#class-checkstatus) when a tunnel is either not active or missing in the current configuration.
-        * [`CheckStatus.SKIPPED`](utils.md#class-checkstatus) when `tunnel_name` is not provided.
-        * [`CheckStatus.ERROR`](utils.md#class-checkstatus) when no IPSec tunnels are configured on the device.
+        * [`CheckStatus.SUCCESS`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) when a tunnel is found and is in active state.
+        * [`CheckStatus.FAIL`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) when a tunnel is either not active or missing in the current configuration.
+        * [`CheckStatus.SKIPPED`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) when `tunnel_name` is not provided.
+        * [`CheckStatus.ERROR`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) when no IPSec tunnels are configured on the device.
 
         """
 
@@ -499,10 +498,10 @@ class CheckFirewall:
 
         # Returns
 
-        CheckResult: Object of [`CheckResult`](utils.md#class-checkresult) class taking value of:
+        CheckResult: Object of [`CheckResult`](/panos-upgrade-assurance/docs/api/utils#class-checkresult) class taking value of:
 
-        * [`CheckStatus.SUCCESS`](utils.md#class-checkstatus) when there is enough free space to download an image.
-        * [`CheckStatus.FAIL`](utils.md#class-checkstatus) when there is NOT enough free space, additionally the actual free space available is provided as the fail reason.
+        * [`CheckStatus.SUCCESS`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) when there is enough free space to download an image.
+        * [`CheckStatus.FAIL`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) when there is NOT enough free space, additionally the actual free space available is provided as the fail reason.
         
         """
         result = CheckResult()
@@ -546,10 +545,10 @@ class CheckFirewall:
 
         # Returns
 
-        CheckResult: Object of [`CheckResult`](utils.md#class-checkresult) class taking value of:
+        CheckResult: Object of [`CheckResult`](/panos-upgrade-assurance/docs/api/utils#class-checkresult) class taking value of:
 
-        * [`CheckStatus.SUCCESS`](utils.md#class-checkstatus) when both clocks are the same or within threshold.
-        * [`CheckStatus.FAIL`](utils.md#class-checkstatus) when both clocks differ.
+        * [`CheckStatus.SUCCESS`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) when both clocks are the same or within threshold.
+        * [`CheckStatus.FAIL`](/panos-upgrade-assurance/docs/api/utils#class-checkstatus) when both clocks differ.
 
         """
         if not isinstance(diff_threshold, int):
@@ -628,9 +627,9 @@ class CheckFirewall:
     ) -> Union[Dict[str, dict], Dict[str,str]]:
         """Run readiness checks.
 
-        This method provides a convenient way of running readiness checks methods. For details on configuration see [readiness checks](../configuration_details.mdx#readiness-checks) documentation.
+        This method provides a convenient way of running readiness checks methods. For details on configuration see [readiness checks](/panos-upgrade-assurance/docs/configuration-details#readiness-checks) documentation.
 
-        # Parameters:
+        # Parameters
 
         checks_configuration (list(str,dict), optional): (defaults to `None`) List of readiness checks to run.
         report_style (bool): (defaults to `False`) Changes the output to more descriptive. Can be used when generating a report from the checks.
@@ -666,7 +665,7 @@ class CheckFirewall:
     def run_snapshots(self, snapshots_config: Optional[List[Union[str, dict]]] = None) -> Dict[str, dict]:
         """Run snapshots of different firewall areas states.
 
-        This method provides a convenient way of running snapshots of a device state. For details on configuration see [state snapshots](../configuration_details.mdx#state-snapshots) documentation.
+        This method provides a convenient way of running snapshots of a device state. For details on configuration see [state snapshots](/panos-upgrade-assurance/docs/configuration-details#state-snapshots) documentation.
 
         # Parameters
 
