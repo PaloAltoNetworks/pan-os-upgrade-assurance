@@ -61,6 +61,7 @@ if __name__ == '__main__':
         'ha',
         'ntp_sync',
         'candidate_config',
+        'active_support',
         # checks below have optional configuration
         {'content_version': {
             'version': '8635-7675'

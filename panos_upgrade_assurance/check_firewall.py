@@ -5,6 +5,7 @@ from datetime import datetime
 from panos_upgrade_assurance.utils import CheckResult, ConfigParser, interpret_yes_no, CheckType, SnapType, CheckStatus
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
 from panos import PanOSVersion
+from panos.errors import PanDeviceXapiError
 
 class ContentDBVersionInFutureException(Exception):
     """Used when the installed Content DB version is newer than the latest available version."""
@@ -16,6 +17,10 @@ class WrongDataTypeException(Exception):
 
 class ImageVersionNotAvailableException(Exception):
     """Used when requested image version is not available for downloading."""
+    pass
+
+class UpdateServerConnectivityException(Exception):
+    """Exception connecting to Update Servers."""
     pass
 
 class CheckFirewall:
@@ -72,6 +77,7 @@ class CheckFirewall:
             CheckType.NTP_SYNC: self.check_ntp_synchronization,
             CheckType.CANDIDATE_CONFIG: self.check_pending_changes,
             CheckType.EXPIRED_LICENSES: self.check_expired_licenses,
+            CheckType.ACTIVE_SUPPORT: self.check_active_support_license,
             CheckType.CONTENT_VERSION: self.check_content_version,
             CheckType.SESSION_EXIST: self.check_critical_session,
             CheckType.ARP_ENTRY_EXIST: self.check_arp_entry,
@@ -240,6 +246,33 @@ class CheckFirewall:
 
         if expired_licenses:
             result.reason = f"Found expired licenses:  {expired_licenses[:-2]}."
+        else:
+            result.status = CheckStatus.SUCCESS
+
+        return result
+
+    def check_active_support_license(self) -> CheckResult:
+        """Check active support license with update server"""
+        result = CheckResult()
+
+        try:
+            support_license = self._node.get_support_license()
+        except PanDeviceXapiError as exc:  # raised when connectivity timeouts
+            raise UpdateServerConnectivityException('Can not reach update servers to check active support license.') from exc
+
+        if not support_license.get("support_expiry_date"):  # if None or empty string
+            result.reason = 'No ExpiryDate found for support license.'
+            result.status = CheckStatus.ERROR
+            return result
+
+        dt_expiry = datetime.strptime(
+            support_license['support_expiry_date'],
+            "%B %d, %Y"
+        )
+        dt_today = datetime.now()
+
+        if (dt_expiry < dt_today):
+            result.reason = 'Support License expired.'
         else:
             result.status = CheckStatus.SUCCESS
 

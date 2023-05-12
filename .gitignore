@@ -57,3 +57,4 @@ dist/
 
 poetry.lock
 sidebar.json
+.python-version
