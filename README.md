@@ -1,46 +1,19 @@
-# README
+# PAN-OS Upgrade Assurance
 
-## running examples
+## Overview
 
-Install poetry if you don't have it:
+The `panos-upgrade-assurance` package includes the set of classes written in `Python` to ease the process of writing checks and state snapshots during PanOS upgrade on the Next Generation Firewall.
 
-```bash
-curl -sSL https://install.python-poetry.org | python3 -
-```
+Both checks and snapshots can be used to verify the state of a device during an upgrade process. What more, it is possible to generate a report for these checks.
 
-Install dependencies:
+The libraries were written to support Ansible and XSOAR integrations. They depend on [pan-os-python](https://pan.dev/panos/docs/panospython/) libraries and therefore are quite easy to fit into the [PanOS Ansible modules collection](https://galaxy.ansible.com/paloaltonetworks/panos).
 
-```bash
-poetry install
-```
+For more detailed documentation please refer to [PAN.DEV](https://pan.dev/panos-upgrade-assurance/docs/) portal.
 
-This will create a virtualenv and install the dependencies. Afterwards you may active the virtualenv with:
+## Installation
 
-```bash
-poetry shell
-```
+To install the package you can use `pip`:
 
-Go into the examples directory to run them:
-
-```bash
-cd examples
-
-./demo_upgrade.py
-```
-
-## Building
-
-```bash
-poetry build
-```
-
-This will create the wheel and tarball packages in the `dist` directory.
-
-## Direct install with pip
-
-
-You may optionally install directly from the repo with pip. Pip version >19.0 is required which has the PEP-517 implementation.
-
-```bash
-pip3 install 'git+https://github.com/PaloAltoNetworks/pan-os-upgrade-assurance.git'
+``` console
+python -m pip install 'git+https://github.com/PaloAltoNetworks/pan-os-upgrade-assurance'
 ```
