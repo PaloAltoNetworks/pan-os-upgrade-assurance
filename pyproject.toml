@@ -19,13 +19,12 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.8"
-pan-os-python = "1.8.0"
-pan-python = "0.17.0"
-xmltodict = "0.12.0"
+pan-os-python = "^1.8"
+pan-python = "^0.17"
+xmltodict = "^0.13"
 
 [tool.poetry.group.dev.dependencies]
-sphinx = "5.3.0"
-sphinx-rtd-theme = "^1.1.1"
+pydoc-markdown = "^4.6"
 
 [build-system]
 requires = ["poetry-core"]

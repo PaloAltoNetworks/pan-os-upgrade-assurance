@@ -56,4 +56,5 @@ dist/
 .venv
 
 poetry.lock
+sidebar.json
 .python-version
