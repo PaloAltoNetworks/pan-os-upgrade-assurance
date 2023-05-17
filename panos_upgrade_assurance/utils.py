@@ -14,7 +14,7 @@ class WrongDataTypeException(Exception):
 class CheckType:
     """Class mapping check configuration strings for commonly used variables.
 
-    Readiness checks configuration passed to the [`CheckFirewall`](/panos-upgrade-assurance/docs/api/check-firewall#class-checkfirewall) class is in a form of a list of strings. These strings are compared in several places to parse the configuration and set the proper checks. This class is used to avoid hardcoding these strings. It maps the actual configuration string to a variable that can be referenced in the code.
+    Readiness checks configuration passed to the [`CheckFirewall`](/panos-upgrade-assurance/docs/api/check_firewall#class-checkfirewall) class is in a form of a list of strings. These strings are compared in several places to parse the configuration and set the proper checks. This class is used to avoid hardcoding these strings. It maps the actual configuration string to a variable that can be referenced in the code.
     """
     PANORAMA = "panorama"
     HA = "ha"
@@ -32,7 +32,7 @@ class CheckType:
 class SnapType:
     """Class mapping the snapshot configuration strings to the commonly used variables.
 
-    Snapshot configuration passed to the [`CheckFirewall`](/panos-upgrade-assurance/docs/api/check-firewall#class-checkfirewall) class is in a form of a list of strings. These strings are compared in several places to parse the configuration and set proper snapshots.
+    Snapshot configuration passed to the [`CheckFirewall`](/panos-upgrade-assurance/docs/api/check_firewall#class-checkfirewall) class is in a form of a list of strings. These strings are compared in several places to parse the configuration and set proper snapshots.
     This class is used to avoid hardcoding these strings. It maps the actual configuration string to a variable that can be referenced in the code.
     """
     NICS = "nics"
@@ -68,7 +68,7 @@ class CheckResult:
     * `status` which represents information about the check outcome,
     * `reason` a reason behind the particular outcome, this comes in handy when a check fails.
 
-    Most of the [`CheckFirewall`](/panos-upgrade-assurance/docs/api/check-firewall#class-checkfirewall) methods use this class to store the return values, but mostly internally. The [`CheckFirewall.run_readiness_checks()`](/panos-upgrade-assurance/docs/api/check-firewall#checkfirewallrun_readiness_checks) method translates this class into the python primitives: `str` and `bool`.
+    Most of the [`CheckFirewall`](/panos-upgrade-assurance/docs/api/check_firewall#class-checkfirewall) methods use this class to store the return values, but mostly internally. The [`CheckFirewall.run_readiness_checks()`](/panos-upgrade-assurance/docs/api/check_firewall#checkfirewallrun_readiness_checks) method translates this class into the python primitives: `str` and `bool`.
 
     # Attributes
 

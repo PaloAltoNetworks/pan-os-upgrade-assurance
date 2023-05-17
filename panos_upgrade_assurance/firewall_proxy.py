@@ -28,7 +28,7 @@ class WrongDiskSizeFormatException(Exception):
 class FirewallProxy(Firewall):
     """Class representing a Firewall.
 
-    Proxy in this class means that it is between the *high level* [`CheckFirewall`](/panos-upgrade-assurance/docs/api/check-firewall#class-checkfirewall) class and a device itself.
+    Proxy in this class means that it is between the *high level* [`CheckFirewall`](/panos-upgrade-assurance/docs/api/check_firewall#class-checkfirewall) class and a device itself.
     Inherits the [Firewall][fw] class but adds methods to interpret XML API commands. The class constructor is also inherited from the [Firewall][fw] class.
 
     All interaction with a device are read-only. Therefore, a less privileged user can be used.

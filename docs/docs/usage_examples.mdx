@@ -49,7 +49,7 @@ In the following code snippets, we assume the 3<sup>rd</sup> way of importing th
 
 ### `FirewallProxy` class
 
-This class inherits the constructor method from the [Pan-OS-Python Firewall](https://pandevice.readthedocs.io/en/latest/module-firewall.html) class. Therefore, objects for this class are initialized in the same way. For details, see documentation for this class. Here we will provide only the most basic way of initializing the [`FirewallProxy`](/panos-upgrade-assurance/docs/api/firewall-proxy#class-firewallproxy) class that includes a username/password authentication.
+This class inherits the constructor method from the [Pan-OS-Python Firewall](https://pandevice.readthedocs.io/en/latest/module-firewall.html) class. Therefore, objects for this class are initialized in the same way. For details, see documentation for this class. Here we will provide only the most basic way of initializing the [`FirewallProxy`](/panos-upgrade-assurance/docs/api/firewall_proxy#class-firewallproxy) class that includes a username/password authentication.
 
 ``` python
 from upgrade_assurance.firewall_proxy import FirewallProxy
@@ -63,7 +63,7 @@ firewall = FirewallProxy(
 
 ### `CheckFirewall` class
 
-Since this is a *high level* class, it depends on the [`FirewallProxy`](/panos-upgrade-assurance/docs/api/firewall-proxy#class-firewallproxy) class for device communication. Hence, the constructor for this class takes an object of the [`FirewallProxy`](/panos-upgrade-assurance/docs/api/firewall-proxy#class-firewallproxy) class.
+Since this is a *high level* class, it depends on the [`FirewallProxy`](/panos-upgrade-assurance/docs/api/firewall_proxy#class-firewallproxy) class for device communication. Hence, the constructor for this class takes an object of the [`FirewallProxy`](/panos-upgrade-assurance/docs/api/firewall_proxy#class-firewallproxy) class.
 
 ``` python
 from upgrade_assurance.check_firewall import CheckFirewall
@@ -76,7 +76,7 @@ checks = CheckFirewall(firewall)
 ### `SnapshotCompare` class
 
 This class provides methods of comparing two snapshots made with the
-[`CheckFirewall`](/panos-upgrade-assurance/docs/api/check-firewall#class-checkfirewall) class. Therefore, it is an *offline* class - no communication with a device is made.
+[`CheckFirewall`](/panos-upgrade-assurance/docs/api/check_firewall#class-checkfirewall) class. Therefore, it is an *offline* class - no communication with a device is made.
 
 The idea around this class is that an object represents an entity storing two snapshots, for example, a pre-upgrade and a post-upgrade one. Therefore, the constructor takes two snapshots as input parameters. After an object is initialized, one can run reports on it. Each report is configurable but limited to data from both snapshots. In order to compare a different set of snapshots, one has to create a new object.
 
@@ -168,7 +168,7 @@ FAILED: arp_entry_exist - [FAIL] Entry not found in the ARP table.
 
 ### Generating a report based on snapshots
 
-In this example, we take two snapshots (one for each device in an HA pair) and we use the [`SnapshotCompare`](/panos-upgrade-assurance/docs/api/snapshot-compare#class-snapshotcompare) class to compare licenses. Based on the comparison result, a decision is made whether to continue with the rest of the script.
+In this example, we take two snapshots (one for each device in an HA pair) and we use the [`SnapshotCompare`](/panos-upgrade-assurance/docs/api/snapshot_compare#class-snapshotcompare) class to compare licenses. Based on the comparison result, a decision is made whether to continue with the rest of the script.
 
 The comparison itself is configured to:
 

@@ -1,8 +1,10 @@
 ---
-sidebar_label: check_firewall
+id: check_firewall
+sidebar_label: check_firewall module
 title: check_firewall
+hide_title: true
+custom_edit_url: null
 ---
-
 ## class `ContentDBVersionInFutureException`
 
 Used when the installed Content DB version is newer than the latest available version.
@@ -25,14 +27,14 @@ Class responsible for running readiness checks and creating Firewall state snaps
 
 This class is designed to:
 
-* run one or more [`FirewallProxy`](/panos-upgrade-assurance/docs/api/firewall-proxy#class-firewallproxy) class methods,
+* run one or more [`FirewallProxy`](/panos-upgrade-assurance/docs/api/firewall_proxy#class-firewallproxy) class methods,
 * gather and interpret results,
 * present results.
 
 It is split into two parts responsible for:
 
 1. running readiness checks, all methods related to this functionality are prefixed with `check_`,
-2. running state snapshots, all methods related to this functionality are prefixed with `get_`, although usually the [`FirewallProxy`](/panos-upgrade-assurance/docs/api/firewall-proxy#class-firewallproxy) methods are run directly.
+2. running state snapshots, all methods related to this functionality are prefixed with `get_`, although usually the [`FirewallProxy`](/panos-upgrade-assurance/docs/api/firewall_proxy#class-firewallproxy) methods are run directly.
 
 Although it is possible to run the methods directly, the preferred way is to run them through one of the following `run` methods:
 
@@ -59,7 +61,7 @@ CheckFirewall constructor.
 __Parameters__
 
 
-- __node__ (`FirewallProxy`): Object representing a device against which checks and/or snapshots are run. See [`FirewallProxy`](/panos-upgrade-assurance/docs/api/firewall-proxy#class-firewallproxy) class' documentation.
+- __node__ (`FirewallProxy`): Object representing a device against which checks and/or snapshots are run. See [`FirewallProxy`](/panos-upgrade-assurance/docs/api/firewall_proxy#class-firewallproxy) class' documentation.
 
 ### `CheckFirewall.check_pending_changes`
 

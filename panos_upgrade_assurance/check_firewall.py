@@ -28,14 +28,14 @@ class CheckFirewall:
 
     This class is designed to:
 
-    * run one or more [`FirewallProxy`](/panos-upgrade-assurance/docs/api/firewall-proxy#class-firewallproxy) class methods,
+    * run one or more [`FirewallProxy`](/panos-upgrade-assurance/docs/api/firewall_proxy#class-firewallproxy) class methods,
     * gather and interpret results,
     * present results.
     
     It is split into two parts responsible for:
 
     1. running readiness checks, all methods related to this functionality are prefixed with `check_`,
-    2. running state snapshots, all methods related to this functionality are prefixed with `get_`, although usually the [`FirewallProxy`](/panos-upgrade-assurance/docs/api/firewall-proxy#class-firewallproxy) methods are run directly.
+    2. running state snapshots, all methods related to this functionality are prefixed with `get_`, although usually the [`FirewallProxy`](/panos-upgrade-assurance/docs/api/firewall_proxy#class-firewallproxy) methods are run directly.
 
     Although it is possible to run the methods directly, the preferred way is to run them through one of the following `run` methods:
 
@@ -57,7 +57,7 @@ class CheckFirewall:
 
         # Parameters
 
-        node (FirewallProxy): Object representing a device against which checks and/or snapshots are run. See [`FirewallProxy`](/panos-upgrade-assurance/docs/api/firewall-proxy#class-firewallproxy) class' documentation.
+        node (FirewallProxy): Object representing a device against which checks and/or snapshots are run. See [`FirewallProxy`](/panos-upgrade-assurance/docs/api/firewall_proxy#class-firewallproxy) class' documentation.
 
         """
         self._node = node

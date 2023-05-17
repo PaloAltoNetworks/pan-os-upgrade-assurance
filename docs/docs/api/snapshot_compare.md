@@ -1,8 +1,10 @@
 ---
-sidebar_label: snapshot_compare
+id: snapshot_compare
+sidebar_label: snapshot_compare module
 title: snapshot_compare
+hide_title: true
+custom_edit_url: null
 ---
-
 ## class `MissingKeyException`
 
 Used when an exception about the missing keys in a dictionary is thrown.
@@ -19,8 +21,8 @@ Used when a snapshot element contains different properties in both snapshots.
 
 Class comparing snapshots of Firewall Nodes.
 
-This object can be used to compare two Firewall snapshots made with the [CheckFirewall.run_snapshots()](/panos-upgrade-assurance/docs/api/check-firewall#checkfirewallrun_snapshots) method and present results of this comparison.
-Its main purpose is to compare two snapshots made with the [`CheckFirewall`](/panos-upgrade-assurance/docs/api/check-firewall#class-checkfirewall) class. However, the code is generic enough to compare any two dictionaries as long as they follow the schema below:
+This object can be used to compare two Firewall snapshots made with the [CheckFirewall.run_snapshots()](/panos-upgrade-assurance/docs/api/check_firewall#checkfirewallrun_snapshots) method and present results of this comparison.
+Its main purpose is to compare two snapshots made with the [`CheckFirewall`](/panos-upgrade-assurance/docs/api/check_firewall#class-checkfirewall) class. However, the code is generic enough to compare any two dictionaries as long as they follow the schema below:
 
 ```yaml
 {
@@ -40,7 +42,7 @@ __Attributes__
 
 - `_functions_mapping (dict)`: Internal variable containing the map of all valid report types mapped to the specific methods.
 
-This mapping is used to verify the requested report and to map the report to an actual method that will eventually run. Keys in this dictionary are report names as defined in the [`SnapType`](/panos-upgrade-assurance/docs/api/utils#class-snaptype) class. Essentially, these are the same values that one would specify when creating a snapshot with the [CheckFirewall.run_snapshots()](/panos-upgrade-assurance/docs/api/check-firewall#checkfirewallrun_snapshots) method. Values are references to the methods that will run.
+This mapping is used to verify the requested report and to map the report to an actual method that will eventually run. Keys in this dictionary are report names as defined in the [`SnapType`](/panos-upgrade-assurance/docs/api/utils#class-snaptype) class. Essentially, these are the same values that one would specify when creating a snapshot with the [CheckFirewall.run_snapshots()](/panos-upgrade-assurance/docs/api/check_firewall#checkfirewallrun_snapshots) method. Values are references to the methods that will run.
 
 ### `SnapshotCompare.__init__`
 
@@ -75,7 +77,7 @@ __Parameters__
 
 - __reports__ (`list, optional`): A list of reports - snapshot state areas with optional configuration. This parameter follows the  [`dialect`](/panos-upgrade-assurance/docs/dialect) of [`ConfigParser`](/panos-upgrade-assurance/docs/api/utils#class-configparser) class.
 
-    The reports list is essentially the list of keys present in the snapshots. These keys, however, are the state areas specified when the snapshot is made with the [`CheckFirewall.run_snapshots()`](/panos-upgrade-assurance/docs/api/check-firewall#checkfirewallrun_snapshots) method. This means that the reports list is basically the list of state areas. The only difference is that for reports, it is possible to specify an additional configuration. This means that the list can be specified in two ways, as `str` or `dict` (in the same manner as for [`CheckFirewall.run_readiness_checks()`](/panos-upgrade-assurance/docs/api/check-firewall#checkfirewallrun_readiness_checks)).
+    The reports list is essentially the list of keys present in the snapshots. These keys, however, are the state areas specified when the snapshot is made with the [`CheckFirewall.run_snapshots()`](/panos-upgrade-assurance/docs/api/check_firewall#checkfirewallrun_snapshots) method. This means that the reports list is basically the list of state areas. The only difference is that for reports, it is possible to specify an additional configuration. This means that the list can be specified in two ways, as `str` or `dict` (in the same manner as for [`CheckFirewall.run_readiness_checks()`](/panos-upgrade-assurance/docs/api/check_firewall#checkfirewallrun_readiness_checks)).
 
     For the elements specified as
 
