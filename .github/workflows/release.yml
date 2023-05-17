@@ -1,0 +1,81 @@
+name: Release
+run-name: "Continous Release"
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  rc:
+    name: Check if we need a new release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: read
+    outputs:
+      rc: ${{ steps.rc.outputs.new_release_published }}
+      ver: ${{ steps.rc.outputs.new_release_version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Check if new version will be produced
+        id: rc
+        uses: cycjimmy/semantic-release-action@v3
+        with:
+          dry_run: true
+          semantic_version: 19.0
+          extra_plugins: |
+            conventional-changelog-conventionalcommits@^5.0.0
+            @semantic-release/git@^10.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release:
+    name: Create a new release
+    runs-on: ubuntu-latest
+    needs:
+      - rc
+    concurrency: release
+    permissions:
+      contents: write
+      issues: read
+    if: needs.rc.outputs.rc == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install Poetry
+        uses: Gr1N/setup-poetry@v8
+        with: 
+          poetry-version: 1.4.2
+
+      - name: Create Poetry venv
+        run: poetry install
+
+      - name: Build and publish to PyPI
+        env:
+          VERSION: ${{ needs.rc.outputs.ver }}
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          sed -i -E "s/^version = \".*\"$/version = \"${VERSION}\"/g" pyproject.toml
+          cat pyproject.toml | grep version
+          poetry publish --build
+
+      - name: Create release and publish to GitHub
+        id: release
+        uses: cycjimmy/semantic-release-action@v3
+        with:
+          semantic_version: 19.0
+          extra_plugins: |
+            conventional-changelog-conventionalcommits@^5.0.0
+            @semantic-release/git@^10.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
