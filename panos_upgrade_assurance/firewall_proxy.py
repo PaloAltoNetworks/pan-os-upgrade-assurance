@@ -1,47 +1,63 @@
 import xml.etree.ElementTree as ET
 from panos_upgrade_assurance.utils import interpret_yes_no
 from xmltodict import parse as XMLParse
-from typing import Optional, Union, Dict, List
+from typing import Optional, Union
 from panos.firewall import Firewall
 from math import floor
 
+
 class CommandRunFailedException(Exception):
     """Used when a command run on a device does not return the `success` status."""
+
     pass
+
 
 class MalformedResponseException(Exception):
     """A generic exception class used when a response does not meet the expected standards."""
+
     pass
+
 
 class ContentDBVersionsFormatException(Exception):
     """Used when parsing Content DB versions fail due to an unknown version format (assuming `XXXX-YYYY`)."""
+
     pass
+
 
 class PanoramaConfigurationMissingException(Exception):
     """Used when checking Panorama connectivity on a device that was not configured with Panorama."""
+
     pass
+
 
 class WrongDiskSizeFormatException(Exception):
     """Used when parsing free disk size information."""
+
     pass
+
 
 class FirewallProxy(Firewall):
     """Class representing a Firewall.
 
-    Proxy in this class means that it is between the *high level* [`CheckFirewall`](/panos-upgrade-assurance/docs/api/check-firewall#class-checkfirewall) class and a device itself.
+    Proxy in this class means that it is between the *high level* [`CheckFirewall`](/panos/docs/panos-upgrade-assurance/api/check_firewall#class-checkfirewall) class and a device itself.
     Inherits the [Firewall][fw] class but adds methods to interpret XML API commands. The class constructor is also inherited from the [Firewall][fw] class.
 
     All interaction with a device are read-only. Therefore, a less privileged user can be used.
 
     All methods starting with `is_` check the state, they do not present any data besides simple `boolean`values.
 
-    All methods starting with `get_` fetch data from a device by running a command and parsing the output. 
+    All methods starting with `get_` fetch data from a device by running a command and parsing the output.
     The return data type can be different depending on what kind of information is returned from a device.
 
     [fw]: https://pan-os-python.readthedocs.io/en/latest/module-firewall.html#module-panos.firewall
     """
-    
-    def op_parser(self, cmd: str, cmd_in_xml: Optional[bool] = False, return_xml: Optional[bool] = False) -> Union[dict, ET.Element]:
+
+    def op_parser(
+        self,
+        cmd: str,
+        cmd_in_xml: Optional[bool] = False,
+        return_xml: Optional[bool] = False,
+    ) -> Union[dict, ET.Element]:
         """Execute a command on node, parse, and return response.
 
         This is just a wrapper around the [`Firewall.op()`](https://pan-os-python.readthedocs.io/en/latest/module-firewall.html#panos.firewall.Firewall.op) method. It additionally does basic error handling and tries to extract the actual device response.
@@ -50,12 +66,12 @@ class FirewallProxy(Firewall):
 
         cmd (str): The actual XML API command to be run on the device. Can be either a free form or an XML formatted command.
         cmd_in_xml (bool): (defaults to `False`) Set to `True` if the command is XML-formatted.
-        return_xml (bool): (defaults to `False`) When set to `True`, the return data is an [`XML object`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element) instead of a python dictionary. 
+        return_xml (bool): (defaults to `False`) When set to `True`, the return data is an [`XML object`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element) instead of a python dictionary.
 
         # Raises
 
         CommandRunFailedException: An exception is raised if the command run status returned by a device is not successful.
-        MalformedResponseException: An exception is raised when a response is not parsable, no `result` element is found in the XML response. 
+        MalformedResponseException: An exception is raised when a response is not parsable, no `result` element is found in the XML response.
 
         # Returns
         dict, xml.etree.ElementTree.Element: The actual command output. A type is defined by the `return_xml` parameter.
@@ -63,15 +79,17 @@ class FirewallProxy(Firewall):
         """
 
         raw_response = self.op(cmd, xml=False, cmd_xml=not cmd_in_xml, vsys=self.vsys)
-        if raw_response.get('status') != 'success':
-            raise CommandRunFailedException(f'Failed to run command: {cmd}.')
+        if raw_response.get("status") != "success":
+            raise CommandRunFailedException(f"Failed to run command: {cmd}.")
 
-        resp_result = raw_response.find('result')
+        resp_result = raw_response.find("result")
         if resp_result is None:
-            raise MalformedResponseException(f'No result field returned for: {cmd}')
+            raise MalformedResponseException(f"No result field returned for: {cmd}")
 
         if not return_xml:
-            resp_result = XMLParse(ET.tostring(resp_result, encoding='utf8', method='xml'))['result']
+            resp_result = XMLParse(
+                ET.tostring(resp_result, encoding="utf8", method="xml")
+            )["result"]
 
         return resp_result
 
@@ -115,13 +133,13 @@ class FirewallProxy(Firewall):
         """Get Panorama connectivity status.
 
         The actual API command run is `show panorama-status`.
-        
+
         An output of this command is usually a string. This method is responsible for parsing this string and trying to extract information if at least one of the Panoramas configured is connected.
 
         Since the API response is a string (that we need to parse) this method expects a strict format. For single Panorama this is:
 
         ```python
-        
+
             Panorama Server 1 : 1.2.3.4
                 Connected     : no
                 HA state      : disconnected
@@ -130,7 +148,7 @@ class FirewallProxy(Firewall):
         For two Panoramas (HA pair for example) those are just two blocks:
 
         ```python
-        
+
             Panorama Server 1 : 1.2.3.4
                 Connected     : no
                 HA state      : disconnected
@@ -154,24 +172,30 @@ class FirewallProxy(Firewall):
         """
 
         pan_status = self.op_parser(cmd="show panorama-status")
-        if pan_status == None:
-            raise PanoramaConfigurationMissingException("Device not configured with Panorama.")
+        if pan_status is None:
+            raise PanoramaConfigurationMissingException(
+                "Device not configured with Panorama."
+            )
 
         if not isinstance(pan_status, str):
-            raise MalformedResponseException("Response from device is not type of string.")
+            raise MalformedResponseException(
+                "Response from device is not type of string."
+            )
 
-        pan_status_list = pan_status.split('\n')
+        pan_status_list = pan_status.split("\n")
         pan_status_list_length = len(pan_status_list)
 
-        if pan_status_list_length in [3,6]:
-            for i in range(1,pan_status_list_length,3):
+        if pan_status_list_length in [3, 6]:
+            for i in range(1, pan_status_list_length, 3):
                 pan_connected = interpret_yes_no(
-                    (pan_status_list[i].split(':')[1]).strip()
+                    (pan_status_list[i].split(":")[1]).strip()
                 )
                 if pan_connected:
                     return True
         else:
-            raise MalformedResponseException(f"Panorama configuration block does not have typical structure: <{resp}>.")
+            raise MalformedResponseException(
+                f"Panorama configuration block does not have typical structure: <{pan_status}>."
+            )
 
         return False
 
@@ -313,7 +337,7 @@ class FirewallProxy(Firewall):
         The actual API command run is `show interface "hardware"`.
 
         # Raises
-        
+
         MalformedResponseException: Exception when no `hw` entry is available in the response.
 
         # Returns
@@ -322,8 +346,8 @@ class FirewallProxy(Firewall):
 
         ```yaml
         {
-            'ethernet1/1': 'down', 
-            'ethernet1/2': 'down', 
+            'ethernet1/1': 'down',
+            'ethernet1/2': 'down',
             'ethernet1/3': 'up'
         }
         ```
@@ -332,16 +356,18 @@ class FirewallProxy(Firewall):
 
         response = self.op_parser(cmd=r'show interface "hardware"')
 
-        hardware = response['hw']
+        hardware = response["hw"]
         if hardware is None:
-            raise MalformedResponseException('Malformed response from device, no [hw] element present.')
+            raise MalformedResponseException(
+                "Malformed response from device, no [hw] element present."
+            )
 
         results = {}
-        entries = hardware['entry']
+        entries = hardware["entry"]
         if isinstance(entries, dict):
             entries = [entries]
         for nic in entries:
-            results[nic['name']] = nic['state']
+            results[nic["name"]] = nic["state"]
         return results
 
     def get_licenses(self) -> dict:
@@ -352,7 +378,7 @@ class FirewallProxy(Firewall):
         # Returns
 
         dict: Licenses available on a device.. Sample output:
-            
+
         ```yaml
         {
             'AutoFocus Device License': {
@@ -382,9 +408,9 @@ class FirewallProxy(Firewall):
         response = self.op_parser(cmd="request license info")
 
         result = {}
-        licenses = response['licenses']['entry']
+        licenses = response["licenses"]["entry"]
         for lic in licenses if isinstance(licenses, list) else [licenses]:
-            result[lic['feature']] = dict(lic)
+            result[lic["feature"]] = dict(lic)
         return result
 
     def get_support_license(self) -> dict:
@@ -431,8 +457,12 @@ class FirewallProxy(Firewall):
         result = {}
         response = self.op_parser(cmd="request support check", return_xml=True)
 
-        result['support_expiry_date'] = response.findtext('./SupportInfoResponse/Support/ExpiryDate')
-        result['support_level'] = response.findtext('./SupportInfoResponse/Support/SupportLevel')
+        result["support_expiry_date"] = response.findtext(
+            "./SupportInfoResponse/Support/ExpiryDate"
+        )
+        result["support_level"] = response.findtext(
+            "./SupportInfoResponse/Support/SupportLevel"
+        )
         return result
 
     def get_routes(self) -> dict:
@@ -441,11 +471,11 @@ class FirewallProxy(Firewall):
         The actual API command is `show routing route`.
 
         In the returned `dict` the key is made of three route properties delimited with an underscore (`_`) in the following order:
-        
+
         * virtual router name,
         * destination CIDR,
         * network interface name if one is available, empty string otherwise.
-        
+
         The key does not provide any meaningful information, it's there only to introduce uniqueness for each entry. All properties that make a key are also available in the value of a dictionary element. Sample output:
 
         ```yaml
@@ -474,7 +504,7 @@ class FirewallProxy(Firewall):
         ```
 
         # Returns
-        
+
         dict: Routes information.
 
         """
@@ -482,12 +512,12 @@ class FirewallProxy(Firewall):
         response = self.op_parser(cmd="show routing route")
 
         result = {}
-        if 'entry' in response:
-            routes = response['entry']
+        if "entry" in response:
+            routes = response["entry"]
             for route in routes if isinstance(routes, list) else [routes]:
                 result[
-                    f"{route['virtual-router']}_{route['destination']}_{route['interface'] if route['interface'] else ''}"] = dict(
-                    route)
+                    f"{route['virtual-router']}_{route['destination']}_{route['interface'] if route['interface'] else ''}"
+                ] = dict(route)
 
         return result
 
@@ -497,10 +527,10 @@ class FirewallProxy(Firewall):
         The actual API command is `<show><arp><entry name = 'all'/></arp></show>`.
 
         In the returned `dict` the key is made of two properties delimited with an underscore (`_`) in the following order:
-            
+
         * interface name,
         * IP address.
-            
+
         The key does not provide any meaningful information, it's there only to introduce uniqueness for each entry. All properties that make a key are also available in the value of a dictionary element. Sample output:
 
         ```yaml
@@ -525,15 +555,17 @@ class FirewallProxy(Firewall):
         ```
 
         # Returns
-        
-        dict: ARP table entries. 
+
+        dict: ARP table entries.
 
         """
         result = {}
-        response = self.op_parser(cmd=f"<show><arp><entry name = 'all'/></arp></show>", cmd_in_xml=True)
+        response = self.op_parser(
+            cmd="<show><arp><entry name = 'all'/></arp></show>", cmd_in_xml=True
+        )
 
         if response.get("entries", {}):
-            arp_table = response['entries'].get("entry", [])
+            arp_table = response["entries"].get("entry", [])
             for entry in arp_table if isinstance(arp_table, list) else [arp_table]:
                 result[f'{entry["interface"]}_{entry["ip"]}'] = dict(entry)
         return result
@@ -544,7 +576,7 @@ class FirewallProxy(Firewall):
         The actual API command run is `show session all`.
 
         # Returns
-        
+
         list: Information about the current sessions. Sample output:
 
         ```yaml
@@ -584,9 +616,9 @@ class FirewallProxy(Firewall):
 
         """
         result = []
-        raw_response = self.op_parser(cmd='show session all')
-        if not raw_response is None:
-            sessions = raw_response['entry']
+        raw_response = self.op_parser(cmd="show session all")
+        if raw_response is not None:
+            sessions = raw_response["entry"]
             result = sessions if isinstance(sessions, list) else [sessions]
 
         return result
@@ -602,7 +634,7 @@ class FirewallProxy(Firewall):
         For meaning and available statistics, refer to the official PanOS documentation.
 
         # Returns
-        
+
         dict: Session stats in a form of a dictionary. Sample output:
 
         ```yaml
@@ -698,15 +730,19 @@ class FirewallProxy(Firewall):
         ```
 
         """
-        response = self.op_parser(cmd='show running tunnel flow all')
+        response = self.op_parser(cmd="show running tunnel flow all")
         result = {}
         for tunnelType, tunnelData in dict(response).items():
             if tunnelData is None:
                 result[tunnelType] = dict()
             elif not isinstance(tunnelData, str):
                 result[tunnelType] = dict()
-                for tunnel in tunnelData['entry'] if isinstance(tunnelData['entry'], list) else [tunnelData['entry']]:
-                    result[tunnelType][tunnel['name']] = dict(tunnel)
+                for tunnel in (
+                    tunnelData["entry"]
+                    if isinstance(tunnelData["entry"], list)
+                    else [tunnelData["entry"]]
+                ):
+                    result[tunnelType][tunnel["name"]] = dict(tunnel)
         return result
 
     def get_latest_available_content_version(self) -> str:
@@ -720,28 +756,36 @@ class FirewallProxy(Firewall):
         * both components of the version string are numbers.
 
         # Raises
-        
+
         ContentDBVersionsFormatException: An exception is thrown when the Content DB version does not match the expected format.
 
         # Returns
 
         str: The latest available content version. Sample output:
 
-        ```python 
+        ```python
         '8670-7824'
         ```
 
         """
         response = self.op_parser(cmd="request content upgrade check", return_xml=False)
         try:
-            content_versions = [ entry['version'] for entry in response['content-updates']['entry'] ]
-            majors = [ int(ver.split('-')[0]) for ver in content_versions ]
+            content_versions = [
+                entry["version"] for entry in response["content-updates"]["entry"]
+            ]
+            majors = [int(ver.split("-")[0]) for ver in content_versions]
             majors.sort()
-            major_minors = [ int(ver.split('-')[1]) for ver in content_versions if ver.startswith(f"{majors[-1]}-") ]
+            major_minors = [
+                int(ver.split("-")[1])
+                for ver in content_versions
+                if ver.startswith(f"{majors[-1]}-")
+            ]
             major_minors.sort()
             latest = f"{majors[-1]}-{major_minors[-1]}"
         except Exception as exc:
-            raise ContentDBVersionsFormatException('Cannot parse list of available updates for Content DB.') from exc
+            raise ContentDBVersionsFormatException(
+                "Cannot parse list of available updates for Content DB."
+            ) from exc
 
         return latest
 
@@ -760,14 +804,14 @@ class FirewallProxy(Firewall):
 
         """
         response = self.op_parser(cmd="show system info", return_xml=True)
-        return response.findtext('./system/app-version')
+        return response.findtext("./system/app-version")
 
     def get_ntp_servers(self) -> dict:
         """Get the NTP synchronization configuration.
 
         The actual API command is `show ntp`.
 
-        The actual return value of this method can differ depending on whether the NTP servers are configured or not: 
+        The actual return value of this method can differ depending on whether the NTP servers are configured or not:
 
         - no NTP servers configured:
 
@@ -800,7 +844,7 @@ class FirewallProxy(Firewall):
         # Returns
 
         dict: The NTP synchronization configuration.
-        
+
 
         """
         return dict(self.op_parser(cmd="show ntp"))
@@ -831,29 +875,29 @@ class FirewallProxy(Firewall):
         result = dict()
 
         disk_space = self.op_parser(cmd="show system disk-space")
-        disk_space_list = disk_space.split('\n')
+        disk_space_list = disk_space.split("\n")
 
         # we start with index 1 to skip header
-        for i in range(1,len(disk_space_list)):
+        for i in range(1, len(disk_space_list)):
             row = disk_space_list[i]
-            row_items = row.split(' ')
-            row_items_trimmed = [item for item in row_items if item != '']
-                
+            row_items = row.split(" ")
+            row_items_trimmed = [item for item in row_items if item != ""]
+
             mount_point = row_items_trimmed[-1]
             free_size_short = row_items_trimmed[3]
             free_size_name = free_size_short[-1]
             free_size_number = float(free_size_short[0:-1])
 
             if isinstance(free_size_name, str):
-                if free_size_name == 'G':
-                    free_size = free_size_number*1024
-                elif free_size_name == 'M':
+                if free_size_name == "G":
+                    free_size = free_size_number * 1024
+                elif free_size_name == "M":
                     free_size = free_size_number
-                elif free_size_name == 'K':
-                    free_size = free_size_number/1024
+                elif free_size_name == "K":
+                    free_size = free_size_number / 1024
 
             elif isinstance(free_size_name, int):
-                free_size = free_size_short/1024/1024
+                free_size = free_size_short / 1024 / 1024
 
             else:
                 raise WrongDiskSizeFormatException("Free disk size has wrong format.")
@@ -905,9 +949,9 @@ class FirewallProxy(Firewall):
         result = dict()
 
         image_data = self.op_parser(cmd="request system software check")
-        images = dict(image_data['sw-updates']['versions'])['entry']
+        images = dict(image_data["sw-updates"]["versions"])["entry"]
         for image in images if isinstance(images, list) else [images]:
-            result[image['version']] = dict(image)
+            result[image["version"]] = dict(image)
 
         return result
 
@@ -933,17 +977,17 @@ class FirewallProxy(Firewall):
 
         """
         time_string = self.op_parser(cmd="show clock")
-        time_dict = time_string.split(' ')
+        time_dict = time_string.split(" ")
         result = {
-            'time': time_dict[3],
-            'tz':  time_dict[4],
-            'day':  time_dict[2],
-            'month':  time_dict[1],
-            'year':  time_dict[5],
-            'day_of_week':  time_dict[0],
+            "time": time_dict[3],
+            "tz": time_dict[4],
+            "day": time_dict[2],
+            "month": time_dict[1],
+            "year": time_dict[5],
+            "day_of_week": time_dict[0],
         }
-        
-        return(result)
+
+        return result
 
     def get_dp_clock(self) -> dict:
         """Get the clock information from data plane.
@@ -967,15 +1011,15 @@ class FirewallProxy(Firewall):
 
         """
         response = self.op_parser(cmd="show clock more")
-        time_string = dict(response)['member']
-        time_dict = time_string.split(' ')
+        time_string = dict(response)["member"]
+        time_dict = time_string.split(" ")
         result = {
-            'time': time_dict[5],
-            'tz':  time_dict[6],
-            'day':  time_dict[4],
-            'month':  time_dict[3],
-            'year':  time_dict[7],
-            'day_of_week':  time_dict[2],
+            "time": time_dict[5],
+            "tz": time_dict[6],
+            "day": time_dict[4],
+            "month": time_dict[3],
+            "year": time_dict[7],
+            "day_of_week": time_dict[2],
         }
-        
-        return(result)
+
+        return result

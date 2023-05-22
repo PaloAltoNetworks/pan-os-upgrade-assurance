@@ -9,10 +9,17 @@ processors:
   - type: crossref
 renderer:
   type: docusaurus
-  docs_base_path: docs/docs
+  docs_base_path: docs/panos-upgrade-assurance
   relative_output_path: api
-
   markdown:
+    render_module_header_template: |
+      ---
+      id: {module_name}
+      sidebar_label: {module_name} module
+      title: {module_name}
+      hide_title: true
+      custom_edit_url: null
+      ---
     header_level_by_type:
       Class: 2
       Function: 3
