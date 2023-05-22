@@ -1,8 +1,10 @@
 ---
-sidebar_label: firewall_proxy
+id: firewall_proxy
+sidebar_label: firewall_proxy module
 title: firewall_proxy
+hide_title: true
+custom_edit_url: null
 ---
-
 ## class `CommandRunFailedException`
 
 Used when a command run on a device does not return the `success` status.
@@ -27,14 +29,14 @@ Used when parsing free disk size information.
 
 Class representing a Firewall.
 
-Proxy in this class means that it is between the *high level* [`CheckFirewall`](/panos-upgrade-assurance/docs/api/check-firewall#class-checkfirewall) class and a device itself.
+Proxy in this class means that it is between the *high level* [`CheckFirewall`](/panos/docs/panos-upgrade-assurance/api/check_firewall#class-checkfirewall) class and a device itself.
 Inherits the [Firewall][fw] class but adds methods to interpret XML API commands. The class constructor is also inherited from the [Firewall][fw] class.
 
 All interaction with a device are read-only. Therefore, a less privileged user can be used.
 
 All methods starting with `is_` check the state, they do not present any data besides simple `boolean`values.
 
-All methods starting with `get_` fetch data from a device by running a command and parsing the output. 
+All methods starting with `get_` fetch data from a device by running a command and parsing the output.
 The return data type can be different depending on what kind of information is returned from a device.
 
 [fw]: https://pan-os-python.readthedocs.io/en/latest/module-firewall.html#module-panos.firewall
@@ -56,13 +58,13 @@ __Parameters__
 
 - __cmd__ (`str`): The actual XML API command to be run on the device. Can be either a free form or an XML formatted command.
 - __cmd_in_xml__ (`bool`): (defaults to `False`) Set to `True` if the command is XML-formatted.
-- __return_xml__ (`bool`): (defaults to `False`) When set to `True`, the return data is an [`XML object`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element) instead of a python dictionary. 
+- __return_xml__ (`bool`): (defaults to `False`) When set to `True`, the return data is an [`XML object`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element) instead of a python dictionary.
 
 __Raises__
 
 
 - `CommandRunFailedException`: An exception is raised if the command run status returned by a device is not successful.
-- `MalformedResponseException`: An exception is raised when a response is not parsable, no `result` element is found in the XML response. 
+- `MalformedResponseException`: An exception is raised when a response is not parsable, no `result` element is found in the XML response.
 
 __Returns__
 
@@ -317,8 +319,8 @@ __Returns__
 
 ```yaml
 {
-    'ethernet1/1': 'down', 
-    'ethernet1/2': 'down', 
+    'ethernet1/1': 'down',
+    'ethernet1/2': 'down',
     'ethernet1/3': 'up'
 }
 ```
@@ -689,7 +691,7 @@ __Returns__
 
 `str`: The latest available content version. Sample output:
 
-```python 
+```python
 '8670-7824'
 ```
 
@@ -722,7 +724,7 @@ Get the NTP synchronization configuration.
 
 The actual API command is `show ntp`.
 
-The actual return value of this method can differ depending on whether the NTP servers are configured or not: 
+The actual return value of this method can differ depending on whether the NTP servers are configured or not:
 
 - no NTP servers configured:
 
