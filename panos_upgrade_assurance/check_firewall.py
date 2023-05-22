@@ -1,6 +1,7 @@
 from typing import Optional, Union, List, Iterable, Dict
 from math import ceil
 from datetime import datetime
+import locale
 
 from panos_upgrade_assurance.utils import CheckResult, ConfigParser, interpret_yes_no, CheckType, SnapType, CheckStatus
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
@@ -85,6 +86,7 @@ class CheckFirewall:
             CheckType.FREE_DISK_SPACE: self.check_free_disk_space,
             CheckType.MP_DP_CLOCK_SYNC: self.check_mp_dp_sync
         }
+        locale.setlocale(locale.LC_ALL, 'en_US')  # force locale for datetime string parsing when non-English locale is set on host
 
     def check_pending_changes(self) -> CheckResult:
         """Check if there are pending changes on device.
