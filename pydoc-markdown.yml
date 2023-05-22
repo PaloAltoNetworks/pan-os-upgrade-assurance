@@ -9,9 +9,8 @@ processors:
   - type: crossref
 renderer:
   type: docusaurus
-  docs_base_path: docs/docs
+  docs_base_path: docs/panos-upgrade-assurance
   relative_output_path: api
-
   markdown:
     render_module_header_template: |
       ---

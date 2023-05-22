@@ -17,13 +17,13 @@ Used when a variable does not meet data type requirements.
 
 Class mapping check configuration strings for commonly used variables.
 
-Readiness checks configuration passed to the [`CheckFirewall`](/panos-upgrade-assurance/docs/api/check_firewall#class-checkfirewall) class is in a form of a list of strings. These strings are compared in several places to parse the configuration and set the proper checks. This class is used to avoid hardcoding these strings. It maps the actual configuration string to a variable that can be referenced in the code.
+Readiness checks configuration passed to the [`CheckFirewall`](/panos/docs/panos-upgrade-assurance/api/check_firewall#class-checkfirewall) class is in a form of a list of strings. These strings are compared in several places to parse the configuration and set the proper checks. This class is used to avoid hardcoding these strings. It maps the actual configuration string to a variable that can be referenced in the code.
 
 ## class `SnapType`
 
 Class mapping the snapshot configuration strings to the commonly used variables.
 
-Snapshot configuration passed to the [`CheckFirewall`](/panos-upgrade-assurance/docs/api/check_firewall#class-checkfirewall) class is in a form of a list of strings. These strings are compared in several places to parse the configuration and set proper snapshots.
+Snapshot configuration passed to the [`CheckFirewall`](/panos/docs/panos-upgrade-assurance/api/check_firewall#class-checkfirewall) class is in a form of a list of strings. These strings are compared in several places to parse the configuration and set proper snapshots.
 This class is used to avoid hardcoding these strings. It maps the actual configuration string to a variable that can be referenced in the code.
 
 ## class `CheckStatus`
@@ -46,7 +46,7 @@ It provides two types of information:
 * `status` which represents information about the check outcome,
 * `reason` a reason behind the particular outcome, this comes in handy when a check fails.
 
-Most of the [`CheckFirewall`](/panos-upgrade-assurance/docs/api/check_firewall#class-checkfirewall) methods use this class to store the return values, but mostly internally. The [`CheckFirewall.run_readiness_checks()`](/panos-upgrade-assurance/docs/api/check_firewall#checkfirewallrun_readiness_checks) method translates this class into the python primitives: `str` and `bool`.
+Most of the [`CheckFirewall`](/panos/docs/panos-upgrade-assurance/api/check_firewall#class-checkfirewall) methods use this class to store the return values, but mostly internally. The [`CheckFirewall.run_readiness_checks()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallrun_readiness_checks) method translates this class into the python primitives: `str` and `bool`.
 
 __Attributes__
 
@@ -78,7 +78,7 @@ Class' boolean representation.
 __Returns__
 
 
-`bool`: a boolean value interpreting the value of the current `state`: 
+`bool`: a boolean value interpreting the value of the current `state`:
 
 * `True` when `status` [`CheckStatus.SUCCESS`](#class-checkstatus)
 * `False` otherwise.
@@ -87,8 +87,8 @@ __Returns__
 
 Class responsible for parsing the provided configuration.
 
-This class is universal, meaning it parses configuration provided as the list of strings or dictionaries and verifies it against the list of valid configuration items. 
-There are no hardcoded items against which the configuration is checked. This class is used in many places in this package and it uses a specific [`dialect`](/panos-upgrade-assurance/docs/dialect).
+This class is universal, meaning it parses configuration provided as the list of strings or dictionaries and verifies it against the list of valid configuration items.
+There are no hardcoded items against which the configuration is checked. This class is used in many places in this package and it uses a specific [`dialect`](/panos/docs/panos-upgrade-assurance/dialect).
 
 __Attributes__
 
@@ -107,7 +107,7 @@ ConfigParser constructor.
 Introduces some initial verification logic:
 
 * `valid_elements` is converted to `set` - this way we get rid of all duplicates,
-* if `requested_config` is `None` we immediately treat it as if `all`  was passed implicitly (see [`dialect`](/panos-upgrade-assurance/docs/dialect)) - it's expanded to `valid_elements`
+* if `requested_config` is `None` we immediately treat it as if `all`  was passed implicitly (see [`dialect`](/panos/docs/panos-upgrade-assurance/dialect)) - it's expanded to `valid_elements`
 * `_requested_config_names` is introduced as `requested_config` stripped of any element configurations. Additionally, we do verification if elements of this variable match `valid_elements`. An exception is thrown if not.
 
 __Parameters__
@@ -129,7 +129,7 @@ def _is_element_included(element: str) -> bool
 
 Method verifying if a config element is a correct (supported) value.
 
-This method can also handle `not-elements` (see [`dialect`](/panos-upgrade-assurance/docs/dialect)).
+This method can also handle `not-elements` (see [`dialect`](/panos/docs/panos-upgrade-assurance/dialect)).
 
 __Parameters__
 
@@ -174,7 +174,7 @@ def _expand_all() -> None
 
 Expand key word `'all'` to  `self.valid_elements`.
 
-During expansion, elements from `self.valid_elements` which are already available in `self.requested_config` are skipped. This way we do not introduce duplicates for elements that were provided explicitly. 
+During expansion, elements from `self.valid_elements` which are already available in `self.requested_config` are skipped. This way we do not introduce duplicates for elements that were provided explicitly.
 
 This method directly operates on `self.requested_config`.
 
@@ -188,7 +188,7 @@ Parse the input config and return a machine-usable configuration.
 
 The parsed configuration retains element types. This means that an element of a dictionary type will remain a dictionary in the parsed config.
 
-This method handles most of the [`dialect`](/panos-upgrade-assurance/docs/dialect)'s logic.
+This method handles most of the [`dialect`](/panos/docs/panos-upgrade-assurance/dialect)'s logic.
 
 __Returns__
 

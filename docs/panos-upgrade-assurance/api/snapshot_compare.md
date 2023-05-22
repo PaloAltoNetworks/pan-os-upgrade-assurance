@@ -21,8 +21,8 @@ Used when a snapshot element contains different properties in both snapshots.
 
 Class comparing snapshots of Firewall Nodes.
 
-This object can be used to compare two Firewall snapshots made with the [CheckFirewall.run_snapshots()](/panos-upgrade-assurance/docs/api/check_firewall#checkfirewallrun_snapshots) method and present results of this comparison.
-Its main purpose is to compare two snapshots made with the [`CheckFirewall`](/panos-upgrade-assurance/docs/api/check_firewall#class-checkfirewall) class. However, the code is generic enough to compare any two dictionaries as long as they follow the schema below:
+This object can be used to compare two Firewall snapshots made with the [CheckFirewall.run_snapshots()](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallrun_snapshots) method and present results of this comparison.
+Its main purpose is to compare two snapshots made with the [`CheckFirewall`](/panos/docs/panos-upgrade-assurance/api/check_firewall#class-checkfirewall) class. However, the code is generic enough to compare any two dictionaries as long as they follow the schema below:
 
 ```yaml
 {
@@ -34,15 +34,15 @@ Its main purpose is to compare two snapshots made with the [`CheckFirewall`](/pa
 
 Where:
 
-* `root_key` has to be present and mapped to a method in the `self._functions_mapping` variable in order to be recognized during a comparison. 
-* `value` can be either of a simple type (`str`, `int`, `float`, `bool`) or a nested `dict`. 
+* `root_key` has to be present and mapped to a method in the `self._functions_mapping` variable in order to be recognized during a comparison.
+* `value` can be either of a simple type (`str`, `int`, `float`, `bool`) or a nested `dict`.
 
 __Attributes__
 
 
 - `_functions_mapping (dict)`: Internal variable containing the map of all valid report types mapped to the specific methods.
 
-This mapping is used to verify the requested report and to map the report to an actual method that will eventually run. Keys in this dictionary are report names as defined in the [`SnapType`](/panos-upgrade-assurance/docs/api/utils#class-snaptype) class. Essentially, these are the same values that one would specify when creating a snapshot with the [CheckFirewall.run_snapshots()](/panos-upgrade-assurance/docs/api/check_firewall#checkfirewallrun_snapshots) method. Values are references to the methods that will run.
+This mapping is used to verify the requested report and to map the report to an actual method that will eventually run. Keys in this dictionary are report names as defined in the [`SnapType`](/panos/docs/panos-upgrade-assurance/api/utils#class-snaptype) class. Essentially, these are the same values that one would specify when creating a snapshot with the [CheckFirewall.run_snapshots()](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallrun_snapshots) method. Values are references to the methods that will run.
 
 ### `SnapshotCompare.__init__`
 
@@ -75,16 +75,16 @@ This is a single point of entry to generate a comparison report. It takes both r
 __Parameters__
 
 
-- __reports__ (`list, optional`): A list of reports - snapshot state areas with optional configuration. This parameter follows the  [`dialect`](/panos-upgrade-assurance/docs/dialect) of [`ConfigParser`](/panos-upgrade-assurance/docs/api/utils#class-configparser) class.
+- __reports__ (`list, optional`): A list of reports - snapshot state areas with optional configuration. This parameter follows the  [`dialect`](/panos/docs/panos-upgrade-assurance/dialect) of [`ConfigParser`](/panos/docs/panos-upgrade-assurance/api/utils#class-configparser) class.
 
-    The reports list is essentially the list of keys present in the snapshots. These keys, however, are the state areas specified when the snapshot is made with the [`CheckFirewall.run_snapshots()`](/panos-upgrade-assurance/docs/api/check_firewall#checkfirewallrun_snapshots) method. This means that the reports list is basically the list of state areas. The only difference is that for reports, it is possible to specify an additional configuration. This means that the list can be specified in two ways, as `str` or `dict` (in the same manner as for [`CheckFirewall.run_readiness_checks()`](/panos-upgrade-assurance/docs/api/check_firewall#checkfirewallrun_readiness_checks)).
+    The reports list is essentially the list of keys present in the snapshots. These keys, however, are the state areas specified when the snapshot is made with the [`CheckFirewall.run_snapshots()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallrun_snapshots) method. This means that the reports list is basically the list of state areas. The only difference is that for reports, it is possible to specify an additional configuration. This means that the list can be specified in two ways, as `str` or `dict` (in the same manner as for [`CheckFirewall.run_readiness_checks()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallrun_readiness_checks)).
 
     For the elements specified as
 
     * `str` - the element value is the name of the report (state area),
     * `dict` - the element contains the report name (state area) and the key value and report configuration as the element value.
 
-    Refer to the [documentation on reporting](/panos-upgrade-assurance/docs/configuration-details#reports) for details on the currently available snapshot areas and optional parameters that can be configured for them.
+    Refer to the [documentation on reporting](/panos/docs/panos-upgrade-assurance/configuration-details#reports) for details on the currently available snapshot areas and optional parameters that can be configured for them.
 
 __Raises__
 
@@ -136,7 +136,7 @@ The format of the returned value is the following:
 
 ```yaml
 {
-    passed: bool, 
+    passed: bool,
     change_percentage: float,
     change_threshold: float
 }
@@ -199,7 +199,7 @@ By default dictionaries are compared by going down all nested levels, to the poi
 }
 ```
 
-The bottom most level keys are: `virtual-router`, `destination`, `nexthop`, `metric`, `flags`, `age`, `interface`, `route-table`. This list follows [`ConfigParser`](/panos-upgrade-assurance/docs/api/utils#class-configparser) [`dialect`](/panos-upgrade-assurance/docs/dialect).
+The bottom most level keys are: `virtual-router`, `destination`, `nexthop`, `metric`, `flags`, `age`, `interface`, `route-table`. This list follows [`ConfigParser`](/panos/docs/panos-upgrade-assurance/api/utils#class-configparser) [`dialect`](/panos/docs/panos-upgrade-assurance/dialect).
 
 The difference between dictionaries is calculated from three perspectives:
 
@@ -207,7 +207,7 @@ The difference between dictionaries is calculated from three perspectives:
 2. are there any keys in the 2nd (right) dictionary that are not present in the 1st (left) - this is represented under the `added` key in the results.
 3. for the keys that are present in both dictionaries, are values for these keys the same or different - this is represented under the `changed` key in the results.
 
-This is a **recursive** method. When calculating changed values, if a value for the key is `dict`, we run the method again on that dictionary - we go down one level in the nested structure. We do that to a point where the value is of the `str` type. 
+This is a **recursive** method. When calculating changed values, if a value for the key is `dict`, we run the method again on that dictionary - we go down one level in the nested structure. We do that to a point where the value is of the `str` type.
 Therefore, when the final comparison results are presented, the `changed` key usually contains a nested results structure. This means it contains a dictionary with the `missing`, `added`, and `changed` keys.
 Each comparison perspective contains the `passed` property that immediately informs if this comparison gave any results (`False`) or not (`True`).
 
@@ -318,7 +318,7 @@ The static method to calculate the upper level `passed` value.
 
 When two snapshots are compared, a dictionary that is the result of this comparison is structured as in the following [`get_diff_and_threshold()`](#snapshotcompareget_diff_and_threshold) method: each root key contains a dictionary that has a structure returned by the [`calculate_diff_on_dicts()`](#snapshotcomparecalculate_diff_on_dicts) method.
 
-This method takes a dictionary under the root key and calculates the `passed` flag based on the all `passed` flags in that dictionary. This provides a quick way of finding out if any comparison made on data under a root key failed or not. 
+This method takes a dictionary under the root key and calculates the `passed` flag based on the all `passed` flags in that dictionary. This provides a quick way of finding out if any comparison made on data under a root key failed or not.
 
 To illustrate that, the `passed` flag added by this method is marked with an arrow:
 
@@ -364,11 +364,11 @@ The generic snapshot comparison method.
 The generic method to compare two snapshots of a given type. It is meant to fit most of the comparison cases.
 It is capable of calculating both - a difference between two snapshots and the change count in the elements against a given threshold. The 1<sup>st</sup> calculation is done by the [`calculate_diff_on_dicts()`](#snapshotcomparecalculate_diff_on_dicts) method, the 2<sup>nd</sup> - internally.
 
-The changed elements count does not compare the count of elements in each snapshot. This value represents the number of actual changes, so elements added, missing and changed. This is compared against the number of elements in the left snapshot as this one is usually the 1st one taken and it's treated as a source of truth. 
+The changed elements count does not compare the count of elements in each snapshot. This value represents the number of actual changes, so elements added, missing and changed. This is compared against the number of elements in the left snapshot as this one is usually the 1st one taken and it's treated as a source of truth.
 
 The changed elements count is presented as a percentage. In scenarios where the right snapshot has more elements then the left one, it can give values greater than 100%.
 
-This method produces a complex set of nested dictionaries. Each level contains the `passed` flag indicating if the comparison of a particular type or for a particular level failed or not, and the actual comparison results. 
+This method produces a complex set of nested dictionaries. Each level contains the `passed` flag indicating if the comparison of a particular type or for a particular level failed or not, and the actual comparison results.
 
 An example for the route tables, crafted in a way that almost each level fails:
 
@@ -421,7 +421,7 @@ An example for the route tables, crafted in a way that almost each level fails:
 }
 ```
 
-In the example above, you can also see a nested dictionary produced by the [`calculate_diff_on_dicts()`](#snapshotcomparecalculate_diff_on_dicts) method under `changed.changed_raw`. 
+In the example above, you can also see a nested dictionary produced by the [`calculate_diff_on_dicts()`](#snapshotcomparecalculate_diff_on_dicts) method under `changed.changed_raw`.
 
 __Parameters__
 
@@ -448,7 +448,7 @@ def get_count_change_percentage(
 
 Generic method to calculate the change on values and compare them against a given threshold.
 
-In opposition to the [`get_diff_and_threshold()`](#snapshotcompareget_diff_and_threshold) method, this one does not calculate the count change but the actual difference between the numerical values. 
+In opposition to the [`get_diff_and_threshold()`](#snapshotcompareget_diff_and_threshold) method, this one does not calculate the count change but the actual difference between the numerical values.
 A good example is a change in the session count. The snapshot for this area is a dictionary with the keys taking values of different session types and values containing the actual session count:
 
 ```yaml
@@ -476,7 +476,7 @@ A good example is a change in the session count. The snapshot for this area is a
 This method:
 
 - sweeps through all the session types provided in the `thresholds` variable,
-- calculates the actual difference, 
+- calculates the actual difference,
 - compares the actual difference with the threshold value (percentage) for a particular session type.
 
 It takes as parameter a list of dictionaries describing elements to compare, in a form of:
@@ -492,8 +492,8 @@ Where:
 - `element_type` is a key which value we are going to compare,
 - `threshold_value` is a percentage value provided as either `int` or `float`. If the list is empty, the method will return `None`.
 
-:::warning
-This list **does not support** [`ConfigParser`](/panos-upgrade-assurance/docs/api/utils#class-configparser) [`dialect`](/panos-upgrade-assurance/docs/dialect).
+:::caution
+This list **does not support** [`ConfigParser`](/panos/docs/panos-upgrade-assurance/api/utils#class-configparser) [`dialect`](/panos/docs/panos-upgrade-assurance/dialect).
 :::
 
 Below there is a sample list for the `sessions_stat` dictionary shown above that would calculate differences for the TCP and UDP sessions:
