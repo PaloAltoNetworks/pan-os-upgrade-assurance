@@ -14,6 +14,8 @@ on:
       - opened
       - edited
       - ready_for_review
+    branches:
+      - main
 
 jobs:
   lint_pr_title:
