@@ -151,7 +151,7 @@ class SnapshotCompare:
         elif isinstance(key, (set, list)):
             key_set = key
         else:
-            raise WrongDataTypeException(f'The key variable is a {type(key)} but should be either str, set or list')
+            raise WrongDataTypeException(f'The key variable is a {type(key)} but should be either: str, set or list')
 
         left_snap_missing_key = False if set(key_set).issubset(left_dict.keys()) else True
         right_snap_missing_key = False if set(key_set).issubset(right_dict.keys()) else True
