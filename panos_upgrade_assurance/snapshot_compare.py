@@ -130,7 +130,7 @@ class SnapshotCompare:
 
     @staticmethod
     def key_checker(left_dict: dict, right_dict: dict, key: Union[str, set, list]) -> None:
-        """The static method to check if a key(string) or list/set of keys is available in both dictionaries.
+        """The static method to check if a key or a list/set of keys is available in both dictionaries.
 
         This method looks for a given key or list/set of keys in two dictionaries. Its main purpose is to assure that when comparing a key-value pair from two dictionaries, it actually exists in both.
 
