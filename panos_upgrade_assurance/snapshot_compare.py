@@ -129,7 +129,9 @@ class SnapshotCompare:
         return result
 
     @staticmethod
-    def key_checker(left_dict: dict, right_dict: dict, key: Union[str, set, list]) -> None:
+    def key_checker(
+        left_dict: dict, right_dict: dict, key: Union[str, set, list]
+    ) -> None:
         """The static method to check if a key or a list/set of keys is available in both dictionaries.
 
         This method looks for a given key or list/set of keys in two dictionaries. Its main purpose is to assure that when comparing a key-value pair from two dictionaries, it actually exists in both.
@@ -151,13 +153,17 @@ class SnapshotCompare:
         elif isinstance(key, (set, list)):
             key_set = set(key)
         else:
-            raise WrongDataTypeException(f'The key variable is a {type(key)} but should be either: str, set or list')
+            raise WrongDataTypeException(
+                f"The key variable is a {type(key)} but should be either: str, set or list"
+            )
 
         left_snap_missing_key = False if key_set.issubset(left_dict.keys()) else True
         right_snap_missing_key = False if key_set.issubset(right_dict.keys()) else True
 
         if left_snap_missing_key and right_snap_missing_key:
-            raise MissingKeyException(f"{key} (some elements if set/list) is missing in both snapshots")
+            raise MissingKeyException(
+                f"{key} (some elements if set/list) is missing in both snapshots"
+            )
         if left_snap_missing_key or right_snap_missing_key:
             raise MissingKeyException(
                 f"{key} (some elements if set/list) is missing in {'left snapshot' if left_snap_missing_key else 'right snapshot'}"
@@ -703,10 +709,17 @@ class SnapshotCompare:
 
         requested_elements = set(next(iter(unary_dict)) for unary_dict in thresholds)
         try:
-            self.key_checker(self.left_snap[report_type], self.right_snap[report_type], requested_elements)
-        except MissingKeyException as exc:  # raised when any requested key is missing in one of the snapshots
+            self.key_checker(
+                self.left_snap[report_type],
+                self.right_snap[report_type],
+                requested_elements,
+            )
+        except (
+            MissingKeyException
+        ) as exc:  # raised when any requested key is missing in one of the snapshots
             raise SnapshotSchemeMismatchException(
-                f'Snapshots have missing keys in {requested_elements} for {report_type} report.') from exc
+                f"Snapshots have missing keys in {requested_elements} for {report_type} report."
+            ) from exc
 
         elements = ConfigParser(
             valid_elements=set(self.left_snap[report_type].keys()),
