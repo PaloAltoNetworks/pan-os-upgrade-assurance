@@ -1,0 +1,45 @@
+{
+  "branches": [
+    "main"
+  ],
+  "plugins": [
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "releaseRules": [
+          {
+            "breaking": true,
+            "release": "minor"
+          },
+          {
+            "type": "feat",
+            "release": "patch"
+          },
+          {
+            "type": "feat",
+            "scope" : "MAJOR",
+            "release": "major"
+          }
+        ]
+      }
+    ],
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/git",
+      {
+        "assets": [
+          "README.md",
+          "pyproject.toml"
+        ],
+        "message": "chore(release): ${nextRelease.version}\n\n${nextRelease.notes}"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "successComment": ":tada: This ${issue.pull_request ? 'PR is included' : 'issue has been resolved'} in version ${nextRelease.version} :tada:\n\nThe release is available on [PyPI](https://pypi.org/project/panos-upgrade-assurance/) and [GitHub release](<github_release_url>)\n\n> Posted by [semantic-release](https://github.com/semantic-release/semantic-release) bot"
+      }
+    ]
+  ],
+  "preset": "conventionalcommits"
+}

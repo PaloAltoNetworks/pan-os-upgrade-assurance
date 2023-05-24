@@ -1,0 +1,73 @@
+name: PR
+run-name: "PR - (#${{ github.event.number }}) ${{ github.event.pull_request.title }}"
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+      - ready_for_review
+    branches: ['main']
+
+jobs:
+
+  format:
+    name: Verify code formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install Poetry
+        uses: Gr1N/setup-poetry@v8
+        with: 
+          poetry-version: 1.4.2
+
+      - name: Create Poetry venv
+        run: poetry install
+
+      - name: Run flake
+        run: poetry run flake8 --config .flake8 panos_upgrade_assurance
+
+      - name: Run black
+        run: poetry run black -v --diff --check panos_upgrade_assurance
+
+
+  documentation:
+    name: Verify if generated API documentation is up to date
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install Poetry
+        uses: Gr1N/setup-poetry@v8
+        with: 
+          poetry-version: 1.4.2
+
+      - name: Create Poetry venv
+        run: poetry install
+
+      - name: Generate API docs
+        run: poetry run pydoc-markdown
+
+      - name: Check if documentation needs updating
+        run: |
+          if [ "$(git status --porcelain)" ]; then 
+            git status
+            exit 1
+          else
+            exit 0
+          fi
