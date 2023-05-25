@@ -65,8 +65,7 @@ jobs:
           VERSION: ${{ needs.rc.outputs.ver }}
           POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
         run: |
-          sed -i -E "s/^version = \".*\"$/version = \"${VERSION}\"/g" pyproject.toml
-          cat pyproject.toml | grep version
+          poetry version "${VERSION}"
           poetry publish --build
 
       - name: Create release and publish to GitHub

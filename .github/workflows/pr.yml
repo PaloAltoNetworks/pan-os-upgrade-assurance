@@ -16,19 +16,27 @@ jobs:
   pyversion:
     name: Discover minimum Python version
     runs-on: ubuntu-latest
+    outputs:
+      pyversion: ${{ steps.pyversion.outputs.pyversion }}
     steps:
       - name: checkout code
         uses: actions/checkout@v3
       - name: discover Python version
         id: pyversion
         uses: ./.github/actions/discover_python_version
-      - name: display version
-        run: echo Python version ${{ steps.pyversion.outputs.pyversion }}
 
-  # code_format:
-  #   name: Validate code formatting
-  #   needs: [pyversion]
-  #   uses: ./.github/workflows/sub_format.yml
-  #   with:
-  #     python_version: 3.8.1
-  #     poetry_version: 1.4.2
+  code_format:
+    name: Validate code formatting
+    needs: [pyversion]
+    uses: ./.github/workflows/sub_format.yml
+    with:
+      python_version: ${{ needs.pyversion.outputs.pyversion }}
+      poetry_version: 1.4.2
+
+  documentation_check:
+    name: Validate that the API documentation is up to date
+    needs: [pyversion]
+    uses: ./.github/workflows/sub_docs.yml
+    with:
+      python_version: ${{ needs.pyversion.outputs.pyversion }}
+      poetry_version: 1.4.2
