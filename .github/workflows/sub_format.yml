@@ -1,4 +1,4 @@
-name: (sub) Code Format
+name: (sub) Code Format and Security
 
 defaults:
   run:
@@ -18,7 +18,7 @@ on:
 
 jobs:
   format:
-    name: Verify code formatting
+    name: Verify code formatting and security
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -38,7 +38,10 @@ jobs:
         run: poetry install
 
       - name: Run flake
-        run: poetry run flake8 --config .flake8 panos_upgrade_assurance
+        run: poetry run make lint
 
       - name: Run black
-        run: poetry run black -v --diff --check panos_upgrade_assurance
+        run: poetry run make format
+
+      - name: Run bandit
+        run: poetry run make security

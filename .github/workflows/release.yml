@@ -6,6 +6,9 @@ on:
   schedule:
     - cron: '0 1 * * 3' # this means every Wednesday @1am UTC
 
+permissions:
+  contents: read
+
 jobs:
 
   rc:
@@ -33,11 +36,43 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  pyversion:
+    name: Discover minimum Python version
+    needs: [rc]
+    if: needs.rc.outputs.rc == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      pyversion: ${{ steps.pyversion.outputs.pyversion }}
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v3
+      - name: discover Python version
+        id: pyversion
+        uses: ./.github/actions/discover_python_version
+
+  code_format:
+    name: Validate code formatting
+    needs: [pyversion]
+    uses: ./.github/workflows/sub_format.yml
+    with:
+      python_version: ${{ needs.pyversion.outputs.pyversion }}
+      poetry_version: 1.4.2
+
+  documentation_check:
+    name: Validate that the API documentation is up to date
+    needs: [pyversion]
+    uses: ./.github/workflows/sub_docs.yml
+    with:
+      python_version: ${{ needs.pyversion.outputs.pyversion }}
+      poetry_version: 1.4.2
+
   release:
     name: Create a new release
     runs-on: ubuntu-latest
     needs:
       - rc
+      - code_format
+      - documentation_check
     concurrency: release
     permissions:
       contents: write

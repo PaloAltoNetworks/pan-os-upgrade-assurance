@@ -39,7 +39,7 @@ jobs:
         run: poetry install
 
       - name: Generate API docs
-        run: poetry run pydoc-markdown
+        run: poetry run make documentation
 
       - name: Check if documentation needs updating
         run: |

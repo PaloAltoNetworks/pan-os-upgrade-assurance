@@ -26,7 +26,7 @@ jobs:
         uses: ./.github/actions/discover_python_version
 
   code_format:
-    name: Validate code formatting
+    name: Formatting and security
     needs: [pyversion]
     uses: ./.github/workflows/sub_format.yml
     with:
@@ -34,7 +34,7 @@ jobs:
       poetry_version: 1.4.2
 
   documentation_check:
-    name: Validate that the API documentation is up to date
+    name: API documentation
     needs: [pyversion]
     uses: ./.github/workflows/sub_docs.yml
     with:
