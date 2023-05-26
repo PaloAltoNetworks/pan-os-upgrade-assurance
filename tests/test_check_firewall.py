@@ -77,8 +77,8 @@ class TestCheckFirewall:
                 'running-sync': 'synchronized'
             }
         }
-        assert check_firewall_mock.check_ha_status() == CheckResult(reason = "HA pair is not in Active-Passive mode.")
-    
+        assert check_firewall_mock.check_ha_status() == CheckResult(status=CheckStatus.ERROR, reason = "HA pair is not in Active-Passive mode.")
+
     def test_check_ha_status_local_info(self, check_firewall_mock):
         check_firewall_mock._node.get_ha_configuration.return_value = {
             'enabled': 'yes',
