@@ -21,5 +21,5 @@ runs:
         #    when the regex does not match SED won't do anything and it will return the
         #    full string, this command looks for 'python' and return exit code 1 if it finds one
 
-        PYVER=$(grep '^[Pp]ython ' pyproject.toml | sed -E 's/python = \"\^?([0-9]\.[0-9])(\.[0-9])?\"/\1/g; /python/q1')
+        PYVER=$(grep '^[Pp]ython ' pyproject.toml | sed -E 's/python += +\"\^?([0-9]\.[0-9]+)(\.[0-9]+)?\"/\1/; /python/q1')
         echo "pyver=$PYVER" >> $GITHUB_OUTPUT
