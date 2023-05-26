@@ -55,6 +55,6 @@ todo
 dist/
 .venv
 
-docs/_build
-
 poetry.lock
+sidebar.json
+.python-version

@@ -10,7 +10,7 @@ from getpass import getpass
 if __name__ == "__main__":
     argparser = ArgumentParser(
         add_help=True,
-        description="A simple script running upgrade assurance checks on device.",
+        description="A simple script running upgrade assurance snapshot on device.",
     )
 
     argparser.add_argument(
@@ -78,36 +78,16 @@ if __name__ == "__main__":
 
     check_node = CheckFirewall(firewall)
 
-    checks = [
-        "all",
-        "panorama",
-        "ha",
-        "ntp_sync",
-        "candidate_config",
-        "active_support",
-        # checks below have optional configuration
-        {"content_version": {"version": "8635-7675"}},
-        {"expired_licenses": {"skip_licenses": ["Threat Preventon"]}},
-        {"planes_clock_sync": {"diff_threshold": 2}},
-        {"free_disk_space": {"image_version": "10.1.6-h6"}},
-        # checks below require additional configuration
-        {
-            "session_exist": {
-                "source": "134.238.135.137",
-                "destination": "10.1.0.4",
-                "dest_port": "80",
-            }
-        },
-        {"arp_entry_exist": {"ip": "10.0.1.1"}},
-        {"ip_sec_tunnel_status": {"tunnel_name": "ipsec_tun"}},
+    areas = [
+        # 'all',
+        "nics",
+        "routes",
+        "license",
+        "arp_table",
+        "content_version",
+        "session_stats",
+        "ip_sec_tunnels",
     ]
 
-    check_readiness = check_node.run_readiness_checks(
-        checks_configuration=checks,
-        # report_style=True
-    )
-    printer(check_readiness)
-    # node_state = check_node.check_is_ha_active(
-    #     # skip_config_sync=True
-    #     )
-    # print(bool(node_state), node_state)
+    snap = check_node.run_snapshots(snapshots_config=areas)
+    printer(snap)

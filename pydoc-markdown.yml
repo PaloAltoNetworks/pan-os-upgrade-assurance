@@ -1,0 +1,35 @@
+loaders:
+  - type: python
+    search_path: [panos_upgrade_assurance]
+processors:
+  - type: filter
+    skip_empty_modules: true
+    exclude_private: false
+  - type: smart
+  - type: crossref
+renderer:
+  type: docusaurus
+  docs_base_path: docs/panos-upgrade-assurance
+  relative_output_path: api
+  markdown:
+    render_module_header_template: |
+      ---
+      id: {module_name}
+      sidebar_label: {module_name} module
+      title: {module_name}
+      hide_title: true
+      custom_edit_url: null
+      ---
+    header_level_by_type:
+      Class: 2
+      Function: 3
+      Method: 3
+      Module: 1
+      Data: 3
+    code_headers: true
+    descriptive_class_title: 'class '
+    descriptive_module_title: false
+    add_method_class_prefix: true
+    classdef_code_block: false
+    signature_with_decorators: true
+    escape_html_in_docstring: false

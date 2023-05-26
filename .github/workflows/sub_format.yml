@@ -1,0 +1,47 @@
+name: (sub) Code Format and Security
+
+defaults:
+  run:
+    shell: bash
+
+on:
+  workflow_call:
+    inputs:
+      python_version:
+        description: A version of Python to install
+        type: string
+        required: true
+      poetry_version:
+        description: A version of poetry to install
+        type: string
+        required: true
+
+jobs:
+  format:
+    name: Verify code formatting and security
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ inputs.python_version }}
+
+      - name: Install Poetry
+        uses: Gr1N/setup-poetry@v8
+        with: 
+          poetry-version: ${{ inputs.poetry_version }}
+
+      - name: Create Poetry venv
+        run: poetry install
+
+      - name: Run flake
+        run: poetry run make lint
+
+      - name: Run black
+        run: poetry run make format
+
+      - name: Run bandit
+        run: poetry run make security
