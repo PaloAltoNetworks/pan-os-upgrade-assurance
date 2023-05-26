@@ -13,61 +13,30 @@ on:
 
 jobs:
 
-  format:
-    name: Verify code formatting
+  pyversion:
+    name: Discover minimum Python version
     runs-on: ubuntu-latest
+    outputs:
+      pyversion: ${{ steps.pyversion.outputs.pyversion }}
     steps:
-      - name: Checkout code
+      - name: checkout code
         uses: actions/checkout@v3
+      - name: discover Python version
+        id: pyversion
+        uses: ./.github/actions/discover_python_version
 
-      - name: Install Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.11
+  code_format:
+    name: Formatting and security
+    needs: [pyversion]
+    uses: ./.github/workflows/sub_format.yml
+    with:
+      python_version: ${{ needs.pyversion.outputs.pyversion }}
+      poetry_version: 1.4.2
 
-      - name: Install Poetry
-        uses: Gr1N/setup-poetry@v8
-        with: 
-          poetry-version: 1.4.2
-
-      - name: Create Poetry venv
-        run: poetry install
-
-      - name: Run flake
-        run: poetry run flake8 --config .flake8 panos_upgrade_assurance
-
-      - name: Run black
-        run: poetry run black -v --diff --check panos_upgrade_assurance
-
-
-  documentation:
-    name: Verify if generated API documentation is up to date
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Install Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.11
-
-      - name: Install Poetry
-        uses: Gr1N/setup-poetry@v8
-        with: 
-          poetry-version: 1.4.2
-
-      - name: Create Poetry venv
-        run: poetry install
-
-      - name: Generate API docs
-        run: poetry run pydoc-markdown
-
-      - name: Check if documentation needs updating
-        run: |
-          if [ "$(git status --porcelain)" ]; then 
-            git status
-            exit 1
-          else
-            exit 0
-          fi
+  documentation_check:
+    name: API documentation
+    needs: [pyversion]
+    uses: ./.github/workflows/sub_docs.yml
+    with:
+      python_version: ${{ needs.pyversion.outputs.pyversion }}
+      poetry_version: 1.4.2
