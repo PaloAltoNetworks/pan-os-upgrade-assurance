@@ -1,23 +1,6 @@
 from typing import Optional, Union, List, Dict
 from panos_upgrade_assurance.utils import ConfigParser, SnapType
-
-
-class MissingKeyException(Exception):
-    """Used when an exception about the missing keys in a dictionary is thrown."""
-
-    pass
-
-
-class WrongDataTypeException(Exception):
-    """Used when a variable does not meet the data type requirements."""
-
-    pass
-
-
-class SnapshotSchemeMismatchException(Exception):
-    """Used when a snapshot element contains different properties in both snapshots."""
-
-    pass
+from panos_upgrade_assurance.errors import *
 
 
 class SnapshotCompare:

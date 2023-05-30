@@ -4,49 +4,8 @@ from xmltodict import parse as XMLParse
 from typing import Optional, Union
 from panos.firewall import Firewall
 from pan.xapi import PanXapiError
+from panos_upgrade_assurance.errors import *
 from math import floor
-
-
-class CommandRunFailedException(Exception):
-    """Used when a command run on a device does not return the `success` status."""
-
-    pass
-
-
-class MalformedResponseException(Exception):
-    """A generic exception class used when a response does not meet the expected standards."""
-
-    pass
-
-
-class DeviceNotLicensedException(Exception):
-    """Used when no license is retrieved from a device."""
-
-    pass
-
-
-class ContentDBVersionsFormatException(Exception):
-    """Used when parsing Content DB versions fail due to an unknown version format (assuming `XXXX-YYYY`)."""
-
-    pass
-
-
-class PanoramaConfigurationMissingException(Exception):
-    """Used when checking Panorama connectivity on a device that was not configured with Panorama."""
-
-    pass
-
-
-class WrongDiskSizeFormatException(Exception):
-    """Used when parsing free disk size information."""
-
-    pass
-
-
-class UpdateServerConnectivityException(Exception):
-    """Used when connection to the Update Server cannot be established."""
-
-    pass
 
 
 class FirewallProxy(Firewall):

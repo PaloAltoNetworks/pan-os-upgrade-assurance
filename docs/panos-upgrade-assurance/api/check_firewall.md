@@ -5,14 +5,6 @@ title: check_firewall
 hide_title: true
 custom_edit_url: null
 ---
-## class `ContentDBVersionInFutureException`
-
-Used when the installed Content DB version is newer than the latest available version.
-
-## class `WrongDataTypeException`
-
-Used when passed configuration does not meet the data type requirements.
-
 ## class `CheckFirewall`
 
 Class responsible for running readiness checks and creating Firewall state snapshots.

@@ -2,18 +2,7 @@ from dataclasses import dataclass
 from copy import deepcopy
 from typing import Optional, Union, List, Iterable
 from enum import Enum
-
-
-class UnknownParameterException(Exception):
-    """Used when one of the requested configuration parameters processed by [`ConfigParser`](#class-configparser) is not a valid parameter."""
-
-    pass
-
-
-class WrongDataTypeException(Exception):
-    """Used when a variable does not meet data type requirements."""
-
-    pass
+from panos_upgrade_assurance.errors import *
 
 
 class CheckType:

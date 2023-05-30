@@ -11,26 +11,9 @@ from panos_upgrade_assurance.utils import (
     SnapType,
     CheckStatus,
 )
-from panos_upgrade_assurance.firewall_proxy import (
-    FirewallProxy,
-    DeviceNotLicensedException,
-    UpdateServerConnectivityException,
-    ContentDBVersionsFormatException,
-    WrongDiskSizeFormatException,
-)
+from panos_upgrade_assurance.firewall_proxy import FirewallProxy
+from panos_upgrade_assurance.errors import *
 from panos import PanOSVersion
-
-
-class ContentDBVersionInFutureException(Exception):
-    """Used when the installed Content DB version is newer than the latest available version."""
-
-    pass
-
-
-class WrongDataTypeException(Exception):
-    """Used when passed configuration does not meet the data type requirements."""
-
-    pass
 
 
 class CheckFirewall:

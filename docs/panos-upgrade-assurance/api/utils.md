@@ -5,14 +5,6 @@ title: utils
 hide_title: true
 custom_edit_url: null
 ---
-## class `UnknownParameterException`
-
-Used when one of the requested configuration parameters processed by [`ConfigParser`](#class-configparser) is not a valid parameter.
-
-## class `WrongDataTypeException`
-
-Used when a variable does not meet data type requirements.
-
 ## class `CheckType`
 
 Class mapping check configuration strings for commonly used variables.

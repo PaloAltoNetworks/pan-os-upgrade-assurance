@@ -5,18 +5,6 @@ title: snapshot_compare
 hide_title: true
 custom_edit_url: null
 ---
-## class `MissingKeyException`
-
-Used when an exception about the missing keys in a dictionary is thrown.
-
-## class `WrongDataTypeException`
-
-Used when a variable does not meet the data type requirements.
-
-## class `SnapshotSchemeMismatchException`
-
-Used when a snapshot element contains different properties in both snapshots.
-
 ## class `SnapshotCompare`
 
 Class comparing snapshots of Firewall Nodes.
