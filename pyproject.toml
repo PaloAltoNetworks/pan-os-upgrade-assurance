@@ -28,6 +28,7 @@ pydoc-markdown = "^4.6"
 flake8 = "^6.0"
 black = "^23.3"
 bandit = "^1.7"
+Flake8-pyproject = "^1.2"
 
 [build-system]
 requires = ["poetry-core"]
@@ -39,3 +40,7 @@ skips = ["B405"]
 
 [tool.black]
 line-length = 160
+
+[tool.flake8]
+select = ["C","E","F","W","B","D","B950"]
+ignore = ["E203","E501","W503","D203","D102","D103","D107","D400","E501","F405","F403"]
