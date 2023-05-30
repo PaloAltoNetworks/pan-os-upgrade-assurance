@@ -3,6 +3,7 @@ from panos_upgrade_assurance.utils import interpret_yes_no
 from xmltodict import parse as XMLParse
 from typing import Optional, Union
 from panos.firewall import Firewall
+from pan.xapi import PanXapiError
 from math import floor
 
 
@@ -14,6 +15,12 @@ class CommandRunFailedException(Exception):
 
 class MalformedResponseException(Exception):
     """A generic exception class used when a response does not meet the expected standards."""
+
+    pass
+
+
+class DeviceNotLicensedException(Exception):
+    """Used when no license is retrieved from a device."""
 
     pass
 
@@ -32,6 +39,12 @@ class PanoramaConfigurationMissingException(Exception):
 
 class WrongDiskSizeFormatException(Exception):
     """Used when parsing free disk size information."""
+
+    pass
+
+
+class UpdateServerConnectivityException(Exception):
+    """Used when connection to the Update Server cannot be established."""
 
     pass
 
@@ -87,9 +100,7 @@ class FirewallProxy(Firewall):
             raise MalformedResponseException(f"No result field returned for: {cmd}")
 
         if not return_xml:
-            resp_result = XMLParse(
-                ET.tostring(resp_result, encoding="utf8", method="xml")
-            )["result"]
+            resp_result = XMLParse(ET.tostring(resp_result, encoding="utf8", method="xml"))["result"]
 
         return resp_result
 
@@ -173,29 +184,21 @@ class FirewallProxy(Firewall):
 
         pan_status = self.op_parser(cmd="show panorama-status")
         if pan_status is None:
-            raise PanoramaConfigurationMissingException(
-                "Device not configured with Panorama."
-            )
+            raise PanoramaConfigurationMissingException("Device not configured with Panorama.")
 
         if not isinstance(pan_status, str):
-            raise MalformedResponseException(
-                "Response from device is not type of string."
-            )
+            raise MalformedResponseException("Response from device is not type of string.")
 
         pan_status_list = pan_status.split("\n")
         pan_status_list_length = len(pan_status_list)
 
         if pan_status_list_length in [3, 6]:
             for i in range(1, pan_status_list_length, 3):
-                pan_connected = interpret_yes_no(
-                    (pan_status_list[i].split(":")[1]).strip()
-                )
+                pan_connected = interpret_yes_no((pan_status_list[i].split(":")[1]).strip())
                 if pan_connected:
                     return True
         else:
-            raise MalformedResponseException(
-                f"Panorama configuration block does not have typical structure: <{pan_status}>."
-            )
+            raise MalformedResponseException(f"Panorama configuration block does not have typical structure: <{pan_status}>.")
 
         return False
 
@@ -358,9 +361,7 @@ class FirewallProxy(Firewall):
 
         hardware = response["hw"]
         if hardware is None:
-            raise MalformedResponseException(
-                "Malformed response from device, no [hw] element present."
-            )
+            raise MalformedResponseException("Malformed response from device, no [hw] element present.")
 
         results = {}
         entries = hardware["entry"]
@@ -374,6 +375,10 @@ class FirewallProxy(Firewall):
         """Get device licenses.
 
         The actual API command is `request license info`.
+
+        # Raises
+
+        DeviceNotLicensedException: Exception thrown when there is no information about licenses, most probably because the device is not licensed.
 
         # Returns
 
@@ -408,6 +413,10 @@ class FirewallProxy(Firewall):
         response = self.op_parser(cmd="request license info")
 
         result = {}
+
+        if response["licenses"] is None:
+            raise DeviceNotLicensedException("Device possibly not licenced - no license information available in the API response.")
+
         licenses = response["licenses"]["entry"]
         for lic in licenses if isinstance(licenses, list) else [licenses]:
             result[lic["feature"]] = dict(lic)
@@ -447,6 +456,11 @@ class FirewallProxy(Firewall):
         </SupportInfoResponse>
         ```
 
+        # Raises
+
+        UpdateServerConnectivityException: Raised when timeout is reached when contacting an update server.
+        PanXapiError: Re-raised when an exception is caught but does not match `UpdateServerConnectivityException`.
+
         # Returns
 
         dict: Partial information extracted from the response formatted as `dict`, it includes:
@@ -455,14 +469,18 @@ class FirewallProxy(Firewall):
         - the support level.
         """
         result = {}
-        response = self.op_parser(cmd="request support check", return_xml=True)
+        try:
+            response = self.op_parser(cmd="request support check", return_xml=True)
+        except PanXapiError as exp:
+            # This is an ugly hack to narrow down the cause of the exception to update server connectivity issues.
+            # Unfortunately the exception class is generic in this case. What is easy to identify is the message.
+            if str(exp) == "Failed to check support info due to Unknown error. Please check network connectivity and try again.":
+                raise UpdateServerConnectivityException(str(exp)) from exp
+            else:
+                raise exp
 
-        result["support_expiry_date"] = response.findtext(
-            "./SupportInfoResponse/Support/ExpiryDate"
-        )
-        result["support_level"] = response.findtext(
-            "./SupportInfoResponse/Support/SupportLevel"
-        )
+        result["support_expiry_date"] = response.findtext("./SupportInfoResponse/Support/ExpiryDate")
+        result["support_level"] = response.findtext("./SupportInfoResponse/Support/SupportLevel")
         return result
 
     def get_routes(self) -> dict:
@@ -515,9 +533,7 @@ class FirewallProxy(Firewall):
         if "entry" in response:
             routes = response["entry"]
             for route in routes if isinstance(routes, list) else [routes]:
-                result[
-                    f"{route['virtual-router']}_{route['destination']}_{route['interface'] if route['interface'] else ''}"
-                ] = dict(route)
+                result[f"{route['virtual-router']}_{route['destination']}_{route['interface'] if route['interface'] else ''}"] = dict(route)
 
         return result
 
@@ -560,9 +576,7 @@ class FirewallProxy(Firewall):
 
         """
         result = {}
-        response = self.op_parser(
-            cmd="<show><arp><entry name = 'all'/></arp></show>", cmd_in_xml=True
-        )
+        response = self.op_parser(cmd="<show><arp><entry name = 'all'/></arp></show>", cmd_in_xml=True)
 
         if response.get("entries", {}):
             arp_table = response["entries"].get("entry", [])
@@ -737,11 +751,7 @@ class FirewallProxy(Firewall):
                 result[tunnelType] = dict()
             elif not isinstance(tunnelData, str):
                 result[tunnelType] = dict()
-                for tunnel in (
-                    tunnelData["entry"]
-                    if isinstance(tunnelData["entry"], list)
-                    else [tunnelData["entry"]]
-                ):
+                for tunnel in tunnelData["entry"] if isinstance(tunnelData["entry"], list) else [tunnelData["entry"]]:
                     result[tunnelType][tunnel["name"]] = dict(tunnel)
         return result
 
@@ -770,22 +780,14 @@ class FirewallProxy(Firewall):
         """
         response = self.op_parser(cmd="request content upgrade check", return_xml=False)
         try:
-            content_versions = [
-                entry["version"] for entry in response["content-updates"]["entry"]
-            ]
+            content_versions = [entry["version"] for entry in response["content-updates"]["entry"]]
             majors = [int(ver.split("-")[0]) for ver in content_versions]
             majors.sort()
-            major_minors = [
-                int(ver.split("-")[1])
-                for ver in content_versions
-                if ver.startswith(f"{majors[-1]}-")
-            ]
+            major_minors = [int(ver.split("-")[1]) for ver in content_versions if ver.startswith(f"{majors[-1]}-")]
             major_minors.sort()
             latest = f"{majors[-1]}-{major_minors[-1]}"
         except Exception as exc:
-            raise ContentDBVersionsFormatException(
-                "Cannot parse list of available updates for Content DB."
-            ) from exc
+            raise ContentDBVersionsFormatException("Cannot parse list of available updates for Content DB.") from exc
 
         return latest
 
@@ -845,7 +847,6 @@ class FirewallProxy(Firewall):
 
         dict: The NTP synchronization configuration.
 
-
         """
         return dict(self.op_parser(cmd="show ntp"))
 
@@ -853,6 +854,10 @@ class FirewallProxy(Firewall):
         """Get the disk utilization (in MB) and parse it to a machine readable format.
 
         The actual API command is `show system disk-space`.
+
+        # Raises
+
+        WrongDiskSizeFormatException: Raised when free text disk allocation information cannot be parsed.
 
         # Returns
 
@@ -911,6 +916,11 @@ class FirewallProxy(Firewall):
 
         The actual API command is `request system software check`.
 
+        # Raises
+
+        UpdateServerConnectivityException: Raised when the update server is not reachable, can also mean that the device is not licensed.
+        PanXapiError: Re-raised when an exception is caught but does not match `UpdateServerConnectivityException`.
+
         # Returns
 
         dict: Detailed information on available images. Sample output:
@@ -948,7 +958,14 @@ class FirewallProxy(Firewall):
         """
         result = dict()
 
-        image_data = self.op_parser(cmd="request system software check")
+        try:
+            image_data = self.op_parser(cmd="request system software check")
+        except PanXapiError as exp:
+            if str(exp) == "Failed to check upgrade info due to Unknown error. Please check network connectivity and try again.":
+                raise UpdateServerConnectivityException(str(exp)) from exp
+            else:
+                raise exp
+
         images = dict(image_data["sw-updates"]["versions"])["entry"]
         for image in images if isinstance(images, list) else [images]:
             result[image["version"]] = dict(image)

@@ -11,9 +11,14 @@ from panos_upgrade_assurance.utils import (
     SnapType,
     CheckStatus,
 )
-from panos_upgrade_assurance.firewall_proxy import FirewallProxy
+from panos_upgrade_assurance.firewall_proxy import (
+    FirewallProxy,
+    DeviceNotLicensedException,
+    UpdateServerConnectivityException,
+    ContentDBVersionsFormatException,
+    WrongDiskSizeFormatException,
+)
 from panos import PanOSVersion
-from panos.errors import PanDeviceXapiError
 
 
 class ContentDBVersionInFutureException(Exception):
@@ -24,18 +29,6 @@ class ContentDBVersionInFutureException(Exception):
 
 class WrongDataTypeException(Exception):
     """Used when passed configuration does not meet the data type requirements."""
-
-    pass
-
-
-class ImageVersionNotAvailableException(Exception):
-    """Used when requested image version is not available for downloading."""
-
-    pass
-
-
-class UpdateServerConnectivityException(Exception):
-    """Used when connection to the Update Server cannot be established."""
 
     pass
 
@@ -102,9 +95,7 @@ class CheckFirewall:
             CheckType.FREE_DISK_SPACE: self.check_free_disk_space,
             CheckType.MP_DP_CLOCK_SYNC: self.check_mp_dp_sync,
         }
-        locale.setlocale(
-            locale.LC_ALL, "en_US"
-        )  # force locale for datetime string parsing when non-English locale is set on host
+        locale.setlocale(locale.LC_ALL, "en_US")  # force locale for datetime string parsing when non-English locale is set on host
 
     def check_pending_changes(self) -> CheckResult:
         """Check if there are pending changes on device.
@@ -149,9 +140,7 @@ class CheckFirewall:
             else:
                 return CheckResult(reason="Device not connected to Panorama.")
         else:
-            return CheckResult(
-                status=CheckStatus.ERROR, reason="Device not configured with Panorama."
-            )
+            return CheckResult(status=CheckStatus.ERROR, reason="Device not configured with Panorama.")
 
     def check_ha_status(self, skip_config_sync: Optional[bool] = False) -> CheckResult:
         """Checks HA pair status from the perspective of the current device.
@@ -193,15 +182,9 @@ class CheckFirewall:
                 result.status = CheckStatus.ERROR
                 result.reason = f"Both devices have the same state: {ha_pair['local-info']['state']}."
 
-            elif (
-                not skip_config_sync
-                and interpret_yes_no(ha_pair["running-sync-enabled"])
-                and ha_pair["running-sync"] != "synchronized"
-            ):
+            elif not skip_config_sync and interpret_yes_no(ha_pair["running-sync-enabled"]) and ha_pair["running-sync"] != "synchronized":
                 result.status = CheckStatus.ERROR
-                result.reason = (
-                    "Device configuration is not synchronized between the nodes."
-                )
+                result.reason = "Device configuration is not synchronized between the nodes."
 
             else:
                 result.status = CheckStatus.SUCCESS
@@ -211,9 +194,7 @@ class CheckFirewall:
 
         return result
 
-    def check_is_ha_active(
-        self, skip_config_sync: Optional[bool] = False
-    ) -> CheckResult:
+    def check_is_ha_active(self, skip_config_sync: Optional[bool] = False) -> CheckResult:
         """Checks whether this is an active node of an HA pair.
 
         Before checking the state of the current device, the [`check_ha_status()`](#checkfirewallcheck_ha_status) method is run. If this method does not end with [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus), its return value is passed as the result of [`check_is_ha_active()`](#checkfirewallcheck_is_ha_active).
@@ -242,9 +223,7 @@ class CheckFirewall:
             if ha_config["group"]["local-info"]["state"] == "active":
                 result.status = CheckStatus.SUCCESS
             else:
-                result.reason = (
-                    f"Node state is: {ha_config['group']['local-info']['state']}."
-                )
+                result.reason = f"Node state is: {ha_config['group']['local-info']['state']}."
             return result
         else:
             return ha_status
@@ -256,23 +235,31 @@ class CheckFirewall:
 
         skip_licenses (list, optional): (defaults to `[]`) List of license names that should be skipped during the check.
 
+        # Raises
+
+        WrongDataTypeException: Raised when `skip_licenses` is not type of `list`.
+
         # Returns
 
         CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking value of:
 
         * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) if no license is expired,
-        * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise.
+        * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise
+        * [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when there is not license information available in the API response.
 
         """
         if not isinstance(skip_licenses, list):
-            raise WrongDataTypeException(
-                f"The skip_licenses variable is a {type(skip_licenses)} but should be a list"
-            )
+            raise WrongDataTypeException(f"The skip_licenses variable is a {type(skip_licenses)} but should be a list")
 
-        licenses = self._node.get_licenses()
+        result = CheckResult()
+        try:
+            licenses = self._node.get_licenses()
+        except DeviceNotLicensedException as exp:
+            result.status = CheckStatus.ERROR
+            result.reason = str(exp)
+            return result
 
         expired_licenses = ""
-        result = CheckResult()
         for lic, value in licenses.items():
             if lic not in skip_licenses:
                 if interpret_yes_no(value["expired"]):
@@ -288,37 +275,38 @@ class CheckFirewall:
     def check_active_support_license(self) -> CheckResult:
         """Check active support license with update server.
 
-        # Raises
-
-        UpdateServerConnectivityException: Thrown when a connection to an update server cannot be established during support license verification.
-
         # Returns
 
         dict: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking value of:
 
         - [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) if the support license is not expired,
         - [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise,
-        - [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when no information about the support license expiration date can be found in response from the firewall.
+        - [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when no information cannot be retrieved or found in the API response.
 
         """
 
         result = CheckResult()
 
         try:
+            self._node.get_licenses()
+        except DeviceNotLicensedException as exp:
+            result.status = CheckStatus.ERROR
+            result.reason = str(exp)
+            return result
+
+        try:
             support_license = self._node.get_support_license()
-        except PanDeviceXapiError as exc:  # raised when connectivity timeouts
-            raise UpdateServerConnectivityException(
-                "Can not reach update servers to check active support license."
-            ) from exc
+        except UpdateServerConnectivityException:  # raised when connectivity timeouts
+            result.reason = "Can not reach update servers to check active support license."
+            result.status = CheckStatus.ERROR
+            return result
 
         if not support_license.get("support_expiry_date"):  # if None or empty string
             result.reason = "No ExpiryDate found for support license."
             result.status = CheckStatus.ERROR
             return result
 
-        dt_expiry = datetime.strptime(
-            support_license["support_expiry_date"], "%B %d, %Y"
-        )
+        dt_expiry = datetime.strptime(support_license["support_expiry_date"], "%B %d, %Y")
         dt_today = datetime.now()
 
         if dt_expiry < dt_today:
@@ -389,10 +377,6 @@ class CheckFirewall:
 
         version (str, optional): (defaults to `None`) Target version of the content DB.
 
-        # Raises
-
-        ContentDBVersionInFutureException: If the data returned from a device is newer than the latest version available.
-
         # Returns
         CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking value off:
 
@@ -402,22 +386,26 @@ class CheckFirewall:
         """
         result = CheckResult()
 
-        required_version = (
-            version if version else self._node.get_latest_available_content_version()
-        )
+        try:
+            required_version = version if version else self._node.get_latest_available_content_version()
+        except ContentDBVersionsFormatException as exp:
+            result.reason = str(exp)
+            result.status = CheckStatus.ERROR
+            return result
+
         installed_version = self._node.get_content_db_version()
 
         if required_version == installed_version:
             result.status = CheckStatus.SUCCESS
         else:
-            exception_text = f"Wrong data returned from device, installed version ({installed_version}) is higher than the required_version available ({required_version})."
+            exception_text = (
+                f"Wrong data returned from device, installed version ({installed_version}) is higher than the required_version available ({required_version})."
+            )
             conditional_success_text = f"Installed content DB version ({installed_version}) is higher than the requested one ({required_version})."
 
             # we already know that the versions are different, so as a default result we assume FAILED
             # now let's handle corner cases
-            if int(required_version.split("-")[0]) < int(
-                installed_version.split("-")[0]
-            ):
+            if int(required_version.split("-")[0]) < int(installed_version.split("-")[0]):
                 # if the passed required version is higher that the installed then we assume the test passed
                 # this is a type of a test where we look for the minimum version
                 if version:
@@ -426,26 +414,21 @@ class CheckFirewall:
                 else:
                     # in case where no version was passed we treat this situation as an exception
                     # latest version cannot by lower than the installed one.
-                    raise ContentDBVersionInFutureException(exception_text)
-            elif int(required_version.split("-")[0]) == int(
-                installed_version.split("-")[0]
-            ):
+                    result.status = CheckStatus.ERROR
+                    result.reason = exception_text
+
+            elif int(required_version.split("-")[0]) == int(installed_version.split("-")[0]):
                 # majors the same, compare minors assuming the same logic we used for majors
-                if int(required_version.split("-")[1]) < int(
-                    installed_version.split("-")[1]
-                ):
+                if int(required_version.split("-")[1]) < int(installed_version.split("-")[1]):
                     if version:
                         result.status = CheckStatus.SUCCESS
                         result.reason = conditional_success_text
                     else:
-                        raise ContentDBVersionInFutureException(exception_text)
+                        result.status = CheckStatus.ERROR
+                        result.reason = exception_text
 
             if not result:
-                reason_suffix = (
-                    f"older then the request one ({required_version})."
-                    if version
-                    else f"not the latest one ({required_version})."
-                )
+                reason_suffix = f"older then the request one ({required_version})." if version else f"not the latest one ({required_version})."
                 result.reason = f"Installed content DB version ({installed_version}) is {reason_suffix}"
 
         return result
@@ -487,9 +470,7 @@ class CheckFirewall:
 
         return result
 
-    def check_arp_entry(
-        self, ip: Optional[str] = None, interface: Optional[str] = None
-    ) -> CheckResult:
+    def check_arp_entry(self, ip: Optional[str] = None, interface: Optional[str] = None) -> CheckResult:
         """Check if a given ARP entry is available in the ARP table.
 
         # Parameters
@@ -524,9 +505,7 @@ class CheckFirewall:
 
         for arp_entry in arp_table.values():
             if interface is not None:
-                found = ip == arp_entry.get("ip") and interface == arp_entry.get(
-                    "interface"
-                )
+                found = ip == arp_entry.get("ip") and interface == arp_entry.get("interface")
             else:
                 found = ip == arp_entry.get("ip")
 
@@ -537,9 +516,7 @@ class CheckFirewall:
         result.reason = "Entry not found in ARP table."
         return result
 
-    def check_ipsec_tunnel_status(
-        self, tunnel_name: Optional[str] = None
-    ) -> CheckResult:
+    def check_ipsec_tunnel_status(self, tunnel_name: Optional[str] = None) -> CheckResult:
         """Check if a given IPSec tunnel is in active state.
 
         # Parameters
@@ -610,40 +587,39 @@ class CheckFirewall:
         minimum_free_space = ceil(3.0 * 1024)
         if image_version:
             image_sem_version = PanOSVersion(image_version)
-            available_versions = self._node.get_available_image_data()
+            try:
+                available_versions = self._node.get_available_image_data()
+            except UpdateServerConnectivityException:
+                result.reason = "Unable to retrieve target image size most probably due to network issues or because the device is not licensed."
+                result.status = CheckStatus.ERROR
+                return result
 
             if str(image_sem_version) in available_versions:
                 requested_base_image_size = 0
-                requested_image_size = int(
-                    available_versions[str(image_sem_version)]["size"]
-                )
+                requested_image_size = int(available_versions[str(image_sem_version)]["size"])
 
                 if image_sem_version.patch != 0:
-                    base_image_version = (
-                        f"{image_sem_version.major}.{image_sem_version.minor}.0"
-                    )
+                    base_image_version = f"{image_sem_version.major}.{image_sem_version.minor}.0"
                     if base_image_version in available_versions:
-                        if not interpret_yes_no(
-                            available_versions[base_image_version]["downloaded"]
-                        ):
-                            requested_base_image_size = int(
-                                available_versions[base_image_version]["size"]
-                            )
+                        if not interpret_yes_no(available_versions[base_image_version]["downloaded"]):
+                            requested_base_image_size = int(available_versions[base_image_version]["size"])
                     else:
-                        raise ImageVersionNotAvailableException(
-                            f"Base image {base_image_version} does not exist."
-                        )
+                        result.reason = f"Base image {base_image_version} does not exist."
+                        result.status = CheckStatus.ERROR
 
-                minimum_free_space = ceil(
-                    1.1 * (requested_base_image_size + requested_image_size)
-                )
+                minimum_free_space = ceil(1.1 * (requested_base_image_size + requested_image_size))
 
             else:
-                raise ImageVersionNotAvailableException(
-                    f"Image {str(image_sem_version)} does not exist."
-                )
+                result.reason = f"Image {str(image_sem_version)} does not exist."
+                result.status = CheckStatus.ERROR
 
-        free_space = self._node.get_disk_utilization()
+        try:
+            free_space = self._node.get_disk_utilization()
+        except WrongDiskSizeFormatException as exp:
+            result.reason = str(exp)
+            result.status = CheckStatus.ERROR
+            return result
+
         free_space_panrepo = free_space["/opt/panrepo"]
 
         if free_space_panrepo > minimum_free_space:
@@ -654,6 +630,10 @@ class CheckFirewall:
 
     def check_mp_dp_sync(self, diff_threshold: int = 0) -> CheckResult:
         """Check if the Data and Management clocks are in sync.
+
+        # Raises
+
+        WrongDataTypeException: Raised when the `diff_threshold` is not type of `int`.
 
         # Parameters
 
@@ -668,9 +648,7 @@ class CheckFirewall:
 
         """
         if not isinstance(diff_threshold, int):
-            raise WrongDataTypeException(
-                f"[diff_threshold] should be of type [int] but is of type [{type(diff_threshold)}]."
-            )
+            raise WrongDataTypeException(f"[diff_threshold] should be of type [int] but is of type [{type(diff_threshold)}].")
 
         result = CheckResult()
 
@@ -774,24 +752,14 @@ class CheckFirewall:
                 check_type, check_config = check, {}
                 # check_result = self._check_method_mapping[check_type]()
             else:
-                raise WrongDataTypeException(
-                    f"Wrong configuration format for check: {check}."
-                )
+                raise WrongDataTypeException(f"Wrong configuration format for check: {check}.")
 
-            check_result = self._check_method_mapping[check_type](
-                **check_config
-            )  # (**) would pass dict config values as seperate parameters to method.
-            result[check_type] = (
-                str(check_result)
-                if report_style
-                else {"state": bool(check_result), "reason": str(check_result)}
-            )
+            check_result = self._check_method_mapping[check_type](**check_config)  # (**) would pass dict config values as separate parameters to method.
+            result[check_type] = str(check_result) if report_style else {"state": bool(check_result), "reason": str(check_result)}
 
         return result
 
-    def run_snapshots(
-        self, snapshots_config: Optional[List[Union[str, dict]]] = None
-    ) -> Dict[str, dict]:
+    def run_snapshots(self, snapshots_config: Optional[List[Union[str, dict]]] = None) -> Dict[str, dict]:
         """Run snapshots of different firewall areas states.
 
         This method provides a convenient way of running snapshots of a device state. For details on configuration see [state snapshots](/panos/docs/panos-upgrade-assurance/configuration-details#state-snapshots) documentation.
@@ -817,9 +785,7 @@ class CheckFirewall:
 
         for snap_type in snaps_list:
             if not isinstance(snap_type, str):
-                raise WrongDataTypeException(
-                    f"Wrong configuration format for snapshot: {snap_type}."
-                )
+                raise WrongDataTypeException(f"Wrong configuration format for snapshot: {snap_type}.")
 
             result[snap_type] = self._snapshot_method_mapping[snap_type]()
 

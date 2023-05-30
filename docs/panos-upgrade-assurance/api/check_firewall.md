@@ -13,14 +13,6 @@ Used when the installed Content DB version is newer than the latest available ve
 
 Used when passed configuration does not meet the data type requirements.
 
-## class `ImageVersionNotAvailableException`
-
-Used when requested image version is not available for downloading.
-
-## class `UpdateServerConnectivityException`
-
-Used when connection to the Update Server cannot be established.
-
 ## class `CheckFirewall`
 
 Class responsible for running readiness checks and creating Firewall state snapshots.
@@ -165,13 +157,19 @@ __Parameters__
 
 - __skip_licenses__ (`list, optional`): (defaults to `[]`) List of license names that should be skipped during the check.
 
+__Raises__
+
+
+- `WrongDataTypeException`: Raised when `skip_licenses` is not type of `list`.
+
 __Returns__
 
 
 `CheckResult`: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking value of:
 
 * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) if no license is expired,
-* [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise.
+* [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise
+* [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when there is not license information available in the API response.
 
 ### `CheckFirewall.check_active_support_license`
 
@@ -181,11 +179,6 @@ def check_active_support_license() -> CheckResult
 
 Check active support license with update server.
 
-__Raises__
-
-
-- `UpdateServerConnectivityException`: Thrown when a connection to an update server cannot be established during support license verification.
-
 __Returns__
 
 
@@ -193,7 +186,7 @@ __Returns__
 
 - [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) if the support license is not expired,
 - [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise,
-- [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when no information about the support license expiration date can be found in response from the firewall.
+- [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when no information cannot be retrieved or found in the API response.
 
 ### `CheckFirewall.check_critical_session`
 
@@ -240,11 +233,6 @@ __Parameters__
 
 
 - __version__ (`str, optional`): (defaults to `None`) Target version of the content DB.
-
-__Raises__
-
-
-- `ContentDBVersionInFutureException`: If the data returned from a device is newer than the latest version available.
 
 __Returns__
 
@@ -354,6 +342,11 @@ def check_mp_dp_sync(diff_threshold: int = 0) -> CheckResult
 ```
 
 Check if the Data and Management clocks are in sync.
+
+__Raises__
+
+
+- `WrongDataTypeException`: Raised when the `diff_threshold` is not type of `int`.
 
 __Parameters__
 

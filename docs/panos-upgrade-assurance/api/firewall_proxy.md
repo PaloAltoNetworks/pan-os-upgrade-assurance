@@ -13,6 +13,10 @@ Used when a command run on a device does not return the `success` status.
 
 A generic exception class used when a response does not meet the expected standards.
 
+## class `DeviceNotLicensedException`
+
+Used when no license is retrieved from a device.
+
 ## class `ContentDBVersionsFormatException`
 
 Used when parsing Content DB versions fail due to an unknown version format (assuming `XXXX-YYYY`).
@@ -24,6 +28,10 @@ Used when checking Panorama connectivity on a device that was not configured wit
 ## class `WrongDiskSizeFormatException`
 
 Used when parsing free disk size information.
+
+## class `UpdateServerConnectivityException`
+
+Used when connection to the Update Server cannot be established.
 
 ## class `FirewallProxy`
 
@@ -335,6 +343,11 @@ Get device licenses.
 
 The actual API command is `request license info`.
 
+__Raises__
+
+
+- `DeviceNotLicensedException`: Exception thrown when there is no information about licenses, most probably because the device is not licensed.
+
 __Returns__
 
 
@@ -403,6 +416,12 @@ This method fetches the response in XML format:
 </Support>
 </SupportInfoResponse>
 ```
+
+__Raises__
+
+
+- `UpdateServerConnectivityException`: Raised when timeout is reached when contacting an update server.
+- `PanXapiError`: Re-raised when an exception is caught but does not match `UpdateServerConnectivityException`.
 
 __Returns__
 
@@ -769,6 +788,11 @@ Get the disk utilization (in MB) and parse it to a machine readable format.
 
 The actual API command is `show system disk-space`.
 
+__Raises__
+
+
+- `WrongDiskSizeFormatException`: Raised when free text disk allocation information cannot be parsed.
+
 __Returns__
 
 
@@ -796,6 +820,12 @@ def get_available_image_data() -> dict
 Get information on the available to download PanOS image versions.
 
 The actual API command is `request system software check`.
+
+__Raises__
+
+
+- `UpdateServerConnectivityException`: Raised when the update server is not reachable, can also mean that the device is not licensed.
+- `PanXapiError`: Re-raised when an exception is caught but does not match `UpdateServerConnectivityException`.
 
 __Returns__
 

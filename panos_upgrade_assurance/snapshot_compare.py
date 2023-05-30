@@ -74,9 +74,7 @@ class SnapshotCompare:
             SnapType.IPSEC_TUNNELS: self.get_diff_and_threshold,
         }
 
-    def compare_snapshots(
-        self, reports: Optional[List[Union[dict, str]]] = None
-    ) -> Dict[str, dict]:
+    def compare_snapshots(self, reports: Optional[List[Union[dict, str]]] = None) -> Dict[str, dict]:
         """A method that triggers the actual snapshot comparison.
 
         This is a single point of entry to generate a comparison report. It takes both reports stored in the class object and compares areas specified in the `reports` parameter.
@@ -105,9 +103,7 @@ class SnapshotCompare:
         """
 
         result = {}
-        reports = ConfigParser(
-            valid_elements=set(self._functions_mapping.keys()), requested_config=reports
-        ).prepare_config()
+        reports = ConfigParser(valid_elements=set(self._functions_mapping.keys()), requested_config=reports).prepare_config()
 
         for report in reports:
             if isinstance(report, dict):
@@ -117,21 +113,15 @@ class SnapshotCompare:
                 report_type = report
                 report_config = {"report_type": report_type}
             else:
-                raise WrongDataTypeException(
-                    f"Wrong configuration format for report: {report}."
-                )
+                raise WrongDataTypeException(f"Wrong configuration format for report: {report}.")
 
             self.key_checker(self.left_snap, self.right_snap, report_type)
-            result.update(
-                {report_type: self._functions_mapping[report_type](**report_config)}
-            )
+            result.update({report_type: self._functions_mapping[report_type](**report_config)})
 
         return result
 
     @staticmethod
-    def key_checker(
-        left_dict: dict, right_dict: dict, key: Union[str, set, list]
-    ) -> None:
+    def key_checker(left_dict: dict, right_dict: dict, key: Union[str, set, list]) -> None:
         """The static method to check if a key or a list/set of keys is available in both dictionaries.
 
         This method looks for a given key or list/set of keys in two dictionaries. Its main purpose is to assure that when comparing a key-value pair from two dictionaries, it actually exists in both.
@@ -153,21 +143,15 @@ class SnapshotCompare:
         elif isinstance(key, (set, list)):
             key_set = set(key)
         else:
-            raise WrongDataTypeException(
-                f"The key variable is a {type(key)} but should be either: str, set or list"
-            )
+            raise WrongDataTypeException(f"The key variable is a {type(key)} but should be either: str, set or list")
 
         left_snap_missing_key = False if key_set.issubset(left_dict.keys()) else True
         right_snap_missing_key = False if key_set.issubset(right_dict.keys()) else True
 
         if left_snap_missing_key and right_snap_missing_key:
-            raise MissingKeyException(
-                f"{key} (some elements if set/list) is missing in both snapshots"
-            )
+            raise MissingKeyException(f"{key} (some elements if set/list) is missing in both snapshots")
         if left_snap_missing_key or right_snap_missing_key:
-            raise MissingKeyException(
-                f"{key} (some elements if set/list) is missing in {'left snapshot' if left_snap_missing_key else 'right snapshot'}"
-            )
+            raise MissingKeyException(f"{key} (some elements if set/list) is missing in {'left snapshot' if left_snap_missing_key else 'right snapshot'}")
 
     @staticmethod
     def calculate_change_percentage(
@@ -216,22 +200,14 @@ class SnapshotCompare:
         second_value = int(second_value)
         threshold = float(threshold)
 
-        result = dict(
-            passed=True, change_percentage=float(0), change_threshold=threshold
-        )
+        result = dict(passed=True, change_percentage=float(0), change_threshold=threshold)
 
         if not (first_value == 0 and second_value == 0):
             if threshold < 0 or threshold > 100:
-                raise WrongDataTypeException(
-                    "The threshold should be a percentage value between 0 and 100."
-                )
+                raise WrongDataTypeException("The threshold should be a percentage value between 0 and 100.")
 
             result["change_percentage"] = round(
-                (
-                    abs(first_value - second_value)
-                    / (first_value if first_value >= second_value else second_value)
-                )
-                * 100,
+                (abs(first_value - second_value) / (first_value if first_value >= second_value else second_value)) * 100,
                 2,
             )
             if result["change_percentage"] > threshold:
@@ -395,18 +371,8 @@ class SnapshotCompare:
                 result["added"]["added_keys"].append(key)
 
         common_keys = left_side_to_compare.keys() & right_side_to_compare.keys()
-        at_lowest_level = (
-            True
-            if isinstance(right_side_to_compare[list(common_keys)[0]], str)
-            else False
-        )
-        keys_to_check = (
-            ConfigParser(
-                valid_elements=set(common_keys), requested_config=properties
-            ).prepare_config()
-            if at_lowest_level
-            else common_keys
-        )
+        at_lowest_level = True if isinstance(right_side_to_compare[list(common_keys)[0]], str) else False
+        keys_to_check = ConfigParser(valid_elements=set(common_keys), requested_config=properties).prepare_config() if at_lowest_level else common_keys
 
         item_changed = False
         for key in keys_to_check:
@@ -571,20 +537,14 @@ class SnapshotCompare:
 
         if count_change_threshold and result:
             if count_change_threshold < 0 or count_change_threshold > 100:
-                raise WrongDataTypeException(
-                    "The threshold should be a percentage value between 0 and 100."
-                )
+                raise WrongDataTypeException("The threshold should be a percentage value between 0 and 100.")
 
             added_count = len(result["added"]["added_keys"])
             missing_count = len(result["missing"]["missing_keys"])
             changed_count = len(result["changed"]["changed_raw"])
             left_total_count = len(self.left_snap[report_type].keys())
 
-            diff = (
-                1
-                if left_total_count == 0
-                else (added_count + missing_count + changed_count) / left_total_count
-            )
+            diff = 1 if left_total_count == 0 else (added_count + missing_count + changed_count) / left_total_count
             diff_percentage = round(float(diff) * 100, 2)
 
             passed = diff_percentage <= count_change_threshold
@@ -714,12 +674,8 @@ class SnapshotCompare:
                 self.right_snap[report_type],
                 requested_elements,
             )
-        except (
-            MissingKeyException
-        ) as exc:  # raised when any requested key is missing in one of the snapshots
-            raise SnapshotSchemeMismatchException(
-                f"Snapshots have missing keys in {requested_elements} for {report_type} report."
-            ) from exc
+        except MissingKeyException as exc:  # raised when any requested key is missing in one of the snapshots
+            raise SnapshotSchemeMismatchException(f"Snapshots have missing keys in {requested_elements} for {report_type} report.") from exc
 
         elements = ConfigParser(
             valid_elements=set(self.left_snap[report_type].keys()),

@@ -154,17 +154,10 @@ class ConfigParser:
 
         if requested_config:  # if not None or not empty list
             self.requested_config = deepcopy(requested_config)
-            self._requested_config_names = set(
-                [
-                    ConfigParser._extract_element_name(config_keyword)
-                    for config_keyword in self.requested_config
-                ]
-            )
+            self._requested_config_names = set([ConfigParser._extract_element_name(config_keyword) for config_keyword in self.requested_config])
             for config_name in self._requested_config_names:
                 if not self._is_element_included(element=config_name):
-                    raise UnknownParameterException(
-                        f"Unknown configuration parameter passed: {config_name}."
-                    )
+                    raise UnknownParameterException(f"Unknown configuration parameter passed: {config_name}.")
         else:
             self._requested_config_names = set(valid_elements)
             self.requested_config = list(valid_elements)  # Meaning 'all' valid tests
@@ -182,9 +175,7 @@ class ConfigParser:
         bool: `True` if the value is correct, `False` otherwise.
 
         """
-        if element in self.valid_elements or (
-            element.startswith("!") and element[1:] in self.valid_elements
-        ):
+        if element in self.valid_elements or (element.startswith("!") and element[1:] in self.valid_elements):
             return True
         elif element == "all" and "all" in self.requested_config:
             return True
@@ -216,9 +207,7 @@ class ConfigParser:
             if len(config) == 1:
                 return list(config.keys())[0]
             else:
-                raise WrongDataTypeException(
-                    "Dict provided as config definition has incorrect format, it is supposed to have only one key {key:[]}"
-                )
+                raise WrongDataTypeException("Dict provided as config definition has incorrect format, it is supposed to have only one key {key:[]}")
         else:
             raise WrongDataTypeException("Config definition is neither string or dict")
 
@@ -229,13 +218,7 @@ class ConfigParser:
 
         This method directly operates on `self.requested_config`.
         """
-        pure_names = set(
-            [
-                (name[1:] if name.startswith("!") else name)
-                for name in self._requested_config_names
-                if name != "all"
-            ]
-        )
+        pure_names = set([(name[1:] if name.startswith("!") else name) for name in self._requested_config_names if name != "all"])
         self.requested_config.extend(list(self.valid_elements - pure_names))
         self.requested_config.remove("all")
 
@@ -250,12 +233,7 @@ class ConfigParser:
         list: The parsed configuration.
 
         """
-        if all(
-            (
-                config_name.startswith("!")
-                for config_name in self._requested_config_names
-            )
-        ):
+        if all((config_name.startswith("!") for config_name in self._requested_config_names)):
             self.requested_config.insert(0, "all")
 
         if "all" in self.requested_config:
@@ -287,9 +265,7 @@ def interpret_yes_no(boolstr: str) -> bool:
 
     """
     if boolstr not in ["yes", "no"]:
-        raise WrongDataTypeException(
-            f"Cannot interpret following string as boolean: {boolstr}."
-        )
+        raise WrongDataTypeException(f"Cannot interpret following string as boolean: {boolstr}.")
 
     return True if boolstr == "yes" else False
 
