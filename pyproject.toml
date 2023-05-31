@@ -30,6 +30,7 @@ black = "^23.3"
 bandit = "^1.7"
 pytest = "^7.2.1"
 pytest-cov = "^4.0.0"
+deepdiff = "^6.3.0"
 
 [build-system]
 requires = ["poetry-core"]
