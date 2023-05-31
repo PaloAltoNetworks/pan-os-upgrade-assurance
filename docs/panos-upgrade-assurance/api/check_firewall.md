@@ -95,13 +95,15 @@ Checks HA pair status from the perspective of the current device.
 
 Currently, only Active-Passive configuration is supported.
 
-# Parameters:
+__Parameters__
 
-skip_config_sync (bool, optional): (defaults to `False`) Use with caution, when set to `True` will skip checking if configuration is synchronized between nodes. Helpful when verifying a state of a partially upgraded HA pair.
 
-# Returns
+- __skip_config_sync__ (`bool, optional`): (defaults to `False`) Use with caution, when set to `True` will skip checking if configuration is synchronized between nodes. Helpful when verifying a state of a partially upgraded HA pair.
 
-CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class representing results of HA pair status inspection:
+__Returns__
+
+
+`CheckResult`: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class representing results of HA pair status inspection:
 
 * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when pair is configured correctly,
 * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise,

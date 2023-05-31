@@ -130,7 +130,7 @@ class CheckFirewall:
 
         Currently, only Active-Passive configuration is supported.
 
-        # Parameters:
+        # Parameters
 
         skip_config_sync (bool, optional): (defaults to `False`) Use with caution, when set to `True` will skip checking if configuration is synchronized between nodes. Helpful when verifying a state of a partially upgraded HA pair.
 
