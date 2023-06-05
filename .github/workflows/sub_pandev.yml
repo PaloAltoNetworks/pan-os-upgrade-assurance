@@ -1,0 +1,22 @@
+name: (sub) Code Format and Security
+
+defaults:
+  run:
+    shell: bash
+
+on:
+  workflow_call:
+
+jobs:
+  fetch:
+    name: Fetch the updated documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v3
+      - run: ls -l
+      # - name: cache documentation
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: 
+      #     key: ${{ github.sha }}

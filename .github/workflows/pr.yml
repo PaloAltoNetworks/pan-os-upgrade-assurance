@@ -13,30 +13,34 @@ on:
 
 jobs:
 
-  pyversion:
-    name: Discover minimum Python version
-    runs-on: ubuntu-latest
-    outputs:
-      pyversion: ${{ steps.pyversion.outputs.pyversion }}
-    steps:
-      - name: checkout code
-        uses: actions/checkout@v3
-      - name: discover Python version
-        id: pyversion
-        uses: ./.github/actions/discover_python_version
+  # pyversion:
+  #   name: Discover minimum Python version
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     pyversion: ${{ steps.pyversion.outputs.pyversion }}
+  #   steps:
+  #     - name: checkout code
+  #       uses: actions/checkout@v3
+  #     - name: discover Python version
+  #       id: pyversion
+  #       uses: ./.github/actions/discover_python_version
 
-  code_format:
-    name: Formatting and security
-    needs: [pyversion]
-    uses: ./.github/workflows/sub_format.yml
-    with:
-      python_version: ${{ needs.pyversion.outputs.pyversion }}
-      poetry_version: 1.4.2
+  # code_format:
+  #   name: Formatting and security
+  #   needs: [pyversion]
+  #   uses: ./.github/workflows/sub_format.yml
+  #   with:
+  #     python_version: ${{ needs.pyversion.outputs.pyversion }}
+  #     poetry_version: 1.4.2
 
-  documentation_check:
-    name: API documentation
-    needs: [pyversion]
-    uses: ./.github/workflows/sub_docs.yml
-    with:
-      python_version: ${{ needs.pyversion.outputs.pyversion }}
-      poetry_version: 1.4.2
+  # documentation_check:
+  #   name: API documentation
+  #   needs: [pyversion]
+  #   uses: ./.github/workflows/sub_docs.yml
+  #   with:
+  #     python_version: ${{ needs.pyversion.outputs.pyversion }}
+  #     poetry_version: 1.4.2
+
+  update_pandev:
+    name: Create a preview PR for pan.dev
+    uses: ./.github/workflows/sub_pandev.yml
