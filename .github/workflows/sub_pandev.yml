@@ -14,9 +14,24 @@ jobs:
     steps:
       - name: checkout code
         uses: actions/checkout@v3
-      - run: ls -l
-      # - name: cache documentation
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: 
-      #     key: ${{ github.sha }}
+      - name: cache documentation
+        uses: actions/cache@v3
+        with:
+          path: docs
+          key: ${{ github.sha }}
+
+  update:
+    name: Prepare a PR for pan.dev
+    needs: [fetch]
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout pan.dev fork
+        uses: actions/checkout@v3
+        with:
+          repository: PaloAltoNetworks/panos-upgrade-assurance-pan.dev
+      - name: load the updated documentation from cache
+        uses: actions/cache@v3
+        with:
+          path: docs
+          key: ${{ github.sha }}
+      - run: ls -ltr docs
