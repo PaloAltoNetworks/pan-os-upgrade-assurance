@@ -147,6 +147,20 @@ class TestFirewallProxy:
         
         assert fw_node.is_panorama_connected() == True
 
+    def test_is_panorama_connected_false(self, fw_node):
+        xml_text = """<response status='success'><result>
+            Panorama Server 1 : 1.2.3.4
+                Connected     : no
+                HA state      : disconnected
+            Panorama Server 2 : 5.6.7.8
+                Connected     : no
+                HA state      : disconnected
+        </result></response>"""
+        raw_response = ET.fromstring(xml_text)
+        fw_node.op.return_value = raw_response
+        
+        assert fw_node.is_panorama_connected() == False
+
     def test_is_panorama_connected_no_typical_structure(self, fw_node):
         xml_text = """<response status='success'><result>
             some line : to break code
@@ -224,6 +238,32 @@ class TestFirewallProxy:
         fw_node.op.return_value = raw_response
 
         assert fw_node.get_nics() == {'ethernet1/1': 'up', 'ethernet1/2': 'up'}
+
+    def test_get_nics_single_entry(self, fw_node):
+    
+        xml_text = """
+        <response status="success">
+            <result>
+                <hw>
+                    <entry>
+                        <name>ethernet1/1</name>
+                        <id>16</id>
+                        <type>0</type>
+                        <mac>aa:bb:cc:dd:ee:ff:aa</mac>
+                        <speed>ukn</speed>
+                        <duplex>ukn</duplex>
+                        <state>up</state>
+                        <mode>(autoneg)</mode>
+                        <st>ukn/ukn/up</st>
+                    </entry>
+                </hw>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_node.op.return_value = raw_response
+    
+        assert fw_node.get_nics() == {'ethernet1/1': 'up'}
 
     def test_get_licenses(self, fw_node):
 
@@ -432,6 +472,135 @@ class TestFirewallProxy:
               'xsport': '32336'},
         ]
 
+    def test_get_session_stats(self, fw_node):
+
+        xml_text = """
+        <response status="success">
+            <result>
+                <age-accel-en>True</age-accel-en>
+                <age-accel-thresh>80</age-accel-thresh>
+                <age-accel-tsf>2</age-accel-tsf>
+                <age-scan-ssf>8</age-scan-ssf>
+                <age-scan-thresh>80</age-scan-thresh>
+                <age-scan-tmo>10</age-scan-tmo>
+                <cps>0</cps>
+                <dis-def>60</dis-def>
+                <dis-sctp>30</dis-sctp>
+                <dis-tcp>90</dis-tcp>
+                <dis-udp>60</dis-udp>
+                <hw-offload>True</hw-offload>
+                <hw-udp-offload>True</hw-udp-offload>
+                <icmp-unreachable-rate>200</icmp-unreachable-rate>
+                <ipv6-fw>True</ipv6-fw>
+                <kbps>0</kbps>
+                <max-pending-mcast>0</max-pending-mcast>
+                <num-active>0</num-active>
+                <num-bcast>0</num-bcast>
+                <num-gtpc>0</num-gtpc>
+                <num-gtpu-active>0</num-gtpu-active>
+                <num-gtpu-pending>0</num-gtpu-pending>
+                <num-http2-5gc>0</num-http2-5gc>
+                <num-icmp>0</num-icmp>
+                <num-imsi>0</num-imsi>
+                <num-installed>0</num-installed>
+                <num-max>1800000</num-max>
+                <num-mcast>0</num-mcast>
+                <num-pfcpc>0</num-pfcpc>
+                <num-predict>0</num-predict>
+                <num-sctp-assoc>0</num-sctp-assoc>
+                <num-sctp-sess>0</num-sctp-sess>
+                <num-tcp>0</num-tcp>
+                <num-udp>0</num-udp>
+                <oor-action>drop</oor-action>
+                <pps>0</pps>
+                <run-tc>True</run-tc>
+                <strict-checksum>True</strict-checksum>
+                <sw-cutthrough>False</sw-cutthrough>
+                <tcp-cong-ctrl>3</tcp-cong-ctrl>
+                <tcp-diff-syn-rej>True</tcp-diff-syn-rej>
+                <tcp-no-refresh-fin-rst>False</tcp-no-refresh-fin-rst>
+                <tcp-nonsyn-rej>True</tcp-nonsyn-rej>
+                <tcp-reject-siw-enable>False</tcp-reject-siw-enable>
+                <tcp-reject-siw-thresh>4</tcp-reject-siw-thresh>
+                <tcp-strict-rst>True</tcp-strict-rst>
+                <tmo-5gcdelete>15</tmo-5gcdelete>
+                <tmo-cp>30</tmo-cp>
+                <tmo-def>30</tmo-def>
+                <tmo-icmp>6</tmo-icmp>
+                <tmo-sctp>3600</tmo-sctp>
+                <tmo-sctpcookie>60</tmo-sctpcookie>
+                <tmo-sctpinit>5</tmo-sctpinit>
+                <tmo-sctpshutdown>60</tmo-sctpshutdown>
+                <tmo-tcp>3600</tmo-tcp>
+                <tmo-tcp-delayed-ack>25</tmo-tcp-delayed-ack>
+                <tmo-tcp-unverif-rst>30</tmo-tcp-unverif-rst>
+                <tmo-tcphalfclosed>120</tmo-tcphalfclosed>
+                <tmo-tcphandshake>10</tmo-tcphandshake>
+                <tmo-tcpinit>5</tmo-tcpinit>
+                <tmo-tcptimewait>15</tmo-tcptimewait>
+                <tmo-udp>30</tmo-udp>
+                <tunnel-accel>True</tunnel-accel>
+                <vardata-rate>10485760</vardata-rate>
+                <dp>*.dp0</dp>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_node.op.return_value = raw_response
+
+        assert fw_node.get_session_stats() == {
+            'age-accel-thresh': '80',
+            'age-accel-tsf': '2',
+            'age-scan-ssf': '8',
+            'age-scan-thresh': '80',
+            'age-scan-tmo': '10',
+            'cps': '0',
+            'dis-def': '60',
+            'dis-sctp': '30',
+            'dis-tcp': '90',
+            'dis-udp': '60',
+            'icmp-unreachable-rate': '200',
+            'kbps': '0',
+            'max-pending-mcast': '0',
+            'num-active': '0',
+            'num-bcast': '0',
+            'num-gtpc': '0',
+            'num-gtpu-active': '0',
+            'num-gtpu-pending': '0',
+            'num-http2-5gc': '0',
+            'num-icmp': '0',
+            'num-imsi': '0',
+            'num-installed': '0',
+            'num-max': '1800000',
+            'num-mcast': '0',
+            'num-pfcpc': '0',
+            'num-predict': '0',
+            'num-sctp-assoc': '0',
+            'num-sctp-sess': '0',
+            'num-tcp': '0',
+            'num-udp': '0',
+            'pps': '0',
+            'tcp-cong-ctrl': '3',
+            'tcp-reject-siw-thresh': '4',
+            'tmo-5gcdelete': '15',
+            'tmo-cp': '30',
+            'tmo-def': '30',
+            'tmo-icmp': '6',
+            'tmo-sctp': '3600',
+            'tmo-sctpcookie': '60',
+            'tmo-sctpinit': '5',
+            'tmo-sctpshutdown': '60',
+            'tmo-tcp': '3600',
+            'tmo-tcp-delayed-ack': '25',
+            'tmo-tcp-unverif-rst': '30',
+            'tmo-tcphalfclosed': '120',
+            'tmo-tcphandshake': '10',
+            'tmo-tcpinit': '5',
+            'tmo-tcptimewait': '15',
+            'tmo-udp': '30',
+            'vardata-rate': '10485760',
+        }
+
     def test_get_tunnels(self, fw_node):
 
         xml_text = """
@@ -612,34 +781,97 @@ class TestFirewallProxy:
             'synched': '1.pool.ntp.org',
         }
 
-# CHECK THIS ONE BECAUSE IT IS NOT WORKING PROPERLY
-
     def test_get_disk_utilization_ok(self, fw_node):
 
         xml_text = """
         <response status="success">
             <result>
-        <![CDATA[ Filesystem Size Used Avail Use% Mounted on /dev/root 6.9G 5.2G 1.4G 79% / none 7.9G 72K 7.9G 1% /dev /dev/sda5 16G 1.2G 14G 8% /opt/pancfg /dev/sda6 7.9G 1.6G 5.9G 22% /opt/panrepo tmpfs 12G 8.7G 2.7G 77% /dev/shm cgroup_root 7.9G 0 7.9G 0% /cgroup /dev/sda8 21G 197M 20G 1% /opt/panlogs ]]>
-        </result>
+                <![CDATA[Filesystem      Size  Used Avail Use% Mounted on
+        /dev/root       6.9G  5.1G  1.5G  78% /
+        none            7.9G   76K  7.9G   1% /dev
+        /dev/sda5        16G  1.2G   14K   8% /opt/pancfg
+        /dev/sda6       7.9G  1.6G  5.9G  22% /opt/panrepo
+        tmpfs            12G  8.4G  3.0G  74% /dev/shm
+        cgroup_root     7.9G     0  7.9G   0% /cgroup
+        /dev/sda8        21G   63M   20G   1% /opt/panlogs
+        tmpfs            12M     0   12M   0% /opt/pancfg/mgmt/lcaas/ssl/private
+        ]]>
+            </result>
         </response>
         """
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
 
-        assert fw_node.get_disk_utilization() == { 
+        assert fw_node.get_disk_utilization() == {
+            '/': 1536,
+            '/cgroup': 8089,
+            '/dev': 8089,
+            '/dev/shm': 3072,
+            '/opt/pancfg': 0,
+            '/opt/pancfg/mgmt/lcaas/ssl/private': 12,
+            '/opt/panlogs': 20480,
+            '/opt/panrepo': 6041,
         }
+    
+    def test_get_disk_utilization_wrong_format(self, fw_node):
+        xml_text = """
+        <response status="success">
+            <result>
+                <![CDATA[Filesystem      Size  Used Avail Use% Mounted on
+        /dev/root       6.9G  5.1G  1.5X  78% /
+        none            7.9G   76K  7.9G   1% /dev
+        /dev/sda5        16G  1.2G   14G   8% /opt/pancfg
+        /dev/sda6       7.9G  1.6G  5.9G  22% /opt/panrepo
+        tmpfs            12G  8.4G  3.0G  74% /dev/shm
+        cgroup_root     7.9G     0  7.9G   0% /cgroup
+        /dev/sda8        21G   63M   20G   1% /opt/panlogs
+        tmpfs            12M     0   12M   0% /opt/pancfg/mgmt/lcaas/ssl/private
+        ]]>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_node.op.return_value = raw_response
+        with pytest.raises(WrongDiskSizeFormatException) as exc_info:
+            fw_node.get_disk_utilization()
 
-# AFTER SOLVE THIS ONE!!
+        expected = f'Free disk size has wrong format.'
+        assert expected in str(exc_info.value)
 
-    # def test_get_disk_utilization_parse_fail(self, fw_node):
-    #     xml_text = "<response status='success'><result>Not Parsable</result></response>"
-    #     raw_response = ET.fromstring(xml_text)
-    #     fw_node.op.return_value = raw_response
-    #     with pytest.raises(WrongDiskSizeFormatException) as exc_info:
-    #         fw_node.get_disk_utilization()
+    def test_get_disk_utilization_index_fail(self, fw_node):
+        xml_text = """
+        <response status="success">
+            <result>
+                <![CDATA[Filesystem      Size  Used Avail Use% Mounted on
+        /dev/root       6.9G  5.1G
+        ]]>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_node.op.return_value = raw_response
+        with pytest.raises(WrongDiskSizeFormatException) as exc_info:
+            fw_node.get_disk_utilization()
 
-    #     expected = f'Free disk size has wrong format.'
-    #     assert expected in str(exc_info.value)
+        expected = f'API response has wrong format.'
+        assert expected in str(exc_info.value)
+
+    def test_get_disk_utilization_no_unit(self, fw_node):
+        xml_text = """
+        <response status="success">
+            <result>
+                <![CDATA[Filesystem      Size  Used Avail Use% Mounted on
+        tmpfs            12M     0   12   0% /opt/pancfg/mgmt/lcaas/ssl/private
+        ]]>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_node.op.return_value = raw_response
+
+        assert fw_node.get_disk_utilization() == {
+            '/opt/pancfg/mgmt/lcaas/ssl/private': 0
+        }
 
     def test_get_available_image_data(self, fw_node):
 

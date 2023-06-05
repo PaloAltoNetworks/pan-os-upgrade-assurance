@@ -66,6 +66,19 @@ class TestCheckFirewall:
         }
         assert check_firewall_mock.check_ha_status() == CheckResult(status=CheckStatus.ERROR, reason="Device is not a member of an HA pair.")
 
+    def test_check_ha_status_no_sync(self, check_firewall_mock):
+        check_firewall_mock._node.get_ha_configuration.return_value = {
+            'enabled': 'yes',
+            'group': {
+                'mode': 'Active-Passive',
+                'local-info': {'state': 'active'},
+                'peer-info': {'state': 'passive'},
+                'running-sync-enabled': 'yes',
+                'running-sync': 'not-synchronized'
+            }
+        }
+        assert check_firewall_mock.check_ha_status() == CheckResult(status=CheckStatus.ERROR, reason="Device configuration is not synchronized between the nodes.")
+
     def test_check_ha_status_mode(self, check_firewall_mock):
         check_firewall_mock._node.get_ha_configuration.return_value = {
             'enabled': 'yes',
@@ -145,6 +158,12 @@ class TestCheckFirewall:
             }
         }
         assert check_firewall_mock.check_is_ha_active() == CheckResult(status=CheckStatus.FAIL,reason="Node state is: someothervalue.")
+
+    def test_check_is_ha_active_no_ha_status(self, check_firewall_mock):
+        check_ha_status_mock = MagicMock(return_value=False)
+        check_firewall_mock.check_ha_status = check_ha_status_mock
+        result = check_firewall_mock.check_is_ha_active()
+        assert result is False
 
     def test_check_expired_licenses_true(self, check_firewall_mock):
         licenses = check_firewall_mock._node.get_licenses.return_value = {
