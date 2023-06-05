@@ -11,6 +11,11 @@ on:
       - ready_for_review
     branches: ['main']
 
+permissions:
+  contents: write
+  pull-requests: write
+
+
 jobs:
 
   # pyversion:
@@ -44,3 +49,4 @@ jobs:
   update_pandev:
     name: Create a preview PR for pan.dev
     uses: ./.github/workflows/sub_pandev.yml
+    secrets: inherit

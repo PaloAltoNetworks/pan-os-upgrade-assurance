@@ -4,6 +4,9 @@ defaults:
   run:
     shell: bash
 
+permissions:
+  contents: read
+
 on:
   workflow_call:
 
@@ -27,11 +30,15 @@ jobs:
     name: Prepare a PR for pan.dev
     needs: [fetch]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: checkout pan.dev fork
         uses: actions/checkout@v3
         with:
-          repository: PaloAltoNetworks/panos-upgrade-assurance-pan.dev
+          repository: PaloAltoNetworks/pan.dev
+          token: ${{ secrets.CLSC_PAT }}
       - name: download documentation artifact
         uses: actions/download-artifact@v3
         with:
@@ -43,5 +50,20 @@ jobs:
           rm -rf 'panos-upgrade-assurance'
           tar xvf documentation.tar
           rm -f documentation.tar
-          ls -ltr
-          ls -ltr 'panos-upgrade-assurance'
+      - name: create a PR to upstram pan.dev
+        uses: peter-evans/create-pull-request@v5
+        with:
+          push-to-fork: PaloAltoNetworks/panos-upgrade-assurance-pan.dev
+          token: ${{ secrets.CLSC_PAT }}
+          # delete-branch: true
+          # branch: PaloAltoNetworks/panos-upgrade-assurance-pan.dev:upgrade-assurance-documentation-update
+          # title: "[PAN-OS Upgrade Assurance] documentation PREVIEW - do NOT MERGE"
+          # commit-message: "docs: documentation update"
+          # body: |
+          #   # Description
+            
+          #   DO NOT MERGE - preview PR
+
+          #   # Types of changes
+
+          #   New feature (non-breaking change which adds functionality)
