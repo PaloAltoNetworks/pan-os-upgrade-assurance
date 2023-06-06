@@ -34,58 +34,59 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - name: checkout pan.dev fork
-        uses: actions/checkout@v3
-        with:
-          repository: PaloAltoNetworks/panos-upgrade-assurance-pan.dev
-          token: ${{ secrets.CLSC_PAT }}
-          # fetch: 0
+      # - name: checkout pan.dev fork
+      #   uses: actions/checkout@v3
+      #   with:
+      #     repository: PaloAltoNetworks/panos-upgrade-assurance-pan.dev
+      #     token: ${{ secrets.CLSC_PAT }}
+      #     # fetch: 0
 
-      - name: checkout a branch and do some modifications
-        id: branch
-        run: |
-          set -x
+      # - name: checkout a branch and do some modifications
+      #   id: branch
+      #   run: |
+      #     set -x
 
-          git config --global user.email "FoSix@users.noreply.github.com"
-          git config --global user.name FoSix
+      #     git config --global user.email "FoSix@users.noreply.github.com"
+      #     git config --global user.name FoSix
 
-          git remote add upstream https://github.com/PaloAltoNetworks/pan.dev.git
-          git fetch origin
-          git fetch upstream
-          git merge upstream/master
-          git push origin
+      #     git remote add upstream https://github.com/PaloAltoNetworks/pan.dev.git
+      #     git fetch origin
+      #     git fetch upstream
+      #     git merge upstream/master
+      #     git push origin
 
-          if [ "$(git branch  -r --list 'origin/upgrade-assurance-documentation-update')" ]; then
-            git checkout upgrade-assurance-documentation-update
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            git branch upgrade-assurance-documentation-update
-            git checkout upgrade-assurance-documentation-update
-            git push -u origin upgrade-assurance-documentation-update
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
+      #     if [ "$(git branch  -r --list 'origin/upgrade-assurance-documentation-update')" ]; then
+      #       git checkout upgrade-assurance-documentation-update
+      #       echo "exists=true" >> $GITHUB_OUTPUT
+      #     else
+      #       git branch upgrade-assurance-documentation-update
+      #       git checkout upgrade-assurance-documentation-update
+      #       git push -u origin upgrade-assurance-documentation-update
+      #       echo "exists=false" >> $GITHUB_OUTPUT
+      #     fi
 
-          git merge master
-          date >> file
-          git add file
-          git commit -m 'modyfing brach for PR'
-          git push
+      #     git merge master
+      #     date >> file
+      #     git add file
+      #     git commit -m 'modyfing brach for PR'
+      #     git push
 
       - name: create a PR from fork
         uses: actions/github-script@v6
-        if: steps.branch.outputs.exists == 'false'
+        # if: steps.branch.outputs.exists == 'false'
         with:
           github-token: ${{ secrets.CLSC_PAT }}
           script: |
             octokit.rest.pulls.create({
               owner: context.repo.owner,
-              repo: "PaloAltoNetworks/pan.dev"
-              base: "master",
-              head_repo: "PaloAltoNetworks/panos-upgrade-assurance-pan.dev"
-              head: "PaloAltoNetworks:upgrade-assurance-documentation-update",
-              body: "PREVIEW - DO NOT MERGE",
-              title: "PREVIEW - DO NOT MERGE",
+              repo: 'PaloAltoNetworks/pan.dev'
+              base: 'master',
+              head_repo: 'PaloAltoNetworks/panos-upgrade-assurance-pan.dev',
+              head: 'PaloAltoNetworks:upgrade-assurance-documentation-update',
+              body: 'PREVIEW - DO NOT MERGE',
+              title: 'PREVIEW - DO NOT MERGE'
             });
+          debug: true
 
 
 
