@@ -1,9 +1,10 @@
 import pytest
 from unittest.mock import MagicMock
-from panos_upgrade_assurance.check_firewall import CheckFirewall,ContentDBVersionInFutureException, ImageVersionNotAvailableException
+from panos_upgrade_assurance.check_firewall import CheckFirewall,ContentDBVersionInFutureException, WrongDataTypeException, UpdateServerConnectivityException, ImageVersionNotAvailableException
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
 from panos_upgrade_assurance.utils import CheckResult
 from panos_upgrade_assurance.utils import CheckStatus
+from panos.errors import PanDeviceXapiError
 
 @pytest.fixture
 def check_firewall_mock():
@@ -166,7 +167,7 @@ class TestCheckFirewall:
         assert result is False
 
     def test_check_expired_licenses_true(self, check_firewall_mock):
-        licenses = check_firewall_mock._node.get_licenses.return_value = {
+        check_firewall_mock._node.get_licenses.return_value = {
                     'AutoFocus Device License': {
                         'authcode': 'Snnnnnnn',
                         'base-license-name': 'PA-VM',
@@ -191,7 +192,7 @@ class TestCheckFirewall:
         assert check_firewall_mock.check_expired_licenses() == CheckResult(reason=f"Found expired licenses:  AutoFocus Device License, PA-VM.")
 
     def test_check_expired_licenses_false(self, check_firewall_mock):
-        licenses = check_firewall_mock._node.get_licenses.return_value = {
+        check_firewall_mock._node.get_licenses.return_value = {
                     'AutoFocus Device License': {
                         'authcode': 'Snnnnnnn',
                         'base-license-name': 'PA-VM',
@@ -215,6 +216,12 @@ class TestCheckFirewall:
         }
         assert check_firewall_mock.check_expired_licenses() == CheckResult(status=CheckStatus.SUCCESS)
 
+    def test_check_expired_licenses_param_error(self, check_firewall_mock):
+
+        with pytest.raises(WrongDataTypeException) as execption_msg:
+            check_firewall_mock.check_expired_licenses(skip_licenses = "not_a_list")
+    
+        assert str(execption_msg.value) == "The skip_licenses variable is a <class 'str'> but should be a list"
 
     def test_check_critical_session_none(self, check_firewall_mock):
         assert check_firewall_mock.check_critical_session(source=None, destination="5.5.5.5", dest_port="443") == CheckResult(status=CheckStatus.SKIPPED, reason="Missing critical session description. Failing check.")
@@ -233,6 +240,15 @@ class TestCheckFirewall:
         ]
         assert check_firewall_mock.check_critical_session(source='10.10.10.10', destination='5.5.5.5', dest_port='443') == CheckResult(status=CheckStatus.SUCCESS)
 
+    def test_check_critical_session_not_found(self, check_firewall_mock):
+        check_firewall_mock._node.get_sessions.return_value = [
+            {
+            'source': '10.10.10.10',
+            'xdst': '5.5.5.5',
+            'dport': '443'
+            }
+        ]
+        assert check_firewall_mock.check_critical_session(source='10.10.10.11', destination='5.5.5.6', dest_port='80') == CheckResult(status=CheckStatus.FAIL, reason="Session not found in session table.")
 
     def test_check_content_version_latest_installed(self, check_firewall_mock):
         check_firewall_mock._node.get_latest_available_content_version.return_value = "1-10"
@@ -260,6 +276,36 @@ class TestCheckFirewall:
         check_firewall_mock._node.get_latest_available_content_version.return_value = "2-10"
         check_firewall_mock._node.get_content_db_version.return_value = "3-10"
         assert check_firewall_mock.check_content_version(version="2-10") == CheckResult(status=CheckStatus.SUCCESS, reason=f'Installed content DB version (3-10) is higher than the requested one (2-10).')
+
+    def test_check_content_version_latest_not_installed(self, check_firewall_mock):
+        check_firewall_mock._node.get_latest_available_content_version.return_value = "2-10"
+        check_firewall_mock._node.get_content_db_version.return_value = "3-20"
+        with pytest.raises(ContentDBVersionInFutureException) as execption_msg:
+            check_firewall_mock.check_content_version()
+        assert str(execption_msg.value) == "Wrong data returned from device, installed version (3-20) is higher than the required_version available (2-10)."
+
+    def test_check_content_version_installed_older_than_requested(self, check_firewall_mock):
+        check_firewall_mock._node.get_latest_available_content_version.return_value = "4-0"
+        check_firewall_mock._node.get_content_db_version.return_value = "3-20"
+        assert check_firewall_mock.check_content_version("4-0") == CheckResult(CheckStatus.FAIL, reason = "Installed content DB version (3-20) is older then the request one (4-0).")
+
+    def test_check_content_version_installed_newer_than_requested(self, check_firewall_mock):
+        check_firewall_mock._node.get_latest_available_content_version.return_value = "3-20"
+        check_firewall_mock._node.get_content_db_version.return_value = "4-0"
+        assert check_firewall_mock.check_content_version("3-20") == CheckResult(CheckStatus.SUCCESS, reason = "Installed content DB version (4-0) is higher than the requested one (3-20).")
+    
+    def test_check_content_version_installed_older_than_latest(self, check_firewall_mock):
+        check_firewall_mock._node.get_latest_available_content_version.return_value = "4-0"
+        check_firewall_mock._node.get_content_db_version.return_value = "3-20"
+        result = check_firewall_mock.check_content_version()
+        assert result.status == CheckStatus.FAIL
+        assert result.reason == "Installed content DB version (3-20) is not the latest one (4-0)."
+    
+    def test_check_content_version_installed_same_as_latest(self, check_firewall_mock):
+        check_firewall_mock._node.get_latest_available_content_version.return_value = "3-20"
+        check_firewall_mock._node.get_content_db_version.return_value = "3-20"
+        result = check_firewall_mock.check_content_version()
+        assert result.status == CheckStatus.SUCCESS
 
     def test_check_ntp_synchronization_local_no_ntp(self, check_firewall_mock):
         check_firewall_mock._node.get_ntp_servers.return_value = {
@@ -325,6 +371,20 @@ class TestCheckFirewall:
         }
         assert check_firewall_mock.check_arp_entry(ip="10.0.2.1", interface="ethernet1/1") == CheckResult(CheckStatus.SUCCESS)
 
+    def test_check_arp_entry_found_without_interface(self, check_firewall_mock):
+        check_firewall_mock._node.get_arp_table.return_value = {
+            'ethernet1/1_10.0.2.1': {
+                'interface': 'ethernet1/1',
+                'ip': '10.0.2.1',
+                'mac': '12:34:56:78:9a:bc',
+                'port': 'ethernet1/1',
+                'status': 'c',
+                'ttl': '1094'
+            }
+        }
+        assert check_firewall_mock.check_arp_entry(ip="10.0.2.1") == CheckResult(CheckStatus.SUCCESS)
+
+
     def test_check_arp_entry_not_found(self, check_firewall_mock):
         check_firewall_mock._node.get_arp_table.return_value = {
             'ethernet1/1_10.0.2.1': {
@@ -337,6 +397,19 @@ class TestCheckFirewall:
             }
         }
         assert check_firewall_mock.check_arp_entry(ip="10.0.3.1", interface="ethernet1/2") == CheckResult(reason="Entry not found in ARP table.")
+
+    def test_check_arp_entry_found(self, check_firewall_mock):
+        check_firewall_mock._node.get_arp_table.return_value = {
+            'ethernet1/2_10.0.3.1': {
+                'interface': 'ethernet1/2',
+                'ip': '10.0.3.1',
+                'mac': '12:34:56:78:9a:bc',
+                'port': '443',
+                'status': 'c',
+                'ttl': '1094'
+            }
+        }
+        assert check_firewall_mock.check_arp_entry(ip="10.0.3.1", interface="ethernet1/2") == CheckResult(CheckStatus.SUCCESS)
 
     def test_ipsec_tunnel_status_none(self, check_firewall_mock):
 
@@ -391,6 +464,31 @@ class TestCheckFirewall:
 
         assert check_firewall_mock.check_free_disk_space() == CheckResult(CheckStatus.FAIL, reason="There is not enough free space, only 50MB is available.")
 
+    def test_check_free_disk_space_with_available_version(self, check_firewall_mock):
+        check_firewall_mock._node.get_available_image_data.return_value = {
+            "9.0.0": {
+                "size": "2000"
+            }
+        }
+        check_firewall_mock._node.get_disk_utilization.return_value = {
+            "/opt/panrepo": 3000
+        }
+
+        assert check_firewall_mock.check_free_disk_space("9.0.0").status == CheckStatus.SUCCESS
+
+    def test_check_free_disk_space_with_unavailable_version(self, check_firewall_mock):
+        check_firewall_mock._node.get_available_image_data.return_value = {
+            "9.1.0": {
+                "size": "2500"
+            }
+        }
+        check_firewall_mock._node.get_disk_utilization.return_value = {
+            "/opt/panrepo": 2000
+        }
+
+        with pytest.raises(ImageVersionNotAvailableException):
+            check_firewall_mock.check_free_disk_space("9.0.0")
+
     def test_get_content_db_version(self, check_firewall_mock):
         check_firewall_mock._node.get_content_db_version.return_value = "5555-6666"
 
@@ -410,6 +508,35 @@ class TestCheckFirewall:
                     "name" : "tunnel_name"
                 }
             }
+
+    def test_check_active_support_license_connectivity_error(self, check_firewall_mock):
+        check_firewall_mock._node.get_support_license.side_effect = PanDeviceXapiError("Can not reach update servers to check active support license.")
+
+        with pytest.raises(UpdateServerConnectivityException) as exception_msg:
+            check_firewall_mock.check_active_support_license()
+
+        assert str(exception_msg.value) == "Can not reach update servers to check active support license."
+
+    def test_check_active_support_license_no_expiry_date(self, check_firewall_mock):
+        check_firewall_mock._node.get_support_license.return_value = {
+                "support_expiry_date" : ""
+            }
+
+        assert check_firewall_mock.check_active_support_license() == CheckResult(status=CheckStatus.ERROR, reason="No ExpiryDate found for support license.")
+
+    def test_check_active_support_license_expired(self, check_firewall_mock):
+        check_firewall_mock._node.get_support_license.return_value = {
+                "support_expiry_date" : "June 06, 2023"
+            }
+
+        assert check_firewall_mock.check_active_support_license() == CheckResult(status=CheckStatus.FAIL, reason="Support License expired.")
+
+    def test_check_active_support_license_success(self, check_firewall_mock):
+        check_firewall_mock._node.get_support_license.return_value = {
+                "support_expiry_date" : "June 06, 9999"
+            }
+
+        assert check_firewall_mock.check_active_support_license() == CheckResult(status=CheckStatus.SUCCESS)
 
 # TO DO :
 #   run_readiness_checks
