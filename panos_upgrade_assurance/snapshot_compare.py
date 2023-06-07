@@ -1,6 +1,6 @@
 from typing import Optional, Union, List, Dict
 from panos_upgrade_assurance.utils import ConfigParser, SnapType
-from panos_upgrade_assurance.errors import *
+from panos_upgrade_assurance import exceptions
 
 
 class SnapshotCompare:
@@ -96,7 +96,7 @@ class SnapshotCompare:
                 report_type = report
                 report_config = {"report_type": report_type}
             else:
-                raise WrongDataTypeException(f"Wrong configuration format for report: {report}.")
+                raise exceptions.WrongDataTypeException(f"Wrong configuration format for report: {report}.")
 
             self.key_checker(self.left_snap, self.right_snap, report_type)
             result.update({report_type: self._functions_mapping[report_type](**report_config)})
@@ -126,15 +126,15 @@ class SnapshotCompare:
         elif isinstance(key, (set, list)):
             key_set = set(key)
         else:
-            raise WrongDataTypeException(f"The key variable is a {type(key)} but should be either: str, set or list")
+            raise exceptions.WrongDataTypeException(f"The key variable is a {type(key)} but should be either: str, set or list")
 
         left_snap_missing_key = False if key_set.issubset(left_dict.keys()) else True
         right_snap_missing_key = False if key_set.issubset(right_dict.keys()) else True
 
         if left_snap_missing_key and right_snap_missing_key:
-            raise MissingKeyException(f"{key} (some elements if set/list) is missing in both snapshots")
+            raise exceptions.MissingKeyException(f"{key} (some elements if set/list) is missing in both snapshots")
         if left_snap_missing_key or right_snap_missing_key:
-            raise MissingKeyException(
+            raise exceptions.MissingKeyException(
                 f"{key} (some elements if set/list) is missing in {'left snapshot' if left_snap_missing_key else 'right snapshot'}"
             )
 
@@ -189,7 +189,7 @@ class SnapshotCompare:
 
         if not (first_value == 0 and second_value == 0):
             if threshold < 0 or threshold > 100:
-                raise WrongDataTypeException("The threshold should be a percentage value between 0 and 100.")
+                raise exceptions.WrongDataTypeException("The threshold should be a percentage value between 0 and 100.")
 
             result["change_percentage"] = round(
                 (abs(first_value - second_value) / (first_value if first_value >= second_value else second_value)) * 100,
@@ -384,7 +384,7 @@ class SnapshotCompare:
                         result["changed"]["changed_raw"][key] = nested_results
                         item_changed = True
                 else:
-                    raise WrongDataTypeException(f"Unknown value format for key {key}.")
+                    raise exceptions.WrongDataTypeException(f"Unknown value format for key {key}.")
             result["changed"]["passed"] = not item_changed
 
         return result
@@ -526,7 +526,7 @@ class SnapshotCompare:
 
         if count_change_threshold and result:
             if count_change_threshold < 0 or count_change_threshold > 100:
-                raise WrongDataTypeException("The threshold should be a percentage value between 0 and 100.")
+                raise exceptions.WrongDataTypeException("The threshold should be a percentage value between 0 and 100.")
 
             added_count = len(result["added"]["added_keys"])
             missing_count = len(result["missing"]["missing_keys"])
@@ -663,8 +663,8 @@ class SnapshotCompare:
                 self.right_snap[report_type],
                 requested_elements,
             )
-        except MissingKeyException as exc:  # raised when any requested key is missing in one of the snapshots
-            raise SnapshotSchemeMismatchException(
+        except exceptions.MissingKeyException as exc:  # raised when any requested key is missing in one of the snapshots
+            raise exceptions.SnapshotSchemeMismatchException(
                 f"Snapshots have missing keys in {requested_elements} for {report_type} report."
             ) from exc
 

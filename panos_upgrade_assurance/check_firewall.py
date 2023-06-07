@@ -12,7 +12,7 @@ from panos_upgrade_assurance.utils import (
     CheckStatus,
 )
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
-from panos_upgrade_assurance.errors import *
+from panos_upgrade_assurance import exceptions
 from panos import PanOSVersion
 
 
@@ -238,12 +238,12 @@ class CheckFirewall:
 
         """
         if not isinstance(skip_licenses, list):
-            raise WrongDataTypeException(f"The skip_licenses variable is a {type(skip_licenses)} but should be a list")
+            raise exceptions.WrongDataTypeException(f"The skip_licenses variable is a {type(skip_licenses)} but should be a list")
 
         result = CheckResult()
         try:
             licenses = self._node.get_licenses()
-        except DeviceNotLicensedException as exp:
+        except exceptions.DeviceNotLicensedException as exp:
             result.status = CheckStatus.ERROR
             result.reason = str(exp)
             return result
@@ -278,14 +278,14 @@ class CheckFirewall:
 
         try:
             self._node.get_licenses()
-        except DeviceNotLicensedException as exp:
+        except exceptions.DeviceNotLicensedException as exp:
             result.status = CheckStatus.ERROR
             result.reason = str(exp)
             return result
 
         try:
             support_license = self._node.get_support_license()
-        except UpdateServerConnectivityException:  # raised when connectivity timeouts
+        except exceptions.UpdateServerConnectivityException:  # raised when connectivity timeouts
             result.reason = "Can not reach update servers to check active support license."
             result.status = CheckStatus.ERROR
             return result
@@ -377,7 +377,7 @@ class CheckFirewall:
 
         try:
             required_version = version if version else self._node.get_latest_available_content_version()
-        except ContentDBVersionsFormatException as exp:
+        except exceptions.ContentDBVersionsFormatException as exp:
             result.reason = str(exp)
             result.status = CheckStatus.ERROR
             return result
@@ -582,7 +582,7 @@ class CheckFirewall:
             image_sem_version = PanOSVersion(image_version)
             try:
                 available_versions = self._node.get_available_image_data()
-            except UpdateServerConnectivityException:
+            except exceptions.UpdateServerConnectivityException:
                 result.reason = "Unable to retrieve target image size most probably due to network issues or because the device is not licensed."
                 result.status = CheckStatus.ERROR
                 return result
@@ -608,7 +608,7 @@ class CheckFirewall:
 
         try:
             free_space = self._node.get_disk_utilization()
-        except WrongDiskSizeFormatException as exp:
+        except exceptions.WrongDiskSizeFormatException as exp:
             result.reason = str(exp)
             result.status = CheckStatus.ERROR
             return result
@@ -641,7 +641,9 @@ class CheckFirewall:
 
         """
         if not isinstance(diff_threshold, int):
-            raise WrongDataTypeException(f"[diff_threshold] should be of type [int] but is of type [{type(diff_threshold)}].")
+            raise exceptions.WrongDataTypeException(
+                f"[diff_threshold] should be of type [int] but is of type [{type(diff_threshold)}]."
+            )
 
         result = CheckResult()
 
@@ -745,7 +747,7 @@ class CheckFirewall:
                 check_type, check_config = check, {}
                 # check_result = self._check_method_mapping[check_type]()
             else:
-                raise WrongDataTypeException(f"Wrong configuration format for check: {check}.")
+                raise exceptions.WrongDataTypeException(f"Wrong configuration format for check: {check}.")
 
             check_result = self._check_method_mapping[check_type](
                 **check_config
@@ -780,7 +782,7 @@ class CheckFirewall:
 
         for snap_type in snaps_list:
             if not isinstance(snap_type, str):
-                raise WrongDataTypeException(f"Wrong configuration format for snapshot: {snap_type}.")
+                raise exceptions.WrongDataTypeException(f"Wrong configuration format for snapshot: {snap_type}.")
 
             result[snap_type] = self._snapshot_method_mapping[snap_type]()
 

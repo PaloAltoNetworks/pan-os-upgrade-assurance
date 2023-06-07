@@ -4,7 +4,7 @@ from xmltodict import parse as XMLParse
 from typing import Optional, Union
 from panos.firewall import Firewall
 from pan.xapi import PanXapiError
-from panos_upgrade_assurance.errors import *
+from panos_upgrade_assurance import exceptions
 from math import floor
 
 
@@ -52,11 +52,11 @@ class FirewallProxy(Firewall):
 
         raw_response = self.op(cmd, xml=False, cmd_xml=not cmd_in_xml, vsys=self.vsys)
         if raw_response.get("status") != "success":
-            raise CommandRunFailedException(f"Failed to run command: {cmd}.")
+            raise exceptions.CommandRunFailedException(f"Failed to run command: {cmd}.")
 
         resp_result = raw_response.find("result")
         if resp_result is None:
-            raise MalformedResponseException(f"No result field returned for: {cmd}")
+            raise exceptions.MalformedResponseException(f"No result field returned for: {cmd}")
 
         if not return_xml:
             resp_result = XMLParse(ET.tostring(resp_result, encoding="utf8", method="xml"))["result"]
@@ -143,10 +143,10 @@ class FirewallProxy(Firewall):
 
         pan_status = self.op_parser(cmd="show panorama-status")
         if pan_status is None:
-            raise PanoramaConfigurationMissingException("Device not configured with Panorama.")
+            raise exceptions.PanoramaConfigurationMissingException("Device not configured with Panorama.")
 
         if not isinstance(pan_status, str):
-            raise MalformedResponseException("Response from device is not type of string.")
+            raise exceptions.MalformedResponseException("Response from device is not type of string.")
 
         pan_status_list = pan_status.split("\n")
         pan_status_list_length = len(pan_status_list)
@@ -157,7 +157,9 @@ class FirewallProxy(Firewall):
                 if pan_connected:
                     return True
         else:
-            raise MalformedResponseException(f"Panorama configuration block does not have typical structure: <{pan_status}>.")
+            raise exceptions.MalformedResponseException(
+                f"Panorama configuration block does not have typical structure: <{pan_status}>."
+            )
 
         return False
 
@@ -320,7 +322,7 @@ class FirewallProxy(Firewall):
 
         hardware = response["hw"]
         if hardware is None:
-            raise MalformedResponseException("Malformed response from device, no [hw] element present.")
+            raise exceptions.MalformedResponseException("Malformed response from device, no [hw] element present.")
 
         results = {}
         entries = hardware["entry"]
@@ -374,7 +376,7 @@ class FirewallProxy(Firewall):
         result = {}
 
         if response["licenses"] is None:
-            raise DeviceNotLicensedException(
+            raise exceptions.DeviceNotLicensedException(
                 "Device possibly not licenced - no license information available in the API response."
             )
 
@@ -436,9 +438,9 @@ class FirewallProxy(Firewall):
             # This is an ugly hack to narrow down the cause of the exception to update server connectivity issues.
             # Unfortunately the exception class is generic in this case. What is easy to identify is the message.
             if str(exp) == "Failed to check support info due to Unknown error. Please check network connectivity and try again.":
-                raise UpdateServerConnectivityException(str(exp)) from exp
+                raise exceptions.UpdateServerConnectivityException(str(exp)) from exp
             else:
-                raise exp
+                raise exceptions.exp
 
         result["support_expiry_date"] = response.findtext("./SupportInfoResponse/Support/ExpiryDate")
         result["support_level"] = response.findtext("./SupportInfoResponse/Support/SupportLevel")
@@ -750,7 +752,7 @@ class FirewallProxy(Firewall):
             major_minors.sort()
             latest = f"{majors[-1]}-{major_minors[-1]}"
         except Exception as exc:
-            raise ContentDBVersionsFormatException("Cannot parse list of available updates for Content DB.") from exc
+            raise exceptions.ContentDBVersionsFormatException("Cannot parse list of available updates for Content DB.") from exc
 
         return latest
 
@@ -868,7 +870,7 @@ class FirewallProxy(Firewall):
                 free_size = free_size_short / 1024 / 1024
 
             else:
-                raise WrongDiskSizeFormatException("Free disk size has wrong format.")
+                raise exceptions.WrongDiskSizeFormatException("Free disk size has wrong format.")
 
             result[mount_point] = floor(free_size)
 
@@ -925,9 +927,9 @@ class FirewallProxy(Firewall):
             image_data = self.op_parser(cmd="request system software check")
         except PanXapiError as exp:
             if str(exp) == "Failed to check upgrade info due to Unknown error. Please check network connectivity and try again.":
-                raise UpdateServerConnectivityException(str(exp)) from exp
+                raise exceptions.UpdateServerConnectivityException(str(exp)) from exp
             else:
-                raise exp
+                raise exceptions.exp
 
         images = dict(image_data["sw-updates"]["versions"])["entry"]
         for image in images if isinstance(images, list) else [images]:

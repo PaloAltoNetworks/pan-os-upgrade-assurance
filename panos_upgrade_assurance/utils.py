@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from copy import deepcopy
 from typing import Optional, Union, List, Iterable
 from enum import Enum
-from panos_upgrade_assurance.errors import *
+from panos_upgrade_assurance import exceptions
 
 
 class CheckType:
@@ -148,7 +148,7 @@ class ConfigParser:
             )
             for config_name in self._requested_config_names:
                 if not self._is_element_included(element=config_name):
-                    raise UnknownParameterException(f"Unknown configuration parameter passed: {config_name}.")
+                    raise exceptions.UnknownParameterException(f"Unknown configuration parameter passed: {config_name}.")
         else:
             self._requested_config_names = set(valid_elements)
             self.requested_config = list(valid_elements)  # Meaning 'all' valid tests
@@ -198,11 +198,11 @@ class ConfigParser:
             if len(config) == 1:
                 return list(config.keys())[0]
             else:
-                raise WrongDataTypeException(
+                raise exceptions.WrongDataTypeException(
                     "Dict provided as config definition has incorrect format, it is supposed to have only one key {key:[]}"
                 )
         else:
-            raise WrongDataTypeException("Config definition is neither string or dict")
+            raise exceptions.WrongDataTypeException("Config definition is neither string or dict")
 
     def _expand_all(self) -> None:
         """Expand key word `'all'` to  `self.valid_elements`.
@@ -258,7 +258,7 @@ def interpret_yes_no(boolstr: str) -> bool:
 
     """
     if boolstr not in ["yes", "no"]:
-        raise WrongDataTypeException(f"Cannot interpret following string as boolean: {boolstr}.")
+        raise exceptions.WrongDataTypeException(f"Cannot interpret following string as boolean: {boolstr}.")
 
     return True if boolstr == "yes" else False
 
