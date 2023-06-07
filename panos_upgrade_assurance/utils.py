@@ -143,7 +143,9 @@ class ConfigParser:
 
         if requested_config:  # if not None or not empty list
             self.requested_config = deepcopy(requested_config)
-            self._requested_config_names = set([ConfigParser._extract_element_name(config_keyword) for config_keyword in self.requested_config])
+            self._requested_config_names = set(
+                [ConfigParser._extract_element_name(config_keyword) for config_keyword in self.requested_config]
+            )
             for config_name in self._requested_config_names:
                 if not self._is_element_included(element=config_name):
                     raise UnknownParameterException(f"Unknown configuration parameter passed: {config_name}.")
@@ -196,7 +198,9 @@ class ConfigParser:
             if len(config) == 1:
                 return list(config.keys())[0]
             else:
-                raise WrongDataTypeException("Dict provided as config definition has incorrect format, it is supposed to have only one key {key:[]}")
+                raise WrongDataTypeException(
+                    "Dict provided as config definition has incorrect format, it is supposed to have only one key {key:[]}"
+                )
         else:
             raise WrongDataTypeException("Config definition is neither string or dict")
 

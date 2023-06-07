@@ -39,7 +39,7 @@ exclude_dirs = ["docs", ".venv", ".github", "docker_image", "dist"]
 skips = ["B405"]
 
 [tool.black]
-line-length = 160
+line-length = 130
 
 [tool.flake8]
 select = ["C","E","F","W","B","D","B950"]

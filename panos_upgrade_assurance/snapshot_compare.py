@@ -134,7 +134,9 @@ class SnapshotCompare:
         if left_snap_missing_key and right_snap_missing_key:
             raise MissingKeyException(f"{key} (some elements if set/list) is missing in both snapshots")
         if left_snap_missing_key or right_snap_missing_key:
-            raise MissingKeyException(f"{key} (some elements if set/list) is missing in {'left snapshot' if left_snap_missing_key else 'right snapshot'}")
+            raise MissingKeyException(
+                f"{key} (some elements if set/list) is missing in {'left snapshot' if left_snap_missing_key else 'right snapshot'}"
+            )
 
     @staticmethod
     def calculate_change_percentage(
@@ -355,7 +357,11 @@ class SnapshotCompare:
 
         common_keys = left_side_to_compare.keys() & right_side_to_compare.keys()
         at_lowest_level = True if isinstance(right_side_to_compare[list(common_keys)[0]], str) else False
-        keys_to_check = ConfigParser(valid_elements=set(common_keys), requested_config=properties).prepare_config() if at_lowest_level else common_keys
+        keys_to_check = (
+            ConfigParser(valid_elements=set(common_keys), requested_config=properties).prepare_config()
+            if at_lowest_level
+            else common_keys
+        )
 
         item_changed = False
         for key in keys_to_check:
@@ -658,7 +664,9 @@ class SnapshotCompare:
                 requested_elements,
             )
         except MissingKeyException as exc:  # raised when any requested key is missing in one of the snapshots
-            raise SnapshotSchemeMismatchException(f"Snapshots have missing keys in {requested_elements} for {report_type} report.") from exc
+            raise SnapshotSchemeMismatchException(
+                f"Snapshots have missing keys in {requested_elements} for {report_type} report."
+            ) from exc
 
         elements = ConfigParser(
             valid_elements=set(self.left_snap[report_type].keys()),

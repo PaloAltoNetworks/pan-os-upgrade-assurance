@@ -78,7 +78,9 @@ class CheckFirewall:
             CheckType.FREE_DISK_SPACE: self.check_free_disk_space,
             CheckType.MP_DP_CLOCK_SYNC: self.check_mp_dp_sync,
         }
-        locale.setlocale(locale.LC_ALL, "en_US")  # force locale for datetime string parsing when non-English locale is set on host
+        locale.setlocale(
+            locale.LC_ALL, "en_US"
+        )  # force locale for datetime string parsing when non-English locale is set on host
 
     def check_pending_changes(self) -> CheckResult:
         """Check if there are pending changes on device.
@@ -165,7 +167,11 @@ class CheckFirewall:
                 result.status = CheckStatus.ERROR
                 result.reason = f"Both devices have the same state: {ha_pair['local-info']['state']}."
 
-            elif not skip_config_sync and interpret_yes_no(ha_pair["running-sync-enabled"]) and ha_pair["running-sync"] != "synchronized":
+            elif (
+                not skip_config_sync
+                and interpret_yes_no(ha_pair["running-sync-enabled"])
+                and ha_pair["running-sync"] != "synchronized"
+            ):
                 result.status = CheckStatus.ERROR
                 result.reason = "Device configuration is not synchronized between the nodes."
 
@@ -381,10 +387,10 @@ class CheckFirewall:
         if required_version == installed_version:
             result.status = CheckStatus.SUCCESS
         else:
-            exception_text = (
-                f"Wrong data returned from device, installed version ({installed_version}) is higher than the required_version available ({required_version})."
+            exception_text = f"Wrong data returned from device, installed version ({installed_version}) is higher than the required_version available ({required_version})."
+            conditional_success_text = (
+                f"Installed content DB version ({installed_version}) is higher than the requested one ({required_version})."
             )
-            conditional_success_text = f"Installed content DB version ({installed_version}) is higher than the requested one ({required_version})."
 
             # we already know that the versions are different, so as a default result we assume FAILED
             # now let's handle corner cases
@@ -411,7 +417,11 @@ class CheckFirewall:
                         result.reason = exception_text
 
             if not result:
-                reason_suffix = f"older then the request one ({required_version})." if version else f"not the latest one ({required_version})."
+                reason_suffix = (
+                    f"older then the request one ({required_version})."
+                    if version
+                    else f"not the latest one ({required_version})."
+                )
                 result.reason = f"Installed content DB version ({installed_version}) is {reason_suffix}"
 
         return result
@@ -737,7 +747,9 @@ class CheckFirewall:
             else:
                 raise WrongDataTypeException(f"Wrong configuration format for check: {check}.")
 
-            check_result = self._check_method_mapping[check_type](**check_config)  # (**) would pass dict config values as separate parameters to method.
+            check_result = self._check_method_mapping[check_type](
+                **check_config
+            )  # (**) would pass dict config values as separate parameters to method.
             result[check_type] = str(check_result) if report_style else {"state": bool(check_result), "reason": str(check_result)}
 
         return result

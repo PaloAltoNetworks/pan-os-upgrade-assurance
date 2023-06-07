@@ -374,7 +374,9 @@ class FirewallProxy(Firewall):
         result = {}
 
         if response["licenses"] is None:
-            raise DeviceNotLicensedException("Device possibly not licenced - no license information available in the API response.")
+            raise DeviceNotLicensedException(
+                "Device possibly not licenced - no license information available in the API response."
+            )
 
         licenses = response["licenses"]["entry"]
         for lic in licenses if isinstance(licenses, list) else [licenses]:
@@ -492,7 +494,9 @@ class FirewallProxy(Firewall):
         if "entry" in response:
             routes = response["entry"]
             for route in routes if isinstance(routes, list) else [routes]:
-                result[f"{route['virtual-router']}_{route['destination']}_{route['interface'] if route['interface'] else ''}"] = dict(route)
+                result[
+                    f"{route['virtual-router']}_{route['destination']}_{route['interface'] if route['interface'] else ''}"
+                ] = dict(route)
 
         return result
 
