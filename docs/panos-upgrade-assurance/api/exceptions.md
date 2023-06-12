@@ -9,15 +9,15 @@ custom_edit_url: null
 
 Used when passed configuration does not meet the data type requirements. Used in all modules.
 
-## class `FirewallProxyExceptions`
+## class `FirewallProxyException`
 
 Parent class for all exceptions comming from [FirewallProxy](/panos/docs/panos-upgrade-assurance/api/firewall_proxy) module.
 
-## class `SnapshotCompareExceptions`
+## class `SnapshotCompareException`
 
 Parent class for all exceptions comming from [SnapshotCompare](/panos/docs/panos-upgrade-assurance/api/snapshot_compare) module.
 
-## class `UtilsExceptions`
+## class `UtilsException`
 
 Parent class for all exceptions comming from [Utils](/panos/docs/panos-upgrade-assurance/api/utils) module.
 
