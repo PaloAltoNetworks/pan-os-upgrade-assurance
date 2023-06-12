@@ -977,7 +977,7 @@ class FirewallProxy(Firewall):
 
         """
         time_string = self.op_parser(cmd="show clock")
-        time_dict = time_string.split(" ")
+        time_dict = time_string.split()
         result = {
             "time": time_dict[3],
             "tz": time_dict[4],
