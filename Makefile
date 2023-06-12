@@ -12,3 +12,5 @@ format:
 
 documentation:
 	pydoc-markdown
+
+all: lint format security documentation
