@@ -710,7 +710,7 @@ class CheckFirewall:
         """
         return {"version": self._node.get_content_db_version()}
 
-    def get_ip_sec_tunnels(self) -> Dict[str, Union[str, int]]:
+    def get_ip_sec_tunnels(self) -> Dict[str, dict]:
         """Extract information about IPSEC tunnels from all tunnel data retrieved from a device.
 
         # Returns
@@ -735,7 +735,7 @@ class CheckFirewall:
         ```
 
         """
-        return self._node.get_tunnels()["IPSec"]
+        return self._node.get_tunnels().get("IPSec", {})
 
     def run_readiness_checks(
         self,
