@@ -50,3 +50,5 @@ jobs:
     name: Create a preview PR for pan.dev
     uses: ./.github/workflows/sub_pandev.yml
     secrets: inherit
+    with:
+      head_branch: ${{ github.event.pull_request.head.ref }}

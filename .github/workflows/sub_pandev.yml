@@ -9,114 +9,67 @@ permissions:
 
 on:
   workflow_call:
+    inputs:
+      head_branch:
+        description: Name of a branch from which the PR in source repository is created
+        type: string
+        required: true
 
 jobs:
-  # fetch:
-  #   name: Fetch the updated documentation
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: checkout code
-  #       uses: actions/checkout@v3
-  #     - name: pack the documentation
-  #       working-directory: docs
-  #       run: tar --exclude .DS_Store --exclude sidebars.js -cvf documentation.tar *
-  #     - name: upload the documentation artifact
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         name: documentation
-  #         path: docs/documentation.tar
+  fetch:
+    name: Fetch the updated documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v3
+      - name: pack the documentation
+        working-directory: docs
+        run: tar --exclude .DS_Store --exclude sidebars.js -cvf documentation.tar *
+      - name: upload the documentation artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: documentation
+          path: docs/documentation.tar
 
   update:
     name: Prepare a PR for pan.dev
-    # needs: [fetch]
+    needs: [fetch]
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
     steps:
-      # - name: checkout pan.dev fork
-      #   uses: actions/checkout@v3
-      #   with:
-      #     repository: PaloAltoNetworks/panos-upgrade-assurance-pan.dev
-      #     token: ${{ secrets.CLSC_PAT }}
-      #     # fetch: 0
-
-      # - name: checkout a branch and do some modifications
-      #   id: branch
-      #   run: |
-      #     set -x
-
-      #     git config --global user.email "FoSix@users.noreply.github.com"
-      #     git config --global user.name FoSix
-
-      #     git remote add upstream https://github.com/PaloAltoNetworks/pan.dev.git
-      #     git fetch origin
-      #     git fetch upstream
-      #     git merge upstream/master
-      #     git push origin
-
-      #     if [ "$(git branch  -r --list 'origin/upgrade-assurance-documentation-update')" ]; then
-      #       git checkout upgrade-assurance-documentation-update
-      #       echo "exists=true" >> $GITHUB_OUTPUT
-      #     else
-      #       git branch upgrade-assurance-documentation-update
-      #       git checkout upgrade-assurance-documentation-update
-      #       git push -u origin upgrade-assurance-documentation-update
-      #       echo "exists=false" >> $GITHUB_OUTPUT
-      #     fi
-
-      #     git merge master
-      #     date >> file
-      #     git add file
-      #     git commit -m 'modyfing brach for PR'
-      #     git push
-
-      - name: create a PR from fork
-        uses: actions/github-script@v6
-        # if: steps.branch.outputs.exists == 'false'
+      - name: checkout pan.dev fork
+        uses: actions/checkout@v3
         with:
-          github-token: ${{ secrets.CLSC_PAT }}
-          script: |
-            octokit.rest.pulls.create({
-              owner: context.repo.owner,
-              repo: 'PaloAltoNetworks/pan.dev'
-              base: 'master',
-              head_repo: 'PaloAltoNetworks/panos-upgrade-assurance-pan.dev',
-              head: 'PaloAltoNetworks:upgrade-assurance-documentation-update',
-              body: 'PREVIEW - DO NOT MERGE',
-              title: 'PREVIEW - DO NOT MERGE'
-            });
-          debug: true
-
-
-
-
-
-      # - name: download documentation artifact
-      #   uses: actions/download-artifact@v3
-      #   with:
-      #     name: documentation
-      #     path: products/panos/docs
-      # - name: unpack the documentation
-      #   working-directory: products/panos/docs
-      #   run: |
-      #     rm -rf 'panos-upgrade-assurance'
-      #     tar xvf documentation.tar
-      #     rm -f documentation.tar
-      # - name: create a PR to upstram pan.dev
-      #   uses: peter-evans/create-pull-request@v5
-      #   with:
-      #     push-to-fork: PaloAltoNetworks/panos-upgrade-assurance-pan.dev
-      #     token: ${{ secrets.CLSC_PAT }}
-          # delete-branch: true
-          # branch: PaloAltoNetworks/panos-upgrade-assurance-pan.dev:upgrade-assurance-documentation-update
-          # title: "[PAN-OS Upgrade Assurance] documentation PREVIEW - do NOT MERGE"
-          # commit-message: "docs: documentation update"
-          # body: |
-          #   # Description
+          repository: PaloAltoNetworks/pan.dev
+          token: ${{ secrets.CLSC_PAT }}
+          # fetch: 0
+      - name: download documentation artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: documentation
+          path: products/panos/docs
+      - name: unpack the documentation
+        working-directory: products/panos/docs
+        run: |
+          rm -rf 'panos-upgrade-assurance'
+          tar xvf documentation.tar
+          rm -f documentation.tar
+      - name: create a PR to upstream pan.dev
+        uses: peter-evans/create-pull-request@head-repo
+        with:
+          push-to-fork: PaloAltoNetworks/panos-upgrade-assurance-pan.dev
+          token: ${{ secrets.CLSC_PAT }}
+          delete-branch: true
+          branch: "${{ inputs.head_branch }}"
+          title: "[PAN-OS Upgrade Assurance][${{ inputs.head_branch }}] documentation PREVIEW - do NOT MERGE"
+          commit-message: "docs: documentation update"
+          body: |
+            # Description
             
-          #   DO NOT MERGE - preview PR
+            DO NOT MERGE - preview PR made for changes on branch: ${{ inputs.head_branch }}.
 
-          #   # Types of changes
+            # Types of changes
 
-          #   New feature (non-breaking change which adds functionality)
+            New feature (non-breaking change which adds functionality)
