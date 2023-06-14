@@ -69,6 +69,7 @@ jobs:
   release:
     name: Create a new release
     runs-on: ubuntu-latest
+    if: needs.rc.outputs.rc == 'true'
     needs:
       - rc
       - code_format
@@ -77,7 +78,9 @@ jobs:
     permissions:
       contents: write
       issues: read
-    if: needs.rc.outputs.rc == 'true'
+    outputs:
+      released: ${{ steps.release.outputs.new_release_published }}
+      tag: ${{ steps.release.outputs.new_release_git_tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -113,3 +116,57 @@ jobs:
             @semantic-release/git@^10.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup_pandev:
+    name: Cleanup documentation release PRs @PAN.DEV
+    runs-on: ubuntu-latest
+    if: needs.release.outputs.release == 'true'
+    needs: release
+    permissions:
+      pull_request: write
+    steps:
+      - name: cleanup old PRs
+        uses: actions/github-script@v6
+        with:
+          result-encoding: string
+          github-token: ${{ secrets.CLSC_PAT }}
+          script: |
+            let prs = await github.rest.pulls.list({
+              owner: "PaloAltoNetworks",
+              repo: "pan.dev",
+              state: "open",
+            })
+
+            let prs_list = prs.data
+            console.log("Total PRs found: " + prs_list.length)
+
+            let found = false
+            let pr_no
+
+            if (prs_list.length > 0){
+              console.log("Removing obsolete PRs:")
+              for (let pr of prs_list){
+                if (pr.head.label.includes("PaloAltoNetworks:v")){
+                  console.log(" - removing PR (#" + pr.number + ") " + pr.title + " -> " + pr.url)
+
+                  await github.rest.pulls.update({
+                    owner: "PaloAltoNetworks",
+                    repo: "pan.dev",
+                    pull_number: pr.number,
+                    state: "closed",
+                  })
+                }
+              }
+            }
+
+  update_pandev:
+    name: Create a PR for pan.dev
+    if: needs.release.outputs.release == 'true'
+    needs: 
+      - cleanup_pandev
+      - release
+    uses: ./.github/workflows/sub_pandev.yml
+    secrets: inherit
+    with:
+      head_branch: ${{ needs.release.outputs.tag }}
+      preview: false
