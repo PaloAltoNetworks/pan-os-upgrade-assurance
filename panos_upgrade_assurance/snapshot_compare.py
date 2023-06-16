@@ -86,7 +86,8 @@ class SnapshotCompare:
             specified when the snapshot is made with the
             [`CheckFirewall.run_snapshots()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallrun_snapshots)
             method. This means that the reports list is basically the list of state areas. The only difference is that for
-            reports, it is possible to specify an additional configuration. This means that the list can be specified in two ways, as `str` or `dict` (in the same manner as for
+            reports, it is possible to specify an additional configuration. This means that the list can be specified in two
+            ways, as `str` or `dict` (in the same manner as for
             [`CheckFirewall.run_readiness_checks()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallrun_readiness_checks)).
 
             For the elements specified as
@@ -364,7 +365,7 @@ class SnapshotCompare:
 
         dict: Summary of the differences between dictionaries. The output has the following format:
 
-        ```python showLineNumbers
+        ```python showLineNumbers title="Sample output"
         {
             'missing': {
                 'passed': True,
@@ -673,7 +674,8 @@ class SnapshotCompare:
         Where:
 
         - `element_type` is a key which value we are going to compare,
-        - `threshold_value` is a percentage value provided as either `int` or `float`. If the list is empty, the method will return `None`.
+        - `threshold_value` is a percentage value provided as either `int` or `float`. If the list is empty,
+            the method will return `None`.
 
         :::caution
         This list **does not support** [`ConfigParser`](/panos/docs/panos-upgrade-assurance/api/utils#class-configparser)
@@ -704,7 +706,7 @@ class SnapshotCompare:
             by the [`calculate_change_percentage()`](#snapshotcomparecalculate_change_percentage) method. For the examples \
             above, the return value would be:
 
-        ```python showLineNumbers
+        ```python showLineNumbers title="Sample output"
         {
             'num-tcp': {
                 'change_percentage': 99.0,
