@@ -5,13 +5,15 @@ class WrongDataTypeException(Exception):
 
 
 class FirewallProxyException(Exception):
-    """Parent class for all exceptions comming from [FirewallProxy](/panos/docs/panos-upgrade-assurance/api/firewall_proxy) module."""
+    """Parent class for all exceptions comming from [FirewallProxy](/panos/docs/panos-upgrade-assurance/api/firewall_proxy)
+    module."""
 
     pass
 
 
 class SnapshotCompareException(Exception):
-    """Parent class for all exceptions comming from [SnapshotCompare](/panos/docs/panos-upgrade-assurance/api/snapshot_compare) module."""
+    """Parent class for all exceptions comming from [SnapshotCompare](/panos/docs/panos-upgrade-assurance/api/snapshot_compare)
+    module."""
 
     pass
 
@@ -77,6 +79,7 @@ class SnapshotSchemeMismatchException(SnapshotCompareException):
 
 
 class UnknownParameterException(UtilsException):
-    """Used when one of the requested configuration parameters processed by [`ConfigParser`](#class-configparser) is not a valid parameter."""
+    """Used when one of the requested configuration parameters processed by [`ConfigParser`](#class-configparser) is not a valid
+    parameter."""
 
     pass

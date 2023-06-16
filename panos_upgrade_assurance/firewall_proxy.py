@@ -11,8 +11,10 @@ from math import floor
 class FirewallProxy(Firewall):
     """Class representing a Firewall.
 
-    Proxy in this class means that it is between the *high level* [`CheckFirewall`](/panos/docs/panos-upgrade-assurance/api/check_firewall#class-checkfirewall) class and a device itself.
-    Inherits the [Firewall][fw] class but adds methods to interpret XML API commands. The class constructor is also inherited from the [Firewall][fw] class.
+    Proxy in this class means that it is between the *high level*
+    [`CheckFirewall`](/panos/docs/panos-upgrade-assurance/api/check_firewall#class-checkfirewall) class and a device itself.
+    Inherits the [Firewall][fw] class but adds methods to interpret XML API commands. The class constructor is also inherited
+    from the [Firewall][fw] class.
 
     All interaction with a device are read-only. Therefore, a less privileged user can be used.
 
@@ -32,18 +34,24 @@ class FirewallProxy(Firewall):
     ) -> Union[dict, ET.Element]:
         """Execute a command on node, parse, and return response.
 
-        This is just a wrapper around the [`Firewall.op()`](https://pan-os-python.readthedocs.io/en/latest/module-firewall.html#panos.firewall.Firewall.op) method. It additionally does basic error handling and tries to extract the actual device response.
+        This is just a wrapper around the
+        [`Firewall.op()`](https://pan-os-python.readthedocs.io/en/latest/module-firewall.html#panos.firewall.Firewall.op) method.
+        It additionally does basic error handling and tries to extract the actual device
+        response.
 
         # Parameters
 
         cmd (str): The actual XML API command to be run on the device. Can be either a free form or an XML formatted command.
         cmd_in_xml (bool): (defaults to `False`) Set to `True` if the command is XML-formatted.
-        return_xml (bool): (defaults to `False`) When set to `True`, the return data is an [`XML object`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element) instead of a python dictionary.
+        return_xml (bool): (defaults to `False`) When set to `True`, the return data is an \
+            [`XML object`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element)
+            instead of a Python dictionary.
 
         # Raises
 
         CommandRunFailedException: An exception is raised if the command run status returned by a device is not successful.
-        MalformedResponseException: An exception is raised when a response is not parsable, no `result` element is found in the XML response.
+        MalformedResponseException: An exception is raised when a response is not parsable, no `result` element is found in the
+            XML response.
 
         # Returns
         dict, xml.etree.ElementTree.Element: The actual command output. A type is defined by the `return_xml` parameter.
@@ -104,12 +112,13 @@ class FirewallProxy(Firewall):
 
         The actual API command run is `show panorama-status`.
 
-        An output of this command is usually a string. This method is responsible for parsing this string and trying to extract information if at least one of the Panoramas configured is connected.
+        An output of this command is usually a string. This method is responsible for parsing this string and trying to extract
+        information if at least one of the Panoramas configured is connected.
 
-        Since the API response is a string (that we need to parse) this method expects a strict format. For single Panorama this is:
+        Since the API response is a string (that we need to parse) this method expects a strict format. For single Panorama this
+        is:
 
-        ```python
-
+        ```yaml showLineNumbers title="Example - single Panorama"
             Panorama Server 1 : 1.2.3.4
                 Connected     : no
                 HA state      : disconnected
@@ -117,8 +126,7 @@ class FirewallProxy(Firewall):
 
         For two Panoramas (HA pair for example) those are just two blocks:
 
-        ```python
-
+        ```yaml showLineNumbers title="Example - HA Panorama"
             Panorama Server 1 : 1.2.3.4
                 Connected     : no
                 HA state      : disconnected
@@ -131,7 +139,8 @@ class FirewallProxy(Firewall):
 
         # Raises
 
-        PanoramaConfigurationMissingException: Exception being raised when this check is run against a device with no Panorama configured.
+        PanoramaConfigurationMissingException: Exception being raised when this check is run against a device with no Panorama
+            configured.
         MalformedResponseException: Exception being raised when response from device does not meet required format.
 
 
@@ -170,9 +179,9 @@ class FirewallProxy(Firewall):
 
         # Returns
 
-        dict: Information about HA pair and its status as retrieved from the current (local) device. Sample output:
+        dict: Information about HA pair and its status as retrieved from the current (local) device.
 
-        ```yaml
+        ```python showLineNumbers title="Sample output"
         {
             'enabled': 'yes',
             'group': {
@@ -306,9 +315,9 @@ class FirewallProxy(Firewall):
 
         # Returns
 
-        dict: Status of the configured network interfaces. Sample output:
+        dict: Status of the configured network interfaces.
 
-        ```yaml
+        ```python showLineNumbers title="Sample output"
         {
             'ethernet1/1': 'down',
             'ethernet1/2': 'down',
@@ -339,13 +348,14 @@ class FirewallProxy(Firewall):
 
         # Raises
 
-        DeviceNotLicensedException: Exception thrown when there is no information about licenses, most probably because the device is not licensed.
+        DeviceNotLicensedException: Exception thrown when there is no information about licenses, most probably because the
+            device is not licensed.
 
         # Returns
 
-        dict: Licenses available on a device.. Sample output:
+        dict: Licenses available on a device.
 
-        ```yaml
+        ```python showLineNumbers title="Sample output"
         {
             'AutoFocus Device License': {
                 'authcode': 'Snnnnnnn',
@@ -392,7 +402,7 @@ class FirewallProxy(Firewall):
 
         This method fetches the response in XML format:
 
-        ```xml
+        ```xml showLineNumbers
         <SupportInfoResponse>
             <Links>
             <Link>
@@ -451,15 +461,17 @@ class FirewallProxy(Firewall):
 
         The actual API command is `show routing route`.
 
-        In the returned `dict` the key is made of three route properties delimited with an underscore (`_`) in the following order:
+        In the returned `dict` the key is made of three route properties delimited with an underscore (`_`) in the following
+        order:
 
         * virtual router name,
         * destination CIDR,
         * network interface name if one is available, empty string otherwise.
 
-        The key does not provide any meaningful information, it's there only to introduce uniqueness for each entry. All properties that make a key are also available in the value of a dictionary element. Sample output:
+        The key does not provide any meaningful information, it's there only to introduce uniqueness for each entry. All
+        properties that make a key are also available in the value of a dictionary element.
 
-        ```yaml
+        ```python showLineNumbers title="Sample output"
         {
             private_0.0.0.0/0_private/i3': {
                 'age': None,
@@ -512,9 +524,10 @@ class FirewallProxy(Firewall):
         * interface name,
         * IP address.
 
-        The key does not provide any meaningful information, it's there only to introduce uniqueness for each entry. All properties that make a key are also available in the value of a dictionary element. Sample output:
+        The key does not provide any meaningful information, it's there only to introduce uniqueness for each entry. All
+        properties that make a key are also available in the value of a dictionary element.
 
-        ```yaml
+        ```python showLineNumbers title="Sample output"
         {
             'ethernet1/1_10.0.2.1': {
                 'interface': 'ethernet1/1',
@@ -556,9 +569,9 @@ class FirewallProxy(Firewall):
 
         # Returns
 
-        list: Information about the current sessions. Sample output:
+        list: Information about the current sessions.
 
-        ```yaml
+        ```python showLineNumbers title="Sample output"
         [
             {
                 'application': 'undecided',
@@ -607,16 +620,18 @@ class FirewallProxy(Firewall):
 
         The actual API command is `show session info`.
 
-        **NOTE**
-        This is raw output. Names of stats are the same as returned by API. No translation is made on purpose. The output of this command might vary depending on the version of PanOS.
+        :::note
+        This is raw output. Names of stats are the same as returned by API. No translation is made on purpose. The output of this
+        command might vary depending on the version of PanOS.
+        :::
 
         For meaning and available statistics, refer to the official PanOS documentation.
 
         # Returns
 
-        dict: Session stats in a form of a dictionary. Sample output:
+        dict: Session stats in a form of a dictionary.
 
-        ```yaml
+        ```python showLineNumbers title="Sample output"
         {
             'age-accel-thresh': '80',
             'age-accel-tsf': '2',
@@ -685,7 +700,7 @@ class FirewallProxy(Firewall):
 
         dict: Information about the configured tunnels. Sample output (with only one IPSec tunnel configured):
 
-        ```yaml
+        ```python showLineNumbers
         {
             'GlobalProtect-Gateway': {},
             'GlobalProtect-site-to-site': {},
@@ -725,7 +740,8 @@ class FirewallProxy(Firewall):
 
         The actual API command run is `request content upgrade check`.
 
-        Values returned by API are not ordered. This method tries to reorder them and find the highest available Content DB version. The following assumptions are made:
+        Values returned by API are not ordered. This method tries to reorder them and find the highest available Content DB
+        version. The following assumptions are made:
 
         * versions are always increasing,
         * both components of the version string are numbers.
@@ -736,9 +752,9 @@ class FirewallProxy(Firewall):
 
         # Returns
 
-        str: The latest available content version. Sample output:
+        str: The latest available content version.
 
-        ```python
+        ```python showLineNumbers title="Sample output"
         '8670-7824'
         ```
 
@@ -763,9 +779,9 @@ class FirewallProxy(Firewall):
 
         # Returns
 
-        str: Current Content DB version. Sample output:
+        str: Current Content DB version.
 
-        ```python
+        ```python showLineNumbers title="Sample output"
         '8670-7824'
         ```
 
@@ -782,7 +798,7 @@ class FirewallProxy(Firewall):
 
         - no NTP servers configured:
 
-            ```yaml
+            ```python showLineNumbers
             {
                 'synched': 'LOCAL'
             }
@@ -790,7 +806,7 @@ class FirewallProxy(Firewall):
 
         - NTP servers configured:
 
-            ```yaml
+            ```python showLineNumbers
             {
                 'ntp-server-1': {
                     'authentication-type': 'none',
@@ -826,9 +842,9 @@ class FirewallProxy(Firewall):
 
         # Returns
 
-        dict: Disk free space in MBytes. Sample output:
+        dict: Disk free space in MBytes.
 
-        ```yaml
+        ```python showLineNumbers title="Sample output"
         {
             '/': 2867
             '/dev': 7065
@@ -883,14 +899,15 @@ class FirewallProxy(Firewall):
 
         # Raises
 
-        UpdateServerConnectivityException: Raised when the update server is not reachable, can also mean that the device is not licensed.
+        UpdateServerConnectivityException: Raised when the update server is not reachable, can also mean that the device is not
+            licensed.
         PanXapiError: Re-raised when an exception is caught but does not match `UpdateServerConnectivityException`.
 
         # Returns
 
-        dict: Detailed information on available images. Sample output:
+        dict: Detailed information on available images.
 
-        ```yaml
+        ```python showLineNumbers title="Sample output"
         {
             '11.0.1': {
                 'version': '11.0.1'
@@ -944,9 +961,9 @@ class FirewallProxy(Firewall):
 
         # Returns
 
-        dict: The clock information represented as a dictionary. Sample output:
+        dict: The clock information represented as a dictionary.
 
-        ```yaml
+        ```python showLineNumbers title="Sample output"
         {
             'time': '00:41:36',
             'tz': 'PDT',
@@ -978,9 +995,9 @@ class FirewallProxy(Firewall):
 
         # Returns
 
-        dict: The clock information represented as a dictionary. Sample output:
+        dict: The clock information represented as a dictionary.
 
-        ```yaml
+        ```python showLineNumbers title="Sample output"
         {
             'time': '00:41:36',
             'tz': 'PDT',
