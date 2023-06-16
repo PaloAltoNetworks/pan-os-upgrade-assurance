@@ -81,11 +81,11 @@ if __name__ == "__main__":
     checks = [
         "all",
         "panorama",
-        "ha",
         "ntp_sync",
         "candidate_config",
         "active_support",
         # checks below have optional configuration
+        {"ha": {"skip_config_sync": True, "ignore_non_functional": True}},
         {"content_version": {"version": "8635-7675"}},
         {"expired_licenses": {"skip_licenses": ["Threat Preventon"]}},
         {"planes_clock_sync": {"diff_threshold": 2}},
@@ -107,7 +107,8 @@ if __name__ == "__main__":
         # report_style=True
     )
     printer(check_readiness)
-    # node_state = check_node.check_is_ha_active(
-    #     # skip_config_sync=True
-    #     )
-    # print(bool(node_state), node_state)
+    node_state = check_node.check_is_ha_active(
+        skip_config_sync=True,
+        ignore_non_functional=True
+        )
+    print(bool(node_state), node_state)
