@@ -144,7 +144,11 @@ class CheckFirewall:
         else:
             return CheckResult(status=CheckStatus.ERROR, reason="Device not configured with Panorama.")
 
-    def check_ha_status(self, skip_config_sync: Optional[bool] = False) -> CheckResult:
+    def check_ha_status(
+        self,
+        skip_config_sync: Optional[bool] = False,
+        ignore_non_functional: Optional[bool] = False,
+    ) -> CheckResult:
         """Checks HA pair status from the perspective of the current device.
 
         Currently, only Active-Passive configuration is supported.
@@ -153,6 +157,9 @@ class CheckFirewall:
 
         skip_config_sync (bool, optional): (defaults to `False`) Use with caution, when set to `True` will skip checking if
             configuration is synchronized between nodes. Helpful when verifying a state of a partially upgraded HA pair.
+        ignore_non_functional (bool, optional): (defaults to `False`) Use with caution, when set to `True` will ignore if device
+            state is `non-functional` on one of the nodes. Helpful when verifying a state of a partially upgraded HA pair with
+            vmseries plugin version mismatch.
 
         # Returns
 
@@ -166,7 +173,7 @@ class CheckFirewall:
             member of an HA pair or the pair is not in Active-Passive configuration.
 
         """
-        states = ("active", "passive")
+        states = ("active", "passive") if not ignore_non_functional else ("active", "passive", "non-functional")
 
         ha_config = self._node.get_ha_configuration()
         result = CheckResult()
@@ -204,7 +211,11 @@ class CheckFirewall:
 
         return result
 
-    def check_is_ha_active(self, skip_config_sync: Optional[bool] = False) -> CheckResult:
+    def check_is_ha_active(
+        self,
+        skip_config_sync: Optional[bool] = False,
+        ignore_non_functional: Optional[bool] = False,
+    ) -> CheckResult:
         """Checks whether this is an active node of an HA pair.
 
         Before checking the state of the current device, the [`check_ha_status()`](#checkfirewallcheck_ha_status) method is run.
@@ -228,14 +239,20 @@ class CheckFirewall:
         # Parameters
 
         skip_config_sync (bool, optional): (defaults to `False`) Use with caution, when set to `True` will skip checking if
-        configuration is synchronized between nodes. Helpful when working with a partially upgraded HA pair.
+            configuration is synchronized between nodes. Helpful when working with a partially upgraded HA pair.
+        ignore_non_functional (bool, optional): (defaults to `False`) Use with caution, when set to `True` will ignore if device
+            state is `non-functional` on one of the nodes. Helpful when verifying a state of a partially upgraded HA pair with
+            vmseries plugin version mismatch.
 
         # Returns
 
         CheckResult: Boolean information reflecting the state of the device.
 
         """
-        ha_status = self.check_ha_status(skip_config_sync=skip_config_sync)
+        ha_status = self.check_ha_status(
+            skip_config_sync=skip_config_sync,
+            ignore_non_functional=ignore_non_functional,
+        )
         if ha_status:
             ha_config = self._node.get_ha_configuration()
             result = CheckResult()
@@ -743,7 +760,7 @@ class CheckFirewall:
         """
         return {"version": self._node.get_content_db_version()}
 
-    def get_ip_sec_tunnels(self) -> Dict[str, Union[str, int]]:
+    def get_ip_sec_tunnels(self) -> Dict[str, dict]:
         """Extract information about IPSEC tunnels from all tunnel data retrieved from a device.
 
         # Returns
@@ -769,7 +786,7 @@ class CheckFirewall:
         ```
 
         """
-        return self._node.get_tunnels()["IPSec"]
+        return self._node.get_tunnels().get("IPSec", {})
 
     def run_readiness_checks(
         self,

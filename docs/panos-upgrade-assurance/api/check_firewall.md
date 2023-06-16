@@ -103,7 +103,9 @@ __Returns__
 ### `CheckFirewall.check_ha_status`
 
 ```python
-def check_ha_status(skip_config_sync: Optional[bool] = False) -> CheckResult
+def check_ha_status(
+        skip_config_sync: Optional[bool] = False,
+        ignore_non_functional: Optional[bool] = False) -> CheckResult
 ```
 
 Checks HA pair status from the perspective of the current device.
@@ -115,6 +117,9 @@ __Parameters__
 
 - __skip_config_sync__ (`bool, optional`): (defaults to `False`) Use with caution, when set to `True` will skip checking if
     configuration is synchronized between nodes. Helpful when verifying a state of a partially upgraded HA pair.
+- __ignore_non_functional__ (`bool, optional`): (defaults to `False`) Use with caution, when set to `True` will ignore if device
+    state is `non-functional` on one of the nodes. Helpful when verifying a state of a partially upgraded HA pair with
+    vmseries plugin version mismatch.
 
 __Returns__
 
@@ -131,7 +136,8 @@ __Returns__
 
 ```python
 def check_is_ha_active(
-        skip_config_sync: Optional[bool] = False) -> CheckResult
+        skip_config_sync: Optional[bool] = False,
+        ignore_non_functional: Optional[bool] = False) -> CheckResult
 ```
 
 Checks whether this is an active node of an HA pair.
@@ -158,7 +164,10 @@ __Parameters__
 
 
 - __skip_config_sync__ (`bool, optional`): (defaults to `False`) Use with caution, when set to `True` will skip checking if
-configuration is synchronized between nodes. Helpful when working with a partially upgraded HA pair.
+    configuration is synchronized between nodes. Helpful when working with a partially upgraded HA pair.
+- __ignore_non_functional__ (`bool, optional`): (defaults to `False`) Use with caution, when set to `True` will ignore if device
+    state is `non-functional` on one of the nodes. Helpful when verifying a state of a partially upgraded HA pair with
+    vmseries plugin version mismatch.
 
 __Returns__
 
@@ -425,7 +434,7 @@ __Returns__
 ### `CheckFirewall.get_ip_sec_tunnels`
 
 ```python
-def get_ip_sec_tunnels() -> Dict[str, Union[str, int]]
+def get_ip_sec_tunnels() -> Dict[str, dict]
 ```
 
 Extract information about IPSEC tunnels from all tunnel data retrieved from a device.
