@@ -390,7 +390,7 @@ __Returns__
 ### `CheckFirewall.get_ip_sec_tunnels`
 
 ```python
-def get_ip_sec_tunnels() -> Dict[str, Union[str, int]]
+def get_ip_sec_tunnels() -> Dict[str, dict]
 ```
 
 Extract information about IPSEC tunnels from all tunnel data retrieved from a device.
