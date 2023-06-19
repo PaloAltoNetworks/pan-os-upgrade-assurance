@@ -714,6 +714,9 @@ class CheckFirewall:
     def check_ssl_cert_key_size(self, minimum_key_size: int = 2048) -> CheckResult:
         """Check if the certificates' keys meet minimum size requirements.
 
+        This method loops over all certificates installed on a device and compares certificate's key with the `minimum_key_size`
+        value one by one.
+
         # Parameters
 
         minimum_key_size (int, optional): (defaults to `2048`) A minimum allowable certificate key size.

@@ -161,6 +161,7 @@ parameter | description
 --- | ---
 `ip` | IP address we look for
 `interface` | (optional) network interface name we would like to limit the search to
+
 **Sample configuration**
 
 ``` python
@@ -184,6 +185,26 @@ Does not require configuration.
 
 **Method:** [`CheckFirewall.check_pending_changes()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallcheck_pending_changes)
 
+### `certificates_size`
+
+Verifies each certificates' key size against a minimum value.
+
+**Method**: [`CheckFirewall.check_ssl_cert_key_size()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallcheck_ssl_cert_key_size)
+
+**Configuration parameters**
+
+parameter | description
+--- | ---
+`minimum_key_size` | (optional) minimum allowable key size (in bytes)
+
+**Sample configuration**
+
+``` python
+{
+  'minimum_key_size': 1024
+}
+```
+
 ### `content_version`
 
 Compares currently installed Content DB version against either:
@@ -198,6 +219,7 @@ Compares currently installed Content DB version against either:
 paramter | description
 --- | ---
 `version` | (optional) a minimum Content DB version that would satisfy the check
+
 **Sample configuration**
 
 ``` python
@@ -217,6 +239,7 @@ Checks if there is enough free space on the `/opt/panrepo` volume to download a 
 paramter | description
 --- | ---
 `image_version` | (optional) target PanOS version to calculate required free space, when skipped arbitrary 3GB is used
+
 **Sample configuration**
 
 ``` python
@@ -236,6 +259,7 @@ Checks and reports expired licenses.
 paramter | description
 --- | ---
 `skip_licenses` | (optional) a list of license names that should be excluded from verification
+
 **Sample configuration**
 
 ``` python
@@ -255,6 +279,7 @@ Verifies if an HA pair is in a correct state. Only Active-Passive configuration 
 paramter | description
 --- | ---
 `skip_config_sync` | Flag to skip (`True`) configuration sync state between HA pair nodes.
+
 **Sample configuration**
 
 ``` python
@@ -274,6 +299,7 @@ Verifies if a given IPSec tunnel is in active state.
 paramter | description
 --- | ---
 `tunnel_name` | A name of an IPSec tunnel which status we would like to verify
+
 **Sample configuration**
 
 ``` python
@@ -309,6 +335,7 @@ Checks difference between clocks for Management and Data planes.
 paramter | description
 --- | ---
 `diff_threshold` | (optional) Maximum difference in seconds between clocks for management and data planes.
+
 **Sample configuration**
 
 ``` python
@@ -330,6 +357,7 @@ paramter | description
 `source` | IP address from which the session was established
 `destination` | IP address to which the session was established
 `dest_port` | Target destination port
+
 **Sample configuration**
 
 ``` python
@@ -507,6 +535,7 @@ parameter | description
 --- | ---
 `properties` | (optional) a set of properties to skip when comparing two ARP table entries, all properties are checked when this parameter is skipped
 `count_change_threshold` | (optional) maximum difference percentage of changed entries in ARP table in both snapshots, skipped when this property is not specified
+
 **Sample configuration**
 
 The following configuration:
@@ -541,6 +570,7 @@ parameter | description
 --- | ---
 `properties` | (optional) a set of properties to skip when comparing two IPSec tunnels, all properties are checked when this parameter is skipped
 `count_change_threshold` | (optional) maximum difference percentage of changed entries in IPSec tunnels in both snapshots, skipped when this property is not specified
+
 **Sample configuration**
 
 The following configuration compares the state of IPSec tunnels as

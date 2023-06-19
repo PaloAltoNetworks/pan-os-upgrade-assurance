@@ -373,6 +373,36 @@ __Returns__
 * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when both clocks are the same or within threshold.
 * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when both clocks differ.
 
+### `CheckFirewall.check_ssl_cert_key_size`
+
+```python
+def check_ssl_cert_key_size(minimum_key_size: int = 2048) -> CheckResult
+```
+
+Check if the certificates' keys meet minimum size requirements.
+
+This method loops over all certificates installed on a device and compares certificate's key with the `minimum_key_size`
+value one by one.
+
+__Parameters__
+
+
+- __minimum_key_size__ (`int, optional`): (defaults to `2048`) A minimum allowable certificate key size.
+
+__Returns__
+
+
+`CheckResult`: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking
+`value of`:
+
+* [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when all certs meet the size
+    requirements.
+* [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) if a least one cert
+    does not meet the requirements - certificate names with their current sizes are provided in `CheckResult.reason`
+    property.
+* [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when device does not have
+    certificates installed.
+
 ### `CheckFirewall.get_content_db_version`
 
 ```python
