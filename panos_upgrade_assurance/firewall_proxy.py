@@ -1023,3 +1023,63 @@ class FirewallProxy(Firewall):
         }
 
         return result
+
+    def get_certificates(self) -> dict:
+        """Get information about certificates installed on a device.
+
+        This method retrieves every information that is available about a certificate except for the **private-key**.
+        This limitation is here due to security measures.
+
+        The actual API command is `show config running`.
+
+        # Returns
+
+        dict: Information about installed certificates, where key is the certificate name and value contains a dictionary of certificate properties.
+
+        ```python showLineNumbers title="Sample output"
+        {
+            'acertificate': {
+                'algorithm': 'RSA',
+                'ca': 'no',
+                'common-name': 'cert',
+                'expiry-epoch': '1718699772',
+                'issuer': 'root',
+                'issuer-hash': '5198cade',
+                'not-valid-after': 'Jun 18 08:36:12 2024 GMT',
+                'not-valid-before': 'Jun 19 08:36:12 2023 GMT',
+                'public-key': '-----BEGIN CERTIFICATE-----\n'
+                            'MIICiDCCAfGgAwIBAgIEWo92UzANBgkqhkiG9w0BAQsFADAPMQ0wCwYDVQQDDARy\n'
+                            'b290MB4XDTIzMDYxOTA4MzYxMloXDTI0MDYxODA4MzYxMlowDzENMAsGA1UEAwwE\n'
+                            'Y2VydDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAO7CKS7qrdSblk8E\n'
+                            '56Abkd9ikJVFDiDM7kC6l9ezKF4TK5q3tYbKywBiiNHw3DrRvuzwg3GsXDMSaUZZ\n'
+                            'ItsyOOxE4G6Ai48X0gSzAY5aQU2WY+1MErEWR0sMSxSVzNGkPVEDAQmI2KFPrzvX\n'
+                            'U4JGoOXwEsq4tH39nkj7Mo7VfKM/bsZ0obA8llt9VyjBCF1uN9+J1G+nY9mUzyEC\n'
+                            'yFemEexgMqWqmSY9DiL1xwFLfTog73zCvu9SfzvFzUEg+q/16RJF766AVb8TT27d\n'
+                            'KBowEpPdOqmWOXLbiZh9CzP4/GZZQuIWjS+DmSzI3nyDGF591iridlmmuTjPOyEy\n'
+                            'FnEfwsUCAwEAAaNtMGswCQYDVR0TBAIwADALBgNVHQ8EBAMCA7gwJwYDVR0lBCAw\n'
+                            'HgYIKwYBBQUHAwEGCCsGAQUFBwMCBggrBgEFBQcDBTAJBgNVHSMEAjAAMB0GA1Ud\n'
+                            'DgQWBBRmVL1rXamoHiqE1+MWuKhFx4y3lzANBgkqhkiG9w0BAQsFAAOBgQA2d4v4\n'
+                            'ABP1sOk603DTgwF3BmKGJLmdsbzD/GGYH1vs9INOxs/ftcbyld5uNJ8XCVZIX16l\n'
+                            'DbCDmPxxUkiQsjjGxKNKUh33xiqPWM8oqzGxbaLy9SK3YBl5leBPbI4rNozderlm\n'
+                            'BHR62OTIlfRtS0hwLUYkwdis/Tt0v0sc2hJxVw==\n'
+                            '-----END CERTIFICATE-----',
+                'subject': 'cert',
+                'subject-hash': '5ec67661'
+            },
+            ...
+        }
+
+        """
+        configuration = self.op_parser(cmd='show config running')
+        shared_config = configuration['config']['shared']
+
+        result = dict()
+
+        if 'certificate' in shared_config:
+            certificates = shared_config['certificate']['entry']
+            for certificate in certificates if isinstance(certificates, list) else [certificates]:
+                certificate.pop('private-key')
+                cert_name = certificate.pop('@name')
+                result[cert_name] = certificate
+
+        return result
