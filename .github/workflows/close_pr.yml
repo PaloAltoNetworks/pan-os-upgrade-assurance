@@ -1,0 +1,48 @@
+name: Close PR
+run-name: "Close Related PAN.DEV PR - (#${{ github.event.number }}) ${{ github.event.pull_request.title }}"
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches: ['main']
+    types: ['closed']
+
+jobs:
+  close:
+    name: Close PAN.DEV preview PR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/github-script@v6
+        with:
+          result-encoding: string
+          github-token: ${{ secrets.CLSC_PAT }}
+          script: |
+            let prs = await github.rest.pulls.list({
+              owner: "PaloAltoNetworks",
+              repo: "pan.dev",
+              state: "open",
+            })
+
+            let prs_list = prs.data
+
+            for (let pr of prs_list){
+              if (pr.head.label == "PaloAltoNetworks:${{ github.event.pull_request.head.ref }}"){
+                await github.rest.pulls.update({
+                  owner: "PaloAltoNetworks",
+                  repo: "pan.dev",
+                  pull_number: pr.number,
+                  state: "closed",
+                })
+                console.log("Closing related PAN.DEV PR: #" + pr.number + " - " + pr.title + " -> " + pr.url)
+                break
+              }
+            }
