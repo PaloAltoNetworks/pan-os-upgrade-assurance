@@ -34,6 +34,7 @@ class CheckType:
     IPSEC_TUNNEL_STATUS = "ip_sec_tunnel_status"
     FREE_DISK_SPACE = "free_disk_space"
     MP_DP_CLOCK_SYNC = "planes_clock_sync"
+    CERT_SIZE = "certificate_size"
 
 
 class SnapType:

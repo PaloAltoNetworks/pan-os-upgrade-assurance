@@ -14,6 +14,7 @@ from panos_upgrade_assurance.utils import (
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
 from panos import PanOSVersion
 from panos.errors import PanDeviceXapiError
+from OpenSSL import crypto as oSSL
 
 
 class ContentDBVersionInFutureException(Exception):
@@ -101,6 +102,7 @@ class CheckFirewall:
             CheckType.IPSEC_TUNNEL_STATUS: self.check_ipsec_tunnel_status,
             CheckType.FREE_DISK_SPACE: self.check_free_disk_space,
             CheckType.MP_DP_CLOCK_SYNC: self.check_mp_dp_sync,
+            CheckType.CERT_SIZE: self.check_ssl_cert_key_size,
         }
         locale.setlocale(
             locale.LC_ALL, "en_US.UTF-8"
@@ -707,6 +709,52 @@ class CheckFirewall:
         else:
             result.status = CheckStatus.SUCCESS
 
+        return result
+
+    def check_ssl_cert_key_size(self, minimum_key_size: int = 2048) -> CheckResult:
+        """Check if the certificates' keys meet minimum size requirements.
+
+        # Parameters
+
+        minimum_key_size (int, optional): (defaults to `2048`) A minimum allowable certificate key size.
+
+        # Returns
+
+        CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking
+        value of:
+
+        * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when all certs meet the size
+            requirements.
+        * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) if a least one cert
+            does not meet the requirements - certificate names with their current sizes are provided in `CheckResult.reason`
+            property.
+        * [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when device does not have
+            certificates installed.
+
+        """
+        result = CheckResult()
+        certificates = self._node.get_certificates()
+        if not certificates:
+            result.status = CheckStatus.ERROR
+            result.reason = "No certificates installed on device."
+            return result
+
+        cert_keys_to_short = dict()
+        for cert_name, certificate in certificates.items():
+            cert = oSSL.load_certificate(oSSL.FILETYPE_PEM, certificate['public-key'])
+            public_key = cert.get_pubkey()
+            key_size = public_key.bits()
+            if key_size < minimum_key_size:
+                cert_keys_to_short[cert_name] = key_size
+
+        if cert_keys_to_short:
+            err_string = ''
+            for cert_name, key_size in cert_keys_to_short.items():
+                err_string = err_string + f"{cert_name} (size: {key_size}), "
+            result.reason = f"Following certificates having to short keys were found: {err_string[:-2]}"
+            return result
+
+        result.status = CheckStatus.SUCCESS
         return result
 
     def get_content_db_version(self) -> Dict[str, str]:
