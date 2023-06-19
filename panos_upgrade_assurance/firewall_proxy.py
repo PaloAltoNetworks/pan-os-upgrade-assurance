@@ -130,6 +130,7 @@ class FirewallProxy(Firewall):
             Panorama Server 1 : 1.2.3.4
                 Connected     : no
                 HA state      : disconnected
+
             Panorama Server 2 : 5.6.7.8
                 Connected     : yes
                 HA state      : disconnected
@@ -161,7 +162,7 @@ class FirewallProxy(Firewall):
         pan_status_list_length = len(pan_status_list)
 
         if pan_status_list_length in [3, 7]:
-            for i in range(1, pan_status_list_length, 3):
+            for i in range(1, pan_status_list_length, 4):
                 pan_connected = interpret_yes_no((pan_status_list[i].split(":")[1]).strip())
                 if pan_connected:
                     return True
@@ -450,7 +451,7 @@ class FirewallProxy(Firewall):
             if str(exp) == "Failed to check support info due to Unknown error. Please check network connectivity and try again.":
                 raise exceptions.UpdateServerConnectivityException(str(exp)) from exp
             else:
-                raise exceptions.exp
+                raise exp
 
         result["support_expiry_date"] = response.findtext("./SupportInfoResponse/Support/ExpiryDate")
         result["support_level"] = response.findtext("./SupportInfoResponse/Support/SupportLevel")

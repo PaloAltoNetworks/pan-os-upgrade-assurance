@@ -130,6 +130,7 @@ For two Panoramas (HA pair for example) those are just two blocks:
     Panorama Server 1 : 1.2.3.4
         Connected     : no
         HA state      : disconnected
+
     Panorama Server 2 : 5.6.7.8
         Connected     : yes
         HA state      : disconnected
