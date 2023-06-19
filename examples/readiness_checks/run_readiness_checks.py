@@ -90,6 +90,7 @@ if __name__ == "__main__":
         {"expired_licenses": {"skip_licenses": ["Threat Preventon"]}},
         {"planes_clock_sync": {"diff_threshold": 2}},
         {"free_disk_space": {"image_version": "10.1.6-h6"}},
+        {"certificates_size": {"minimum_key_size": 1024}},
         # checks below require additional configuration
         {
             "session_exist": {
