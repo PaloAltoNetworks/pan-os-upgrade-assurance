@@ -164,7 +164,7 @@ parameter | description
 
 **Sample configuration**
 
-``` python
+```python showLineNumbers
 # with lookup limited to a single interface
 {
   'ip': '10.0.1.1'
@@ -187,7 +187,7 @@ Does not require configuration.
 
 ### `certificates_size`
 
-Verifies each certificates' key size against a minimum value.
+Verifies each certificates' properties against minimum requirements. When run w/o any additional parameters the minimum requirements follow limitations introduced in [PanOS 10.2](https://docs.paloaltonetworks.com/pan-os/10-2/pan-os-release-notes/changes-to-default-behavior/changes-to-default-behavior-in-pan-os-10-2#:~:text=Link%20Management%20Profiles-,Certificates,-On%20upgrade%20to).
 
 **Method**: [`CheckFirewall.check_ssl_cert_key_size()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallcheck_ssl_cert_key_size)
 
@@ -195,13 +195,27 @@ Verifies each certificates' key size against a minimum value.
 
 parameter | description
 --- | ---
-`minimum_key_size` | (optional) minimum allowable key size (in bytes)
+`rsa` | (optional) dictionary describing minimum requirements for `RSA` certificates
+`ecdsa` | (optional) dictionary describing minimum requirements for `ECDSA` certificates
+
+Both dictionaries accept the following keys:
+
+key | description
+--- | ---
+`hash_method` | a minimum ([from security perspective](https://en.wikipedia.org/wiki/Hash_function_security_summary)) required hashing method
+`key_size` | a minimum size of a key.
 
 **Sample configuration**
 
-``` python
+```python showLineNumbers
 {
-  'minimum_key_size': 1024
+  "ecdsa": {
+      "hash_method": "sha512"
+  },
+  "rsa": {
+      "key_size": 1024,
+      "hash_method": "sha1"
+  }
 }
 ```
 
@@ -222,7 +236,7 @@ paramter | description
 
 **Sample configuration**
 
-``` python
+```python showLineNumbers
 {
   'version': '6453-5673'
 }
@@ -242,7 +256,7 @@ paramter | description
 
 **Sample configuration**
 
-``` python
+```python showLineNumbers
 {
   'image_version': '10.1.6-h3'
 }
@@ -262,7 +276,7 @@ paramter | description
 
 **Sample configuration**
 
-``` python
+```python showLineNumbers
 {
   'skip_licenses': ['WildFire License', 'Threat Prevention']
 }
@@ -282,7 +296,7 @@ paramter | description
 
 **Sample configuration**
 
-``` python
+```python showLineNumbers
 {
   'skip_config_sync': True
 }
@@ -302,7 +316,7 @@ paramter | description
 
 **Sample configuration**
 
-``` python
+```python showLineNumbers
 {
   'tunnel_name': 'ipsec_tunnel'
 }
@@ -338,7 +352,7 @@ paramter | description
 
 **Sample configuration**
 
-``` python
+```python showLineNumbers
 {
   'diff_threshold': 25
 }
@@ -360,7 +374,7 @@ paramter | description
 
 **Sample configuration**
 
-``` python
+```python showLineNumbers
 {
   'source': '134.238.135.137',
   'destination': '10.1.0.4',
@@ -490,7 +504,7 @@ The reporting part is actually the result of comparison of two snapshots. It is 
 
 Each report can be run with default or custom configuration. The following example shows reports with additional configuration (where applicable):
 
-``` python
+```python showLineNumbers
 [
   {'ip_sec_tunnels: {
     'properties': ['state']
@@ -545,7 +559,7 @@ The following configuration:
 
 This report produces the standardized dictionary.
 
-``` python
+```python showLineNumbers
 {
   'properties': ['!ttl'],
   'count_change_threshold': 10
@@ -578,7 +592,7 @@ captured in snapshots.
 
 This report produces the standardized dictionary.
 
-``` python
+```python showLineNumbers
 {
   'properties': ['state']
 }
@@ -604,7 +618,7 @@ snapshots. It will ignore the `serial` property.
 
 This report produces the standardized dictionary.
 
-``` python
+```python showLineNumbers
 {
   'properties': ['!serial']
 }
@@ -630,7 +644,7 @@ The following configuration provides both: change in NICs\' state (implicitly) a
 
 This report produces the standardized dictionary.
 
-``` python
+```python showLineNumbers
 {
   'count_change_threshold': 10
 }
@@ -661,7 +675,7 @@ The following configuration:
 
 This report produces the standardized dictionary.
 
-``` python
+```python showLineNumbers
 {
   'properties': ['!flags'],
   'count_change_threshold': 10
@@ -688,7 +702,7 @@ The following configuration compares only stats for `num-max` and `num-tcp`. For
 
 This report produces a `dict` as documented in the [`SnapshotCompare.get_count_change_percentage()`](/panos/docs/panos-upgrade-assurance/api/snapshot_compare#snapshotcompareget_count_change_percentage) method documentation.
 
-``` python
+```python showLineNumbers
 {
   'thresholds': [
     {'num-max': 10},

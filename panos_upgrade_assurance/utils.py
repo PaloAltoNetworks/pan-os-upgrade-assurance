@@ -27,7 +27,7 @@ class CheckType:
     IPSEC_TUNNEL_STATUS = "ip_sec_tunnel_status"
     FREE_DISK_SPACE = "free_disk_space"
     MP_DP_CLOCK_SYNC = "planes_clock_sync"
-    CERT_SIZE = "certificates_size"
+    CERTS = "certificates_requirements"
 
 
 class SnapType:
@@ -66,6 +66,29 @@ class CheckStatus(Enum):
     FAIL = 1
     ERROR = 2
     SKIPPED = 3
+
+
+class SupportedHashes(Enum):
+    """Class listing supported hashing methods.
+
+    Algorithms listed here are order from less to most secure (this order follows many criteria, some of them are mentioned
+    [here](https://en.wikipedia.org/wiki/Hash_function_security_summary)).
+
+    By extending the `Enum` class we can easily use this class to compare two hashing methods in terms of their security,
+    for example:
+
+    ```python showLineNumbers title="Example"
+    bool(SupportedHashes.MD5.value < SupportedHashes.SHA256.value)
+    ```
+
+    would produce `True`.
+    """
+
+    MD5 = 1
+    SHA1 = 2
+    SHA256 = 3
+    SHA384 = 4
+    SHA512 = 5
 
 
 @dataclass
