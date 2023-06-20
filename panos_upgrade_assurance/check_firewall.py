@@ -778,14 +778,14 @@ class CheckFirewall:
 
         cert_keys_to_short = dict()
         for cert_name, certificate in certificates.items():
-            cert = oSSL.load_certificate(oSSL.FILETYPE_PEM, certificate['public-key'])
+            cert = oSSL.load_certificate(oSSL.FILETYPE_PEM, certificate["public-key"])
             public_key = cert.get_pubkey()
             key_size = public_key.bits()
             if key_size < minimum_key_size:
                 cert_keys_to_short[cert_name] = key_size
 
         if cert_keys_to_short:
-            err_string = ''
+            err_string = ""
             for cert_name, key_size in cert_keys_to_short.items():
                 err_string = err_string + f"{cert_name} (size: {key_size}), "
             result.reason = f"Following certificates having to short keys were found: {err_string[:-2]}"

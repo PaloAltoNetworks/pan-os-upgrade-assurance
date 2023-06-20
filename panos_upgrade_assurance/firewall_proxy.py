@@ -1072,16 +1072,16 @@ class FirewallProxy(Firewall):
         ```
 
         """
-        configuration = self.op_parser(cmd='show config running')
-        shared_config = configuration['config']['shared']
+        configuration = self.op_parser(cmd="show config running")
+        shared_config = configuration["config"]["shared"]
 
         result = dict()
 
-        if 'certificate' in shared_config:
-            certificates = shared_config['certificate']['entry']
+        if "certificate" in shared_config:
+            certificates = shared_config["certificate"]["entry"]
             for certificate in certificates if isinstance(certificates, list) else [certificates]:
-                certificate.pop('private-key')
-                cert_name = certificate.pop('@name')
+                certificate.pop("private-key")
+                cert_name = certificate.pop("@name")
                 result[cert_name] = certificate
 
         return result
