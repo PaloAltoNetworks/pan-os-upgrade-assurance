@@ -28,6 +28,7 @@ pydoc-markdown = "^4.6"
 flake8 = "^6.0"
 black = "^23.3"
 bandit = "^1.7"
+Flake8-pyproject = "^1.2"
 
 [build-system]
 requires = ["poetry-core"]
@@ -36,3 +37,10 @@ build-backend = "poetry.core.masonry.api"
 [tool.bandit]
 exclude_dirs = ["docs", ".venv", ".github", "docker_image", "dist"]
 skips = ["B405"]
+
+[tool.black]
+line-length = 130
+
+[tool.flake8]
+select = ["C","E","F","W","B","D","B950"]
+ignore = ["E203","E501","W503","D203","D102","D103","D107","D400","E501"]
