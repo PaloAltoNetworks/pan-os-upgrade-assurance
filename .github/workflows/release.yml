@@ -191,7 +191,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - name: checkout pan.dev fork
+      - name: checkout pan.dev
         uses: actions/checkout@v3
         with:
           repository: PaloAltoNetworks/pan.dev
