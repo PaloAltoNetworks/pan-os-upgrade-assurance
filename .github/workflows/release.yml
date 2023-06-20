@@ -69,6 +69,7 @@ jobs:
   release:
     name: Create a new release
     runs-on: ubuntu-latest
+    if: needs.rc.outputs.rc == 'true'
     needs:
       - rc
       - code_format
@@ -77,7 +78,9 @@ jobs:
     permissions:
       contents: write
       issues: read
-    if: needs.rc.outputs.rc == 'true'
+    outputs:
+      released: ${{ steps.release.outputs.new_release_published }}
+      tag: ${{ steps.release.outputs.new_release_git_tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -113,3 +116,115 @@ jobs:
             @semantic-release/git@^10.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup_pandev:
+    name: Cleanup documentation release PRs @PAN.DEV
+    runs-on: ubuntu-latest
+    if: needs.release.outputs.released == 'true'
+    needs: release
+    permissions:
+      pull_request: write
+    steps:
+      - name: cleanup old PRs
+        uses: actions/github-script@v6
+        with:
+          result-encoding: string
+          github-token: ${{ secrets.CLSC_PAT }}
+          script: |
+            let prs = await github.rest.pulls.list({
+              owner: "PaloAltoNetworks",
+              repo: "pan.dev",
+              state: "open",
+            })
+
+            let prs_list = prs.data
+            console.log("Total PRs found: " + prs_list.length)
+
+            let found = false
+            let pr_no
+
+            if (prs_list.length > 0){
+              console.log("Removing obsolete PRs:")
+              for (let pr of prs_list){
+                if (
+                  pr.head.label.includes("PaloAltoNetworks:v")
+                  && pr.head.repo.full_name == "PaloAltoNetworks/panos-upgrade-assurance-pan.dev"
+                ){
+                  console.log(" - removing PR (#" + pr.number + ") " + pr.title + " -> " + pr.url)
+
+                  await github.rest.pulls.update({
+                    owner: "PaloAltoNetworks",
+                    repo: "pan.dev",
+                    pull_number: pr.number,
+                    state: "closed",
+                  })
+                }
+              }
+            }
+
+  store_documentation:
+    name: Fetch the updated documentation
+    if: needs.release.outputs.released == 'true'
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v3
+      - name: pack the documentation
+        working-directory: docs
+        run: tar --exclude .DS_Store --exclude sidebars.js -cvf documentation.tar *
+      - name: upload the documentation artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: documentation
+          path: docs/documentation.tar
+
+  update_pandev:
+    name: Create a PR for pan.dev
+    if: needs.release.outputs.released == 'true'
+    needs: 
+      - cleanup_pandev
+      - release
+      - store_documentation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: checkout pan.dev
+        uses: actions/checkout@v3
+        with:
+          repository: PaloAltoNetworks/pan.dev
+          token: ${{ secrets.CLSC_PAT }}
+
+      - name: download documentation artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: documentation
+          path: products/panos/docs
+
+      - name: unpack the documentation
+        working-directory: products/panos/docs
+        run: |
+          rm -rf 'panos-upgrade-assurance'
+          tar xvf documentation.tar
+          rm -f documentation.tar
+
+      - name: create a PR to upstream pan.dev
+        id: pr
+        uses: peter-evans/create-pull-request@v5
+        with:
+          push-to-fork: PaloAltoNetworks/panos-upgrade-assurance-pan.dev
+          token: ${{ secrets.CLSC_PAT }}
+          delete-branch: true
+          branch: "${{ needs.release.outputs.tag }}"
+          title: "[PAN-OS Upgrade Assurance] documentation update for release: ${{ needs.release.outputs.tag }}"
+          commit-message: "docs: PanOS Upgrade Assurance documentation update"
+          body: |
+            # Description
+            
+            A PR made for changes introduced into documentation on ${{ needs.release.outputs.tag }} release.
+
+            # Types of changes
+
+            New feature (non-breaking change which adds functionality)

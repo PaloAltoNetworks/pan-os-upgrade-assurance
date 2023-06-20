@@ -41,7 +41,7 @@ jobs:
         run: poetry run make lint
 
       - name: Run black
-        run: poetry run make format
+        run: poetry run make format_check
 
       - name: Run bandit
         run: poetry run make security
