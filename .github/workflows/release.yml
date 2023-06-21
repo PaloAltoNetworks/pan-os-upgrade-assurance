@@ -122,8 +122,6 @@ jobs:
     runs-on: ubuntu-latest
     if: needs.release.outputs.released == 'true'
     needs: release
-    permissions:
-      pull_request: write
     steps:
       - name: cleanup old PRs
         uses: actions/github-script@v6
