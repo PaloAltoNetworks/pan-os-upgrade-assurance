@@ -11,17 +11,22 @@ Used when passed configuration does not meet the data type requirements. Used in
 
 ## class `FirewallProxyException`
 
-Parent class for all exceptions comming from [FirewallProxy](/panos/docs/panos-upgrade-assurance/api/firewall_proxy)
+Parent class for all exceptions coming from [FirewallProxy](/panos/docs/panos-upgrade-assurance/api/firewall_proxy)
+module.
+
+## class `CheckFirewallException`
+
+Parent class for all exceptions coming from [CheckFirewall](/panos/docs/panos-upgrade-assurance/api/check_firewall)
 module.
 
 ## class `SnapshotCompareException`
 
-Parent class for all exceptions comming from [SnapshotCompare](/panos/docs/panos-upgrade-assurance/api/snapshot_compare)
+Parent class for all exceptions coming from [SnapshotCompare](/panos/docs/panos-upgrade-assurance/api/snapshot_compare)
 module.
 
 ## class `UtilsException`
 
-Parent class for all exceptions comming from [Utils](/panos/docs/panos-upgrade-assurance/api/utils) module.
+Parent class for all exceptions coming from [Utils](/panos/docs/panos-upgrade-assurance/api/utils) module.
 
 ## class `CommandRunFailedException`
 
@@ -61,6 +66,5 @@ Used when a snapshot element contains different properties in both snapshots.
 
 ## class `UnknownParameterException`
 
-Used when one of the requested configuration parameters processed by [`ConfigParser`](#class-configparser) is not a valid
-parameter.
+Used when one of the requested configuration parameters is not a valid.
 

@@ -412,10 +412,11 @@ __Returns__
     or within threshold.
 * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when both clocks differ.
 
-### `CheckFirewall.check_ssl_cert_key_size`
+### `CheckFirewall.check_ssl_cert_requirements`
 
 ```python
-def check_ssl_cert_key_size(rsa: dict = {}, ecdsa: dict = {}) -> CheckResult
+def check_ssl_cert_requirements(rsa: dict = {},
+                                ecdsa: dict = {}) -> CheckResult
 ```
 
 Check if the certificates' keys meet minimum size requirements.

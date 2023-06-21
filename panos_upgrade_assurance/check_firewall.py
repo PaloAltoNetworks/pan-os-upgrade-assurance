@@ -91,7 +91,7 @@ class CheckFirewall:
             CheckType.IPSEC_TUNNEL_STATUS: self.check_ipsec_tunnel_status,
             CheckType.FREE_DISK_SPACE: self.check_free_disk_space,
             CheckType.MP_DP_CLOCK_SYNC: self.check_mp_dp_sync,
-            CheckType.CERTS: self.check_ssl_cert_key_size,
+            CheckType.CERTS: self.check_ssl_cert_requirements,
         }
         locale.setlocale(
             locale.LC_ALL, "en_US.UTF-8"
@@ -746,7 +746,7 @@ class CheckFirewall:
 
         return result
 
-    def check_ssl_cert_key_size(self, rsa: dict = {}, ecdsa: dict = {}) -> CheckResult:
+    def check_ssl_cert_requirements(self, rsa: dict = {}, ecdsa: dict = {}) -> CheckResult:
         """Check if the certificates' keys meet minimum size requirements.
 
         This method loops over all certificates installed on a device and compares certificate's properties with the ones
@@ -788,6 +788,17 @@ class CheckFirewall:
         """
         result = CheckResult()
 
+        allowed_keys = ["hash_method", "key_size"]
+
+        if not all(key in allowed_keys for key in rsa.keys()):
+            raise exceptions.UnknownParameterException(
+                f"Unknown configuration parameter(s) found in the `rsa` dictionary: {', '.join(rsa.keys())}."
+            )
+        if not all(key in allowed_keys for key in ecdsa.keys()):
+            raise exceptions.UnknownParameterException(
+                f"Unknown configuration parameter(s) found in the `ecdsa` dictionary: {', '.join(ecdsa.keys())}."
+            )
+
         certificates = self._node.get_certificates()
         if not certificates:
             result.status = CheckStatus.SKIPPED
@@ -799,7 +810,7 @@ class CheckFirewall:
             rsa_min_hash = SupportedHashes[rsa_min_hash_method]
         else:
             result.status = CheckStatus.ERROR
-            result.reason = f"The provided minimum hashing method ({rsa_min_hash_method}) is not supported."
+            result.reason = f"The provided minimum RSA hashing method ({rsa_min_hash_method}) is not supported."
             return result
 
         ecdsa_min_hash_method = ecdsa.get("hash_method", "sha256").upper()
@@ -807,13 +818,22 @@ class CheckFirewall:
             ecdsa_min_hash = SupportedHashes[ecdsa_min_hash_method]
         else:
             result.status = CheckStatus.ERROR
-            result.reason = f"The provided minimum hashing method ({ecdsa_min_hash_method}) is not supported."
+            result.reason = f"The provided minimum ECDSA hashing method ({ecdsa_min_hash_method}) is not supported."
             return result
 
         rsa_min_key_size = rsa.get("key_size", 2048)
-        ecdsa_min_key_size = ecdsa.get("key_size", 256)
+        if not (isinstance(rsa_min_key_size, int) and rsa_min_key_size > 0):
+            result.status = CheckStatus.ERROR
+            result.reason = "The provided minimum RSA key size should be an integer grater than 0."
+            return result
 
-        fail_str = ""
+        ecdsa_min_key_size = ecdsa.get("key_size", 256)
+        if not (isinstance(ecdsa_min_key_size, int) and ecdsa_min_key_size > 0):
+            result.status = CheckStatus.ERROR
+            result.reason = "The provided minimum ECDSA key size should be an integer grater than 0."
+            return result
+
+        failed_certs = []
         for cert_name, certificate in certificates.items():
             cert = oSSL.load_certificate(oSSL.FILETYPE_PEM, certificate["public-key"])
 
@@ -836,10 +856,10 @@ class CheckFirewall:
             if (cert_key_size < (rsa_min_key_size if cert_algorithm == "RSA" else ecdsa_min_key_size)) or (
                 cert_hash.value < (rsa_min_hash.value if cert_algorithm == "RSA" else ecdsa_min_hash.value)
             ):
-                fail_str = fail_str + f"{cert_name} (size: {cert_key_size}, hash: {cert_hash_method}), "
+                failed_certs.append(f"{cert_name} (size: {cert_key_size}, hash: {cert_hash_method})")
 
-        if fail_str:
-            result.reason = f"Following certificates do not meet required criteria: {fail_str[:-2]}."
+        if failed_certs:
+            result.reason = f"Following certificates do not meet required criteria: {', '.join(failed_certs)}."
             return result
 
         result.status = CheckStatus.SUCCESS

@@ -125,25 +125,36 @@ The list of checks to run looks as follows:
 
 ```python
 [
-  'panorama',
-  'ntp_sync',
+  "active_support",
   'candidate_config',
   'expired_licenses',
+  'ntp_sync',
+  'panorama',
   # tests below have optional configuration
+  {
+    "certificates_requirements": {
+      "ecdsa": {"hash_method": "sha512"},
+      "rsa": {
+        "key_size": 1024,
+        "hash_method": "sha1"
+      }
+    }
+  },
   {'content_version': {'version': '8634-7678'}},
+  {"expired_licenses": {"skip_licenses": ["Threat Prevention"]}},
   {'free_disk_space': {'image_version': '10.1.6-h6'}},
   {'ha': {'skip_config_sync': True}},
   {'planes_clock_sync': {'diff_threshold': 30}}
   # tests below require additional configuration
+  {'arp_entry_exist': {'ip': '10.0.1.1'} },
+  {'ip_sec_tunnel_status': {
+    'tunnel_name': 'ipsec_tun'
+  }},
   {'session_exist': {
     'source': '134.238.135.137',
     'destination': '10.1.0.4',
     'dest_port': '80'
   }},
-  {'arp_entry_exist': {'ip': '10.0.1.1'} },
-  {'ip_sec_tunnel_status': {
-    'tunnel_name': 'ipsec_tun'
-  }}
 ]
 ```
 
@@ -185,11 +196,11 @@ Does not require configuration.
 
 **Method:** [`CheckFirewall.check_pending_changes()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallcheck_pending_changes)
 
-### `certificates_size`
+### `certificates_requirements`
 
-Verifies each certificates' properties against minimum requirements. When run w/o any additional parameters the minimum requirements follow limitations introduced in [PanOS 10.2](https://docs.paloaltonetworks.com/pan-os/10-2/pan-os-release-notes/changes-to-default-behavior/changes-to-default-behavior-in-pan-os-10-2#:~:text=Link%20Management%20Profiles-,Certificates,-On%20upgrade%20to).
+Verifies each certificates' properties against minimum requirements (keys size and hashing method). When run w/o any additional parameters the minimum requirements follow limitations introduced in [PanOS 10.2](https://docs.paloaltonetworks.com/pan-os/10-2/pan-os-release-notes/changes-to-default-behavior/changes-to-default-behavior-in-pan-os-10-2#:~:text=Link%20Management%20Profiles-,Certificates,-On%20upgrade%20to).
 
-**Method**: [`CheckFirewall.check_ssl_cert_key_size()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallcheck_ssl_cert_key_size)
+**Method**: [`CheckFirewall.check_ssl_cert_requirements()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallcheck_ssl_cert_requirements)
 
 **Configuration parameters**
 

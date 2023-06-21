@@ -79,38 +79,38 @@ if __name__ == "__main__":
     check_node = CheckFirewall(firewall)
 
     checks = [
-        "all",
-        "panorama",
-        "ntp_sync",
-        "candidate_config",
-        "active_support",
-        # checks below have optional configuration
-        {"ha": {"skip_config_sync": True, "ignore_non_functional": True}},
-        {"content_version": {"version": "8635-7675"}},
-        {"expired_licenses": {"skip_licenses": ["Threat Preventon"]}},
-        {"planes_clock_sync": {"diff_threshold": 2}},
-        {"free_disk_space": {"image_version": "10.1.6-h6"}},
+        # "all",
+        # "panorama",
+        # "ntp_sync",
+        # "candidate_config",
+        # "active_support",
+        # # checks below have optional configuration
+        # {"ha": {"skip_config_sync": True, "ignore_non_functional": True}},
+        # {"content_version": {"version": "8635-7675"}},
+        # {"expired_licenses": {"skip_licenses": ["Threat Prevention"]}},
+        # {"planes_clock_sync": {"diff_threshold": 2}},
+        # {"free_disk_space": {"image_version": "10.1.6-h6"}},
         {
             "certificates_requirements": {
                 "ecdsa": {
-                    "hash_method": "sha512"
+                    "hash_method": "sha512",
                 },
                 "rsa": {
-                    "key_size": 1024,
-                    "hash_method": "sha1"
+                    "hash_method": "sha1",
+                    "key_size": 4098,
                 }
             }
         },
         # checks below require additional configuration
-        {
-            "session_exist": {
-                "source": "134.238.135.137",
-                "destination": "10.1.0.4",
-                "dest_port": "80",
-            }
-        },
-        {"arp_entry_exist": {"ip": "10.0.1.1"}},
-        {"ip_sec_tunnel_status": {"tunnel_name": "ipsec_tun"}},
+        # {
+        #     "session_exist": {
+        #         "source": "134.238.135.137",
+        #         "destination": "10.1.0.4",
+        #         "dest_port": "80",
+        #     }
+        # },
+        # {"arp_entry_exist": {"ip": "10.0.1.1"}},
+        # {"ip_sec_tunnel_status": {"tunnel_name": "ipsec_tun"}},
     ]
 
     check_readiness = check_node.run_readiness_checks(
