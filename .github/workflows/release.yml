@@ -98,13 +98,11 @@ jobs:
       - name: Create Poetry venv
         run: poetry install
 
-      - name: Build and publish to PyPI
+      - name: Bump package version
         env:
           VERSION: ${{ needs.rc.outputs.ver }}
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
         run: |
           poetry version "${VERSION}"
-          poetry publish --build
 
       - name: Create release and publish to GitHub
         id: release
@@ -116,6 +114,13 @@ jobs:
             @semantic-release/git@^10.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to PyPI
+        env:
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          poetry publish --build --skip-existing
+
 
   cleanup_pandev:
     name: Cleanup documentation release PRs @PAN.DEV
