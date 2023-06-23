@@ -406,36 +406,37 @@ class SnapshotCompare:
                 result["added"]["added_keys"].append(key)
 
         common_keys = left_side_to_compare.keys() & right_side_to_compare.keys()
-        at_lowest_level = True if isinstance(right_side_to_compare[list(common_keys)[0]], str) else False
-        keys_to_check = (
-            ConfigParser(valid_elements=set(common_keys), requested_config=properties).prepare_config()
-            if at_lowest_level
-            else common_keys
-        )
+        at_lowest_level = True if isinstance(next(iter(right_side_to_compare.values())), str) else False
+        if common_keys:
+            keys_to_check = (
+                ConfigParser(valid_elements=set(common_keys), requested_config=properties).prepare_config()
+                if at_lowest_level
+                else common_keys
+            )
 
-        item_changed = False
-        for key in keys_to_check:
-            if right_side_to_compare[key] != left_side_to_compare[key]:
-                if isinstance(left_side_to_compare[key], str):
-                    result["changed"]["changed_raw"][key] = dict(
-                        left_snap=left_side_to_compare[key],
-                        right_snap=right_side_to_compare[key],
-                    )
-                    item_changed = True
-                elif isinstance(left_side_to_compare[key], dict):
-                    nested_results = SnapshotCompare.calculate_diff_on_dicts(
-                        left_side_to_compare=left_side_to_compare[key],
-                        right_side_to_compare=right_side_to_compare[key],
-                        properties=properties,
-                    )
-
-                    SnapshotCompare.calculate_passed(nested_results)
-                    if not nested_results["passed"]:
-                        result["changed"]["changed_raw"][key] = nested_results
+            item_changed = False
+            for key in keys_to_check:
+                if right_side_to_compare[key] != left_side_to_compare[key]:
+                    if isinstance(left_side_to_compare[key], str):
+                        result["changed"]["changed_raw"][key] = dict(
+                            left_snap=left_side_to_compare[key],
+                            right_snap=right_side_to_compare[key],
+                        )
                         item_changed = True
-                else:
-                    raise exceptions.WrongDataTypeException(f"Unknown value format for key {key}.")
-            result["changed"]["passed"] = not item_changed
+                    elif isinstance(left_side_to_compare[key], dict):
+                        nested_results = SnapshotCompare.calculate_diff_on_dicts(
+                            left_side_to_compare=left_side_to_compare[key],
+                            right_side_to_compare=right_side_to_compare[key],
+                            properties=properties,
+                        )
+
+                        SnapshotCompare.calculate_passed(nested_results)
+                        if not nested_results["passed"]:
+                            result["changed"]["changed_raw"][key] = nested_results
+                            item_changed = True
+                    else:
+                        raise exceptions.WrongDataTypeException(f"Unknown value format for key {key}.")
+                result["changed"]["passed"] = not item_changed
 
         return result
 
