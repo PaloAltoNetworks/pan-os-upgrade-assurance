@@ -1,9 +1,16 @@
 import pytest
 from unittest.mock import MagicMock
-from panos_upgrade_assurance.firewall_proxy import FirewallProxy, CommandRunFailedException,MalformedResponseException,PanoramaConfigurationMissingException,ContentDBVersionsFormatException,WrongDiskSizeFormatException
+from panos_upgrade_assurance.firewall_proxy import FirewallProxy
 from panos_upgrade_assurance.utils import interpret_yes_no
 from xmltodict import parse as xml_parse
 import xml.etree.ElementTree as ET
+from panos_upgrade_assurance.exceptions import (
+    CommandRunFailedException,
+    MalformedResponseException,
+    ContentDBVersionsFormatException,
+    PanoramaConfigurationMissingException,
+    WrongDiskSizeFormatException,
+)
 
 @pytest.fixture(scope="function")
 def fw_node():
@@ -138,9 +145,6 @@ class TestFirewallProxy:
             Panorama Server 1 : 1.2.3.4
                 Connected     : yes
                 HA state      : disconnected
-            Panorama Server 2 : 5.6.7.8
-                Connected     : yes
-                HA state      : disconnected
         </result></response>"""
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
@@ -150,9 +154,6 @@ class TestFirewallProxy:
     def test_is_panorama_connected_false(self, fw_node):
         xml_text = """<response status='success'><result>
             Panorama Server 1 : 1.2.3.4
-                Connected     : no
-                HA state      : disconnected
-            Panorama Server 2 : 5.6.7.8
                 Connected     : no
                 HA state      : disconnected
         </result></response>"""

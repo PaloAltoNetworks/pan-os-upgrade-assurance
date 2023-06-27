@@ -871,23 +871,28 @@ class FirewallProxy(Firewall):
             row_items_trimmed = [item for item in row_items if item != ""]
 
             mount_point = row_items_trimmed[-1]
-            free_size_short = row_items_trimmed[3]
-            free_size_name = free_size_short[-1]
-            free_size_number = float(free_size_short[0:-1])
+            try:
+                free_size_short = row_items_trimmed[3]
+                free_size_name = free_size_short[-1]
+                free_size_number = float(free_size_short[0:-1])
 
-            if isinstance(free_size_name, str):
-                if free_size_name == "G":
-                    free_size = free_size_number * 1024
-                elif free_size_name == "M":
-                    free_size = free_size_number
-                elif free_size_name == "K":
-                    free_size = free_size_number / 1024
+                if not free_size_name.isnumeric():
+                    if free_size_name == "G":
+                        free_size = free_size_number * 1024
+                    elif free_size_name == "M":
+                        free_size = free_size_number
+                    elif free_size_name == "K":
+                        free_size = free_size_number / 1024
+                    else:
+                        raise Exception("Free disk size has wrong format.")
+                else:
+                    free_size = float(free_size_short) / 1024 / 1024
 
-            elif isinstance(free_size_name, int):
-                free_size = free_size_short / 1024 / 1024
-
-            else:
-                raise exceptions.WrongDiskSizeFormatException("Free disk size has wrong format.")
+            except Exception as exp:
+                if str(exp) == "Free disk size has wrong format.":
+                    raise exceptions.WrongDiskSizeFormatException(str(exp))
+                else:
+                    raise exceptions.WrongDiskSizeFormatException("API response has wrong format.")
 
             result[mount_point] = floor(free_size)
 

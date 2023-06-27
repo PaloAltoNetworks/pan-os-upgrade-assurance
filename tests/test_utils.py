@@ -2,12 +2,14 @@ import pytest
 from unittest.mock import MagicMock
 from panos_upgrade_assurance.utils import (
     ConfigParser,
-    UnknownParameterException,
-    WrongDataTypeException,
     CheckType,
     SnapType,
 )
 from deepdiff import DeepDiff
+from panos_upgrade_assurance.exceptions import (
+    WrongDataTypeException,
+    UnknownParameterException
+)
 
 
 valid_check_types = [v for k, v in vars(CheckType).items() if not k.startswith("__")]

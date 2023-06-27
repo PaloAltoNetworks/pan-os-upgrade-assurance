@@ -1,6 +1,9 @@
 import pytest
-from panos_upgrade_assurance.snapshot_compare import SnapshotCompare, MissingKeyException, WrongDataTypeException
-
+from panos_upgrade_assurance.snapshot_compare import SnapshotCompare
+from panos_upgrade_assurance.exceptions import (
+    WrongDataTypeException,
+    MissingKeyException,
+)
 class TestSnapshotCompare:
     def setup_method(self):
         # Set up the snapshots for testing
