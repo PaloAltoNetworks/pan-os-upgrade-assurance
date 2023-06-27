@@ -1,9 +1,10 @@
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from panos_upgrade_assurance.check_firewall import CheckFirewall,ContentDBVersionInFutureException, WrongDataTypeException, UpdateServerConnectivityException, ImageVersionNotAvailableException
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
 from panos_upgrade_assurance.utils import CheckResult
 from panos_upgrade_assurance.utils import CheckStatus
+from panos_upgrade_assurance.utils import interpret_yes_no
 from panos.errors import PanDeviceXapiError
 
 @pytest.fixture
@@ -476,18 +477,54 @@ class TestCheckFirewall:
 
         assert check_firewall_mock.check_free_disk_space("9.0.0").status == CheckStatus.SUCCESS
 
-    def test_check_free_disk_space_with_unavailable_version(self, check_firewall_mock):
+    def test_check_free_disk_space_with_unavailable_base_image(self, check_firewall_mock):
+
         check_firewall_mock._node.get_available_image_data.return_value = {
-            "9.1.0": {
-                "size": "2500"
+            "9.2.2": {
+                "size": "2000"
             }
         }
         check_firewall_mock._node.get_disk_utilization.return_value = {
-            "/opt/panrepo": 2000
+            "/opt/panrepo": 5000
         }
 
-        with pytest.raises(ImageVersionNotAvailableException):
-            check_firewall_mock.check_free_disk_space("9.0.0")
+        with pytest.raises(ImageVersionNotAvailableException) as exception_msg:
+            check_firewall_mock.check_free_disk_space("9.2.2")
+
+        assert str(exception_msg.value) == "Base image 9.2.0 does not exist."
+
+    def test_check_free_disk_space_image_does_not_exist(self, check_firewall_mock):
+
+        check_firewall_mock._node.get_available_image_data.return_value = {
+            "9.2.2": {
+                "size": "2000"
+            }
+        }
+        check_firewall_mock._node.get_disk_utilization.return_value = {
+            "/opt/panrepo": 5000
+        }
+
+        with pytest.raises(ImageVersionNotAvailableException) as exception_msg:
+            check_firewall_mock.check_free_disk_space("9.1.2")
+
+        assert str(exception_msg.value) == "Image 9.1.2 does not exist."
+
+    # def test_check_free_disk_space_image_does_not_exist(self, check_firewall_mock):
+    #     check_firewall_mock._node.get_available_image_data.return_value = {
+    #         "9.2.0": {
+    #             "size": "2000",
+    #             "downloaded": "no"
+    #         }
+    #     }
+    #     check_firewall_mock._node.get_disk_utilization.return_value = {
+    #         "/opt/panrepo": 5000
+    #     }
+
+    #     with patch("panos_upgrade_assurance.check_firewall.interpret_yes_no", return_value=False):
+    #         result = check_firewall_mock.check_free_disk_space("9.2.0")
+
+    #     assert result.status == CheckStatus.SUCCESS
+
 
     def test_get_content_db_version(self, check_firewall_mock):
         check_firewall_mock._node.get_content_db_version.return_value = "5555-6666"
@@ -538,6 +575,111 @@ class TestCheckFirewall:
 
         assert check_firewall_mock.check_active_support_license() == CheckResult(status=CheckStatus.SUCCESS)
 
-# TO DO :
-#   run_readiness_checks
-#   run_snapshots
+    def test_check_mp_dp_sync_wrong_input_data(self, check_firewall_mock):
+
+        with pytest.raises(WrongDataTypeException) as exception_msg:
+            check_firewall_mock.check_mp_dp_sync("1.0")
+
+        assert str(exception_msg.value) == f"[diff_threshold] should be of type [int] but is of type [<class 'str'>]."
+
+    def test_check_mp_dp_sync_time_diff(self, check_firewall_mock):
+
+        check_firewall_mock._node.get_mp_clock.return_value = {
+            'day': '31',
+            'day_of_week': 'Wed',
+            'month': 'May',
+            'time': '11:50:21',
+            'tz': 'PDT',
+            'year': '2023',
+        }
+        check_firewall_mock._node.get_dp_clock.return_value = {
+            'day': '31',
+            'day_of_week': 'Wed',
+            'month': 'May',
+            'time': '11:52:34',
+            'tz': 'PDT',
+            'year': '2023',
+        }
+
+        assert check_firewall_mock.check_mp_dp_sync(1) == CheckResult(status=CheckStatus.FAIL, reason=f"The data plane clock and management clock are different by 133.0 seconds.")
+
+    def test_check_mp_dp_sync_time_synced(self, check_firewall_mock):
+
+        check_firewall_mock._node.get_mp_clock.return_value = {
+            'day': '31',
+            'day_of_week': 'Wed',
+            'month': 'May',
+            'time': '11:50:21',
+            'tz': 'PDT',
+            'year': '2023',
+        }
+        check_firewall_mock._node.get_dp_clock.return_value = {
+            'day': '31',
+            'day_of_week': 'Wed',
+            'month': 'May',
+            'time': '11:50:21',
+            'tz': 'PDT',
+            'year': '2023',
+        }
+
+        assert check_firewall_mock.check_mp_dp_sync(1) == CheckResult(status=CheckStatus.SUCCESS)
+
+    def test_run_readiness_checks(self, check_firewall_mock):
+        check_firewall_mock._check_method_mapping = {
+            'check1': MagicMock(return_value=True),
+            'check2': MagicMock(return_value=False),
+        }
+
+        checks_configuration = ['check1', {'check2': {'param1': 123}}]
+        report_style = False
+
+        result = check_firewall_mock.run_readiness_checks(checks_configuration, report_style)
+
+        expected_result = {
+            'check1': {'state': True, 'reason': 'True'},
+            'check2': {'state': False, 'reason': 'False'},
+        }
+        assert result == expected_result
+
+        check_firewall_mock._check_method_mapping['check1'].assert_called_once_with()
+        check_firewall_mock._check_method_mapping['check2'].assert_called_once_with(param1=123)
+
+
+    # def test_run_readiness_checks_exception(self, check_firewall_mock):
+
+    #     # Set up the input parameters for the method
+    #     checks_configuration = ['check1', [123]]
+    #     report_style = False
+
+    #     with pytest.raises(WrongDataTypeException) as exception_msg:
+    #         check_firewall_mock.run_readiness_checks(checks_configuration, report_style)
+
+    #     assert str(exception_msg.value) == f"Wrong configuration format for check: check1."
+
+    def test_run_snapshots(self, check_firewall_mock):
+        check_firewall_mock._snapshot_method_mapping = {
+            'snapshot1': MagicMock(return_value={'status': 'success'}),
+            'snapshot2': MagicMock(return_value={'status': 'failed'}),
+        }
+
+        snapshots_config = ['snapshot1', 'snapshot2']
+
+        result = check_firewall_mock.run_snapshots(snapshots_config)
+
+        expected_result = {
+            'snapshot1': {'status': 'success'},
+            'snapshot2': {'status': 'failed'},
+        }
+        assert result == expected_result
+
+        check_firewall_mock._snapshot_method_mapping['snapshot1'].assert_called_once_with()
+        check_firewall_mock._snapshot_method_mapping['snapshot2'].assert_called_once_with()
+
+    # def test_run_snapshots_wrong_data_type(self, check_firewall_mock):
+
+    #     snapshots_config = ['snapshot1', 123]
+
+    #     with pytest.raises(WrongDataTypeException) as exception_msg:
+    #         check_firewall_mock.run_snapshots(snapshots_config)
+        
+    #     assert str(exception_msg.value) == f"Wrong configuration format for snapshot: snap_type."
