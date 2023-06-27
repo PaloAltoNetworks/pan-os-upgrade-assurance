@@ -384,8 +384,8 @@ class SnapshotCompare:
 
         """
 
-        if not (left_side_to_compare and right_side_to_compare):
-            return {}
+        # if not (left_side_to_compare and right_side_to_compare):
+        #     return {}
 
         result = dict(
             missing=dict(passed=True, missing_keys=[]),
@@ -406,8 +406,8 @@ class SnapshotCompare:
                 result["added"]["added_keys"].append(key)
 
         common_keys = left_side_to_compare.keys() & right_side_to_compare.keys()
-        at_lowest_level = True if isinstance(next(iter(right_side_to_compare.values())), str) else False
         if common_keys:
+            at_lowest_level = True if isinstance(left_side_to_compare[next(iter(common_keys))], str) else False
             keys_to_check = (
                 ConfigParser(valid_elements=set(common_keys), requested_config=properties).prepare_config()
                 if at_lowest_level
