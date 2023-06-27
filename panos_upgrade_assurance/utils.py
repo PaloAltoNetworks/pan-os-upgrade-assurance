@@ -2,24 +2,17 @@ from dataclasses import dataclass
 from copy import deepcopy
 from typing import Optional, Union, List, Iterable
 from enum import Enum
-
-
-class UnknownParameterException(Exception):
-    """Used when one of the requested configuration parameters processed by [`ConfigParser`](#class-configparser) is not a valid parameter."""
-
-    pass
-
-
-class WrongDataTypeException(Exception):
-    """Used when a variable does not meet data type requirements."""
-
-    pass
+from panos_upgrade_assurance import exceptions
 
 
 class CheckType:
     """Class mapping check configuration strings for commonly used variables.
 
-    Readiness checks configuration passed to the [`CheckFirewall`](/panos/docs/panos-upgrade-assurance/api/check_firewall#class-checkfirewall) class is in a form of a list of strings. These strings are compared in several places to parse the configuration and set the proper checks. This class is used to avoid hardcoding these strings. It maps the actual configuration string to a variable that can be referenced in the code.
+    Readiness checks configuration passed to the
+    [`CheckFirewall`](/panos/docs/panos-upgrade-assurance/api/check_firewall#class-checkfirewall) class is in a form of a list of
+    strings. These strings are compared in several places to parse the configuration and set the proper checks. This class is
+    used to avoid hardcoding these strings. It maps the actual configuration string to a variable that can be referenced in the
+    code.
     """
 
     PANORAMA = "panorama"
@@ -39,8 +32,11 @@ class CheckType:
 class SnapType:
     """Class mapping the snapshot configuration strings to the commonly used variables.
 
-    Snapshot configuration passed to the [`CheckFirewall`](/panos/docs/panos-upgrade-assurance/api/check_firewall#class-checkfirewall) class is in a form of a list of strings. These strings are compared in several places to parse the configuration and set proper snapshots.
-    This class is used to avoid hardcoding these strings. It maps the actual configuration string to a variable that can be referenced in the code.
+    Snapshot configuration passed to the
+    [`CheckFirewall`](/panos/docs/panos-upgrade-assurance/api/check_firewall#class-checkfirewall) class is in a form of a list of
+    strings. These strings are compared in several places to parse the configuration and set proper snapshots.
+    This class is used to avoid hardcoding these strings. It maps the actual configuration string to a variable that can be
+    referenced in the code.
     """
 
     NICS = "nics"
@@ -55,7 +51,8 @@ class SnapType:
 class CheckStatus(Enum):
     """Class containing possible statuses for the check results.
 
-    Its main purpose is to extend the simple `True`/`False` logic in a way that would provide more details/explanation in case a check fails. It provides the following statuses:
+    Its main purpose is to extend the simple `True`/`False` logic in a way that would provide more details/explanation in case a
+    check fails. It provides the following statuses:
 
     * `SUCCESS`
     * `FAIL`
@@ -79,7 +76,10 @@ class CheckResult:
     * `status` which represents information about the check outcome,
     * `reason` a reason behind the particular outcome, this comes in handy when a check fails.
 
-    Most of the [`CheckFirewall`](/panos/docs/panos-upgrade-assurance/api/check_firewall#class-checkfirewall) methods use this class to store the return values, but mostly internally. The [`CheckFirewall.run_readiness_checks()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallrun_readiness_checks) method translates this class into the python primitives: `str` and `bool`.
+    Most of the [`CheckFirewall`](/panos/docs/panos-upgrade-assurance/api/check_firewall#class-checkfirewall) methods use this
+    class to store the return values, but mostly internally. The
+    [`CheckFirewall.run_readiness_checks()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallrun_readiness_checks)
+    method translates this class into the python primitives: `str` and `bool`.
 
     # Attributes
 
@@ -96,7 +96,8 @@ class CheckResult:
 
         # Returns
 
-        str: a string combined from the `self.status` and `self.reason` variables. Provides a human readable representation of the class. Perfect to provide a reason for a particular check outcome.
+        str: a string combined from the `self.status` and `self.reason` variables. Provides a human readable representation of
+        the class. Perfect to provide a reason for a particular check outcome.
 
         """
         return f"[{self.status.name}] {self.reason}"
@@ -118,12 +119,15 @@ class CheckResult:
 class ConfigParser:
     """Class responsible for parsing the provided configuration.
 
-    This class is universal, meaning it parses configuration provided as the list of strings or dictionaries and verifies it against the list of valid configuration items.
-    There are no hardcoded items against which the configuration is checked. This class is used in many places in this package and it uses a specific [`dialect`](/panos/docs/panos-upgrade-assurance/dialect).
+    This class is universal, meaning it parses configuration provided as the list of strings or dictionaries and verifies it
+    against the list of valid configuration items.
+    There are no hardcoded items against which the configuration is checked. This class is used in many places in this package
+    and it uses a specific [`dialect`](/panos/docs/panos-upgrade-assurance/dialect).
 
     # Attributes
 
-    _requested_config_names (set): Contains only element names of the requested configuration. When no requested configuration is passed (implicit `'all'`), this is equal to `self.valid_elements`.
+    _requested_config_names (set): Contains only element names of the requested configuration. When no requested configuration is
+        passed (implicit `'all'`), this is equal to `self.valid_elements`.
 
     """
 
@@ -137,13 +141,16 @@ class ConfigParser:
         Introduces some initial verification logic:
 
         * `valid_elements` is converted to `set` - this way we get rid of all duplicates,
-        * if `requested_config` is `None` we immediately treat it as if `all`  was passed implicitly (see [`dialect`](/panos/docs/panos-upgrade-assurance/dialect)) - it's expanded to `valid_elements`
-        * `_requested_config_names` is introduced as `requested_config` stripped of any element configurations. Additionally, we do verification if elements of this variable match `valid_elements`. An exception is thrown if not.
+        * if `requested_config` is `None` we immediately treat it as if `all`  was passed implicitly
+            (see [`dialect`](/panos/docs/panos-upgrade-assurance/dialect)) - it's expanded to `valid_elements`
+        * `_requested_config_names` is introduced as `requested_config` stripped of any element configurations. Additionally, we
+            do verification if elements of this variable match `valid_elements`. An exception is thrown if not.
 
         # Parameters
 
         valid_elements (iterable): Valid elements against which we check the requested config.
-        requested_config (list, optional): (defaults to `None`) A list of requested configuration items with an optional configuration.
+        requested_config (list, optional): (defaults to `None`) A list of requested configuration items with an optional
+            configuration.
 
         # Raises
 
@@ -155,16 +162,11 @@ class ConfigParser:
         if requested_config:  # if not None or not empty list
             self.requested_config = deepcopy(requested_config)
             self._requested_config_names = set(
-                [
-                    ConfigParser._extract_element_name(config_keyword)
-                    for config_keyword in self.requested_config
-                ]
+                [ConfigParser._extract_element_name(config_keyword) for config_keyword in self.requested_config]
             )
             for config_name in self._requested_config_names:
                 if not self._is_element_included(element=config_name):
-                    raise UnknownParameterException(
-                        f"Unknown configuration parameter passed: {config_name}."
-                    )
+                    raise exceptions.UnknownParameterException(f"Unknown configuration parameter passed: {config_name}.")
         else:
             self._requested_config_names = set(valid_elements)
             self.requested_config = list(valid_elements)  # Meaning 'all' valid tests
@@ -176,15 +178,14 @@ class ConfigParser:
 
         # Parameters
 
-        element (str): The config element to verify. This can be a `not-element`. This parameter is verified against `self.valid_elements` `set`. Key word `'all'` is also accepted.
+        element (str): The config element to verify. This can be a `not-element`. This parameter is verified against
+            `self.valid_elements` `set`. Key word `'all'` is also accepted.
 
         # Returns
         bool: `True` if the value is correct, `False` otherwise.
 
         """
-        if element in self.valid_elements or (
-            element.startswith("!") and element[1:] in self.valid_elements
-        ):
+        if element in self.valid_elements or (element.startswith("!") and element[1:] in self.valid_elements):
             return True
         elif element == "all" and "all" in self.requested_config:
             return True
@@ -195,7 +196,8 @@ class ConfigParser:
     def _extract_element_name(config: Union[str, dict]) -> str:
         """Method that extracts the name from a config element.
 
-        If a config element is a string, the actual config element is returned. For elements of a dictionary type, the 1<sup>st</sup> key is returned.
+        If a config element is a string, the actual config element is returned. For elements of a dictionary type, the
+        1<sup>st</sup> key is returned.
 
         # Parameters
 
@@ -216,33 +218,29 @@ class ConfigParser:
             if len(config) == 1:
                 return list(config.keys())[0]
             else:
-                raise WrongDataTypeException(
+                raise exceptions.WrongDataTypeException(
                     "Dict provided as config definition has incorrect format, it is supposed to have only one key {key:[]}"
                 )
         else:
-            raise WrongDataTypeException("Config definition is neither string or dict")
+            raise exceptions.WrongDataTypeException("Config definition is neither string or dict")
 
     def _expand_all(self) -> None:
         """Expand key word `'all'` to  `self.valid_elements`.
 
-        During expansion, elements from `self.valid_elements` which are already available in `self.requested_config` are skipped. This way we do not introduce duplicates for elements that were provided explicitly.
+        During expansion, elements from `self.valid_elements` which are already available in `self.requested_config` are skipped.
+        This way we do not introduce duplicates for elements that were provided explicitly.
 
         This method directly operates on `self.requested_config`.
         """
-        pure_names = set(
-            [
-                (name[1:] if name.startswith("!") else name)
-                for name in self._requested_config_names
-                if name != "all"
-            ]
-        )
+        pure_names = set([(name[1:] if name.startswith("!") else name) for name in self._requested_config_names if name != "all"])
         self.requested_config.extend(list(self.valid_elements - pure_names))
         self.requested_config.remove("all")
 
     def prepare_config(self) -> List[Union[str, dict]]:
         """Parse the input config and return a machine-usable configuration.
 
-        The parsed configuration retains element types. This means that an element of a dictionary type will remain a dictionary in the parsed config.
+        The parsed configuration retains element types. This means that an element of a dictionary type will remain a dictionary
+        in the parsed config.
 
         This method handles most of the [`dialect`](/panos/docs/panos-upgrade-assurance/dialect)'s logic.
 
@@ -250,12 +248,7 @@ class ConfigParser:
         list: The parsed configuration.
 
         """
-        if all(
-            (
-                config_name.startswith("!")
-                for config_name in self._requested_config_names
-            )
-        ):
+        if all((config_name.startswith("!") for config_name in self._requested_config_names)):
             self.requested_config.insert(0, "all")
 
         if "all" in self.requested_config:
@@ -287,9 +280,7 @@ def interpret_yes_no(boolstr: str) -> bool:
 
     """
     if boolstr not in ["yes", "no"]:
-        raise WrongDataTypeException(
-            f"Cannot interpret following string as boolean: {boolstr}."
-        )
+        raise exceptions.WrongDataTypeException(f"Cannot interpret following string as boolean: {boolstr}.")
 
     return True if boolstr == "yes" else False
 

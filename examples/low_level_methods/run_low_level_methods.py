@@ -105,9 +105,7 @@ if __name__ == "__main__":
 
     print(f"\n  content DB version: {firewall.get_content_db_version()}")
 
-    print(
-        f"\n  latest availble content DB version: {firewall.get_latest_available_content_version()}"
-    )
+    print(f"\n  latest availble content DB version: {firewall.get_latest_available_content_version()}")
 
     print(f"\n  disk utilization: {firewall.get_disk_utilization()}")
 

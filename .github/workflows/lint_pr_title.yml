@@ -20,5 +20,5 @@ on:
 jobs:
   lint_pr_title:
     name: Lint PR
-    uses: PaloAltoNetworks/terraform-modules-vmseries-ci-workflows/.github/workflows/lint_pr_title.yml@plan-apply
+    uses: PaloAltoNetworks/terraform-modules-vmseries-ci-workflows/.github/workflows/lint_pr_title.yml@v1
     if: github.actor != 'dependabot[bot]'
