@@ -21,7 +21,7 @@ on:
 jobs:
 
   build:
-    name: Verify if generated API documentation is up to date
+    name: Build ${{ inputs.publish == 'true' && 'and publish' || '' }} a Docker image
     runs-on: ubuntu-latest
     steps:
       - name: checkout code
@@ -39,10 +39,11 @@ jobs:
 
       - name: build and prepare package for contenarization
         run: |
-          mkdir -p docker_image/files
-          poetry export --without-hashes --format=requirements.txt > docker_image/files/requirements.txt
+          poetry lock
           poetry build
-          cp dist/* docker_image/files
+          poetry export --without-hashes --format=requirements.txt > requirements.txt
+
+          cat requirements.txt
 
       - name: login to GHCR
         uses: docker/login-action@v2
@@ -54,6 +55,9 @@ jobs:
       - name: build ${{ inputs.publish == 'true' && 'and publish' || '' }}
         uses: docker/build-push-action@v4
         with:
-          context: docker_image
+          context: .
           push: false
           tags: ${{ steps.tag.outputs.version_tag}},paloaltonetworks/panos_upgrade_assurance:latest
+
+      - name: debug
+        run: docker image ls
