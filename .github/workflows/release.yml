@@ -121,6 +121,13 @@ jobs:
         run: |
           poetry publish --build --skip-existing
 
+  docker_image_build:
+    name: Build and Publish Docker image
+    needs: release
+    uses: ./.github/workflows/docker.yml
+    with:
+      publish: true
+      poetry_version: 1.4.2
 
   cleanup_pandev:
     name: Cleanup documentation release PRs @PAN.DEV
@@ -189,6 +196,7 @@ jobs:
       - cleanup_pandev
       - release
       - store_documentation
+      - docker_image_build
     runs-on: ubuntu-latest
     permissions:
       contents: write
