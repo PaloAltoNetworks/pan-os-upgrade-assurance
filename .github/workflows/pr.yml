@@ -50,6 +50,7 @@ jobs:
     uses: ./.github/workflows/docker.yml
     with:
       publish: false
+      poetry_version: 1.4.2
 
   store_documentation:
     name: Fetch the updated documentation

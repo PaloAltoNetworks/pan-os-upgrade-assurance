@@ -5,8 +5,6 @@ defaults:
     shell: bash
 
 on:
-  push:
-    branches: 78-publish-images-to-ghcr
   workflow_call:
     inputs:
       publish:
@@ -56,8 +54,5 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          push: false
+          push: ${{ inputs.publish }}
           tags: ${{ steps.tag.outputs.version_tag}},paloaltonetworks/panos_upgrade_assurance:latest
-
-      - name: debug
-        run: docker image ls
