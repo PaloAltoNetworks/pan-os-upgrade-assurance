@@ -1,0 +1,25 @@
+name: (sub) Build Docker image
+
+defaults:
+  run:
+    shell: bash
+
+on:
+  workflow_call:
+    inputs:
+      publish:
+        description: A flag that triggers publishing to GHCR
+        type: boolean
+        required: false
+
+jobs:
+
+  build:
+    name: Verify if generated API documentation is up to date
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: debug
+        run: echo $REGISTRY
