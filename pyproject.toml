@@ -22,13 +22,14 @@ python = "^3.8.1"
 pan-os-python = "^1.8"
 pan-python = "^0.17"
 xmltodict = "^0.13"
+pyopenssl = "^23.2"
 
 [tool.poetry.group.dev.dependencies]
 pydoc-markdown = "^4.6"
 flake8 = "^6.0"
 black = "^23.3"
 bandit = "^1.7"
-Flake8-pyproject = "^1.2"
+flake8-pyproject = "^1.2"
 
 [build-system]
 requires = ["poetry-core"]
