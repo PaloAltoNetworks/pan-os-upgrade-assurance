@@ -412,6 +412,50 @@ __Returns__
     or within threshold.
 * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when both clocks differ.
 
+### `CheckFirewall.check_ssl_cert_requirements`
+
+```python
+def check_ssl_cert_requirements(rsa: dict = {},
+                                ecdsa: dict = {}) -> CheckResult
+```
+
+Check if the certificates' keys meet minimum size requirements.
+
+This method loops over all certificates installed on a device and compares certificate's properties with the ones
+provided in input parameters. There are two parameters available, one describing `RSA` certificate requirements, the
+other for `ECDSA` certificates. Both parameters are dictionaries accepting the following keys:
+
+- `hash_method` - a minimum (from security perspective) required hashing method,
+- `key_size` - a minimum size of a key.
+
+__Parameters__
+
+
+- __rsa__ (`dict, optional`): A dictionary describing minimum security requirements of a `RSA` certificate. Default values             for the certificate requirements are as follows:
+
+    - `hash_method` - `SHA256`,
+    - `key_size` - `2048`.
+
+- __ecdsa__ (`dict, optional`): A dictionary describing minimum security requirements of a `ECDSA` certificate. Default values         for the certificate requirements are as follows:
+
+    - `hash_method` - `SHA256`,
+    - `key_size` - `256`.
+
+__Returns__
+
+
+`CheckResult`: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking             value of:
+
+* [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when all certs meet the size
+    requirements.
+* [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) if a least one cert
+    does not meet the requirements - certificate names with their current sizes are provided in `CheckResult.reason`
+    property.
+* [`CheckStatus.SKIPPED`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when device does not have
+    certificates installed.
+* [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when the certificate's
+    properties (installed or required) are not supported.
+
 ### `CheckFirewall.get_content_db_version`
 
 ```python

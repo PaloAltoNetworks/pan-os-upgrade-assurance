@@ -10,10 +10,12 @@ from panos_upgrade_assurance.utils import (
     CheckType,
     SnapType,
     CheckStatus,
+    SupportedHashes,
 )
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
 from panos_upgrade_assurance import exceptions
 from panos import PanOSVersion
+from OpenSSL import crypto as oSSL
 
 
 class CheckFirewall:
@@ -89,6 +91,7 @@ class CheckFirewall:
             CheckType.IPSEC_TUNNEL_STATUS: self.check_ipsec_tunnel_status,
             CheckType.FREE_DISK_SPACE: self.check_free_disk_space,
             CheckType.MP_DP_CLOCK_SYNC: self.check_mp_dp_sync,
+            CheckType.CERTS: self.check_ssl_cert_requirements,
         }
         locale.setlocale(
             locale.LC_ALL, "en_US.UTF-8"
@@ -741,6 +744,125 @@ class CheckFirewall:
         else:
             result.status = CheckStatus.SUCCESS
 
+        return result
+
+    def check_ssl_cert_requirements(self, rsa: dict = {}, ecdsa: dict = {}) -> CheckResult:
+        """Check if the certificates' keys meet minimum size requirements.
+
+        This method loops over all certificates installed on a device and compares certificate's properties with the ones
+        provided in input parameters. There are two parameters available, one describing `RSA` certificate requirements, the
+        other for `ECDSA` certificates. Both parameters are dictionaries accepting the following keys:
+
+        - `hash_method` - a minimum (from security perspective) required hashing method,
+        - `key_size` - a minimum size of a key.
+
+        # Parameters
+
+        rsa (dict, optional): A dictionary describing minimum security requirements of a `RSA` certificate. Default values \
+            for the certificate requirements are as follows:
+
+            - `hash_method` - `SHA256`,
+            - `key_size` - `2048`.
+
+        ecdsa (dict, optional): A dictionary describing minimum security requirements of a `ECDSA` certificate. Default values \
+        for the certificate requirements are as follows:
+
+            - `hash_method` - `SHA256`,
+            - `key_size` - `256`.
+
+        # Returns
+
+        CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking \
+            value of:
+
+        * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when all certs meet the size
+            requirements.
+        * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) if a least one cert
+            does not meet the requirements - certificate names with their current sizes are provided in `CheckResult.reason`
+            property.
+        * [`CheckStatus.SKIPPED`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when device does not have
+            certificates installed.
+        * [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when the certificate's
+            properties (installed or required) are not supported.
+
+        """
+        result = CheckResult()
+
+        allowed_keys = ["hash_method", "key_size"]
+
+        if not all(key in allowed_keys for key in rsa.keys()):
+            raise exceptions.UnknownParameterException(
+                f"Unknown configuration parameter(s) found in the `rsa` dictionary: {', '.join(rsa.keys())}."
+            )
+        if not all(key in allowed_keys for key in ecdsa.keys()):
+            raise exceptions.UnknownParameterException(
+                f"Unknown configuration parameter(s) found in the `ecdsa` dictionary: {', '.join(ecdsa.keys())}."
+            )
+
+        certificates = self._node.get_certificates()
+        if not certificates:
+            result.status = CheckStatus.SKIPPED
+            result.reason = "No certificates installed on device."
+            return result
+
+        rsa_min_hash_method = rsa.get("hash_method", "sha256").upper()
+        if rsa_min_hash_method in [member.name for member in SupportedHashes]:
+            rsa_min_hash = SupportedHashes[rsa_min_hash_method]
+        else:
+            result.status = CheckStatus.ERROR
+            result.reason = f"The provided minimum RSA hashing method ({rsa_min_hash_method}) is not supported."
+            return result
+
+        ecdsa_min_hash_method = ecdsa.get("hash_method", "sha256").upper()
+        if ecdsa_min_hash_method in [member.name for member in SupportedHashes]:
+            ecdsa_min_hash = SupportedHashes[ecdsa_min_hash_method]
+        else:
+            result.status = CheckStatus.ERROR
+            result.reason = f"The provided minimum ECDSA hashing method ({ecdsa_min_hash_method}) is not supported."
+            return result
+
+        rsa_min_key_size = rsa.get("key_size", 2048)
+        if not (isinstance(rsa_min_key_size, int) and rsa_min_key_size > 0):
+            result.status = CheckStatus.ERROR
+            result.reason = "The provided minimum RSA key size should be an integer grater than 0."
+            return result
+
+        ecdsa_min_key_size = ecdsa.get("key_size", 256)
+        if not (isinstance(ecdsa_min_key_size, int) and ecdsa_min_key_size > 0):
+            result.status = CheckStatus.ERROR
+            result.reason = "The provided minimum ECDSA key size should be an integer grater than 0."
+            return result
+
+        failed_certs = []
+        for cert_name, certificate in certificates.items():
+            cert = oSSL.load_certificate(oSSL.FILETYPE_PEM, certificate["public-key"])
+
+            cert_key_size = cert.get_pubkey().bits()
+
+            cert_algorithm = certificate["algorithm"]
+            if cert_algorithm not in ["RSA", "EC"]:
+                result.status = CheckStatus.ERROR
+                result.reason = f"Failed for certificate: {cert_name}: unknown algorithm {cert_algorithm}."
+                return result
+
+            cert_hash_method = cert.to_cryptography().signature_hash_algorithm.name.upper()
+            if cert_hash_method in [member.name for member in SupportedHashes]:
+                cert_hash = SupportedHashes[cert_hash_method]
+            else:
+                result.status = CheckStatus.ERROR
+                result.reason = f"The certificate's hashing method ({cert_hash}) is not supported? Please check the device."
+                return result
+
+            if (cert_key_size < (rsa_min_key_size if cert_algorithm == "RSA" else ecdsa_min_key_size)) or (
+                cert_hash.value < (rsa_min_hash.value if cert_algorithm == "RSA" else ecdsa_min_hash.value)
+            ):
+                failed_certs.append(f"{cert_name} (size: {cert_key_size}, hash: {cert_hash_method})")
+
+        if failed_certs:
+            result.reason = f"Following certificates do not meet required criteria: {', '.join(failed_certs)}."
+            return result
+
+        result.status = CheckStatus.SUCCESS
         return result
 
     def get_content_db_version(self) -> Dict[str, str]:
