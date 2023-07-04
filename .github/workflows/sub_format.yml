@@ -11,10 +11,6 @@ on:
         description: A version of Python to install
         type: string
         required: true
-      poetry_version:
-        description: A version of poetry to install
-        type: string
-        required: true
 
 jobs:
   format:
@@ -31,11 +27,11 @@ jobs:
 
       - name: Install Poetry
         uses: Gr1N/setup-poetry@v8
-        with: 
-          poetry-version: ${{ inputs.poetry_version }}
 
       - name: Create Poetry venv
-        run: poetry install
+        run: |
+          poetry env use ${{ inputs.python_version }}
+          poetry install
 
       - name: Run flake
         run: poetry run make lint
