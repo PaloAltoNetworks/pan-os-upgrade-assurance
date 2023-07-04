@@ -39,7 +39,10 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.bandit]
 exclude_dirs = ["docs", ".venv", ".github", "docker_image", "dist"]
-skips = ["B405"]
+skips = ["B405", "B314"]
+
+[tool.bandit.assert_used]
+skips = ['*_test.py', '*test_*.py']
 
 [tool.black]
 line-length = 130

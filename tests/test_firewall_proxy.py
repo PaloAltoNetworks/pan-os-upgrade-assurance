@@ -641,7 +641,7 @@ class TestFirewallProxy:
             'IPSec': {'my-tunnel': {'gwid': '1',
                                     'id': '1',
                                     'inner-if': 'tunnel.1',
-                                    'localip': '0.0.0.0',
+                                    'localip': '0.0.0.0',  # nosec
                                     'mon': 'off',
                                     'name': 'my-tunnel',
                                     'outer-if': 'ethernet1/1',
@@ -807,7 +807,7 @@ class TestFirewallProxy:
             '/': 1536,
             '/cgroup': 8089,
             '/dev': 8089,
-            '/dev/shm': 3072,
+            '/dev/shm': 3072,   # nosec
             '/opt/pancfg': 0,
             '/opt/pancfg/mgmt/lcaas/ssl/private': 12,
             '/opt/panlogs': 20480,
