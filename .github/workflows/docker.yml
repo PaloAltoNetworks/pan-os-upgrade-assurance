@@ -45,7 +45,7 @@ jobs:
         run: |
           echo "version_tag=$(poetry version -s)" >> $GITHUB_OUTPUT
 
-      - name: build and prepare package for contenarization
+      - name: build and prepare package for containerization
         run: |
           poetry env use ${{ inputs.python_version }}
           poetry lock
@@ -56,7 +56,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ghcr.io/paloaltonetworks/test_assurance
+          images: ghcr.io/paloaltonetworks/panos_upgrade_assurance
           tags: |
             type=raw,value=latest
             type=semver,pattern=v{{version}},value=${{ steps.tag.outputs.version_tag }}
