@@ -824,13 +824,13 @@ class CheckFirewall:
         rsa_min_key_size = rsa.get("key_size", 2048)
         if not (isinstance(rsa_min_key_size, int) and rsa_min_key_size > 0):
             result.status = CheckStatus.ERROR
-            result.reason = "The provided minimum RSA key size should be an integer grater than 0."
+            result.reason = "The provided minimum RSA key size should be an integer greater than 0."
             return result
 
         ecdsa_min_key_size = ecdsa.get("key_size", 256)
         if not (isinstance(ecdsa_min_key_size, int) and ecdsa_min_key_size > 0):
             result.status = CheckStatus.ERROR
-            result.reason = "The provided minimum ECDSA key size should be an integer grater than 0."
+            result.reason = "The provided minimum ECDSA key size should be an integer greater than 0."
             return result
 
         failed_certs = []
@@ -850,7 +850,9 @@ class CheckFirewall:
                 cert_hash = SupportedHashes[cert_hash_method]
             else:
                 result.status = CheckStatus.ERROR
-                result.reason = f"The certificate's hashing method ({cert_hash}) is not supported? Please check the device."
+                result.reason = (
+                    f"The certificate's hashing method ({cert_hash_method}) is not supported? Please check the device."
+                )
                 return result
 
             if (cert_key_size < (rsa_min_key_size if cert_algorithm == "RSA" else ecdsa_min_key_size)) or (
@@ -949,7 +951,9 @@ class CheckFirewall:
                 check_type, check_config = check, {}
                 # check_result = self._check_method_mapping[check_type]()
             else:
-                raise exceptions.WrongDataTypeException(f"Wrong configuration format for check: {check}.")
+                raise exceptions.WrongDataTypeException(
+                    f"Wrong configuration format for check: {check}."
+                )  # NOTE checks are already validated in ConfigParser._extrac_element_name - this is never executed.
 
             check_result = self._check_method_mapping[check_type](
                 **check_config

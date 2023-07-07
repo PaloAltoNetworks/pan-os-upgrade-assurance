@@ -952,7 +952,7 @@ class FirewallProxy(Firewall):
             if str(exp) == "Failed to check upgrade info due to Unknown error. Please check network connectivity and try again.":
                 raise exceptions.UpdateServerConnectivityException(str(exp)) from exp
             else:
-                raise exceptions.exp
+                raise
 
         images = dict(image_data["sw-updates"]["versions"])["entry"]
         for image in images if isinstance(images, list) else [images]:
@@ -1082,7 +1082,7 @@ class FirewallProxy(Firewall):
 
         result = dict()
 
-        if "certificate" in shared_config:
+        if "certificate" in shared_config:  # NOTE this causes exception if shared config has no sub-elements
             certificates = shared_config["certificate"]["entry"]
             for certificate in certificates if isinstance(certificates, list) else [certificates]:
                 certificate.pop("private-key")

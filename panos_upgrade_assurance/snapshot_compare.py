@@ -118,7 +118,9 @@ class SnapshotCompare:
                 report_type = report
                 report_config = {"report_type": report_type}
             else:
-                raise exceptions.WrongDataTypeException(f"Wrong configuration format for report: {report}.")
+                raise exceptions.WrongDataTypeException(
+                    f"Wrong configuration format for report: {report}."
+                )  # NOTE checks are already validated in ConfigParser - this is never executed.
 
             self.key_checker(self.left_snap, self.right_snap, report_type)
             result.update({report_type: self._functions_mapping[report_type](**report_config)})
@@ -585,7 +587,7 @@ class SnapshotCompare:
         """
         result = {}
 
-        diff = SnapshotCompare.calculate_diff_on_dicts(
+        diff = self.calculate_diff_on_dicts(
             left_side_to_compare=self.left_snap[report_type],
             right_side_to_compare=self.right_snap[report_type],
             properties=properties,
@@ -617,7 +619,7 @@ class SnapshotCompare:
             )
 
         if result:
-            SnapshotCompare.calculate_passed(result)
+            self.calculate_passed(result)
         else:
             result = None
         return result
@@ -752,7 +754,7 @@ class SnapshotCompare:
             element_type, threshold_value = list(element.items())[0]
             result.update(
                 {
-                    element_type: SnapshotCompare.calculate_change_percentage(
+                    element_type: self.calculate_change_percentage(
                         first_value=self.left_snap[report_type][element_type],
                         second_value=self.right_snap[report_type][element_type],
                         threshold=threshold_value,
@@ -760,5 +762,5 @@ class SnapshotCompare:
                 }
             )
 
-        SnapshotCompare.calculate_passed(result)
+        self.calculate_passed(result)
         return result
