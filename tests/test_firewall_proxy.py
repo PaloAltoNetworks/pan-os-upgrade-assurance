@@ -4,12 +4,15 @@ from panos_upgrade_assurance.firewall_proxy import FirewallProxy
 from panos_upgrade_assurance.utils import interpret_yes_no
 from xmltodict import parse as xml_parse
 import xml.etree.ElementTree as ET
+from pan.xapi import PanXapiError
 from panos_upgrade_assurance.exceptions import (
     CommandRunFailedException,
     MalformedResponseException,
     ContentDBVersionsFormatException,
     PanoramaConfigurationMissingException,
     WrongDiskSizeFormatException,
+    DeviceNotLicensedException,
+    UpdateServerConnectivityException
 )
 
 @pytest.fixture(scope="function")
@@ -301,6 +304,23 @@ class TestFirewallProxy:
                                      'serial': '00000000000000'},
         }
 
+    def test_get_licenses_not_licensed_exception(self, fw_node):
+        xml_text = """
+        <response status="success">
+            <result>
+                <licenses>
+                </licenses>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_node.op.return_value = raw_response
+
+        with pytest.raises(DeviceNotLicensedException) as exception_msg:
+            fw_node.get_licenses()
+
+        assert str(exception_msg.value) == "Device possibly not licenced - no license information available in the API response."
+
     def test_get_support_license(self, fw_node):
 
         xml_text = """
@@ -331,7 +351,27 @@ class TestFirewallProxy:
         fw_node.op.return_value = raw_response
 
         assert fw_node.get_support_license() == {'support_expiry_date': '', 'support_level': ''}
-    
+
+    def test_get_support_license_connectivity_exception(self, fw_node):
+        fw_node.op.side_effect = PanXapiError(
+            "Failed to check support info due to Unknown error. Please check network connectivity and try again."
+        )
+
+        with pytest.raises(UpdateServerConnectivityException) as exception_msg:
+            fw_node.get_support_license()
+
+        assert str(exception_msg.value) == "Failed to check support info due to Unknown error. Please check network connectivity and try again."
+
+    def test_get_support_license_panxapierror_exception(self, fw_node):
+        fw_node.op.side_effect = PanXapiError(
+            "Some other exception message."
+        )
+
+        with pytest.raises(PanXapiError) as exception_msg:
+            fw_node.get_support_license()
+
+        assert str(exception_msg.value) == "Some other exception message."
+
     def test_get_routes(self, fw_node):
 
         xml_text = """
@@ -941,6 +981,26 @@ class TestFirewallProxy:
                        'version': '11.0.1'},
         }
 
+    def test_get_available_image_data_connectivity_exception(self, fw_node):
+        fw_node.op.side_effect = PanXapiError(
+            "Failed to check upgrade info due to Unknown error. Please check network connectivity and try again."
+        )
+
+        with pytest.raises(UpdateServerConnectivityException) as exception_msg:
+            fw_node.get_available_image_data()
+
+        assert str(exception_msg.value) == "Failed to check upgrade info due to Unknown error. Please check network connectivity and try again."
+
+    def test_get_available_image_data_panxapierror_exception(self, fw_node):
+        fw_node.op.side_effect = PanXapiError(
+            "Some other exception message."
+        )
+
+        with pytest.raises(PanXapiError) as exception_msg:
+            fw_node.get_available_image_data()
+
+        assert str(exception_msg.value) == "Some other exception message."
+
     def test_get_mp_clock(self, fw_node):
 
         xml_text = """
@@ -980,3 +1040,97 @@ class TestFirewallProxy:
             'tz': 'PDT',
             'year': '2023',
         }
+
+    def test_get_certificates(self, fw_node):
+        xml_text = """
+        <response status="success">
+            <result>
+                <config>
+                    <shared>
+                        <certificate>
+                            <entry name="acertificate">
+                                <algorithm>RSA</algorithm>
+                                <ca>no</ca>
+                                <common-name>cert</common-name>
+                                <expiry-epoch>1718699772</expiry-epoch>
+                                <issuer>root</issuer>
+                                <issuer-hash>5198cade</issuer-hash>
+                                <not-valid-after>Jun 18 08:36:12 2024 GMT</not-valid-after>
+                                <not-valid-before>Jun 19 08:36:12 2023 GMT</not-valid-before>
+                                <public-key>public-key-data</public-key>
+                                <private-key>private-key-data</private-key>
+                                <subject>cert</subject>
+                                <subject-hash>5ec67661</subject-hash>
+                            </entry>
+                            <entry name="bcertificate">
+                                <algorithm>EC</algorithm>
+                                <ca>no</ca>
+                                <common-name>cert</common-name>
+                                <expiry-epoch>1718699772</expiry-epoch>
+                                <issuer>root</issuer>
+                                <issuer-hash>5198cade</issuer-hash>
+                                <not-valid-after>Jun 18 08:36:12 2024 GMT</not-valid-after>
+                                <not-valid-before>Jun 19 08:36:12 2023 GMT</not-valid-before>
+                                <public-key>public-key-data</public-key>
+                                <private-key>private-key-data</private-key>
+                                <subject>cert</subject>
+                                <subject-hash>5ec67661</subject-hash>
+                            </entry>
+                        </certificate>
+                    </shared>
+                </config>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_node.op.return_value = raw_response
+
+        assert fw_node.get_certificates() == {
+            'acertificate': {
+                'algorithm': 'RSA',
+                'ca': 'no',
+                'common-name': 'cert',
+                'expiry-epoch': '1718699772',
+                'issuer': 'root',
+                'issuer-hash': '5198cade',
+                'not-valid-after': 'Jun 18 08:36:12 2024 GMT',
+                'not-valid-before': 'Jun 19 08:36:12 2023 GMT',
+                'public-key': 'public-key-data',
+                'subject': 'cert',
+                'subject-hash': '5ec67661'
+            },
+            'bcertificate': {
+                'algorithm': 'EC',
+                'ca': 'no',
+                'common-name': 'cert',
+                'expiry-epoch': '1718699772',
+                'issuer': 'root',
+                'issuer-hash': '5198cade',
+                'not-valid-after': 'Jun 18 08:36:12 2024 GMT',
+                'not-valid-before': 'Jun 19 08:36:12 2023 GMT',
+                'public-key': 'public-key-data',
+                'subject': 'cert',
+                'subject-hash': '5ec67661'
+            }
+        }
+
+    def test_get_certificates_no_certificate(self, fw_node):
+        xml_text = """
+        <response status="success">
+            <result>
+                <config>
+                    <shared>
+                        <application/>
+                        <application-group/>
+                        <service/>
+                        <service-group/>
+                        <botnet/>
+                    </shared>
+                </config>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_node.op.return_value = raw_response
+
+        assert fw_node.get_certificates() == {}
