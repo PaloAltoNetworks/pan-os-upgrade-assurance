@@ -12,8 +12,9 @@ from panos_upgrade_assurance.exceptions import (
     PanoramaConfigurationMissingException,
     WrongDiskSizeFormatException,
     DeviceNotLicensedException,
-    UpdateServerConnectivityException
+    UpdateServerConnectivityException,
 )
+
 
 @pytest.fixture(scope="function")
 def fw_node():
@@ -21,21 +22,21 @@ def fw_node():
     tested_class.op = MagicMock()
     yield tested_class
 
+
 class TestFirewallProxy:
     def test_op_parser_correct_response_default_params(self, fw_node):
-
         xml_text = "<response status='success'><result example='1'></result></response>"
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
         cmd = "Example cmd"
 
-        assert fw_node.op_parser(cmd) == xml_parse(
-            ET.tostring(raw_response.find('result'), encoding='utf8', method='xml'))['result']
+        assert (
+            fw_node.op_parser(cmd) == xml_parse(ET.tostring(raw_response.find("result"), encoding="utf8", method="xml"))["result"]
+        )
 
         fw_node.op.assert_called_with(cmd, xml=False, cmd_xml=True, vsys=fw_node.vsys)
 
     def test_op_parser_correct_response_custom_params(self, fw_node):
-
         xml_text = "<response status='success'><result example='1'></result></response>"
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
@@ -46,7 +47,6 @@ class TestFirewallProxy:
         fw_node.op.assert_called_with(cmd, xml=False, cmd_xml=False, vsys=fw_node.vsys)
 
     def test_op_parser_incorrect(self, fw_node):
-
         xml_text = "<response status='fail'><result example='1'></result></response>"
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
@@ -55,13 +55,12 @@ class TestFirewallProxy:
         with pytest.raises(CommandRunFailedException) as exc_info:
             fw_node.op_parser(cmd)
 
-        expected = f'Failed to run command: {cmd}.'
+        expected = f"Failed to run command: {cmd}."
         assert expected in str(exc_info.value)
 
         fw_node.op.assert_called_with(cmd, xml=False, cmd_xml=True, vsys=fw_node.vsys)
 
     def test_op_parser_none(self, fw_node):
-
         xml_text = "<response status='success'><noresult example='1'></noresult></response>"
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
@@ -70,13 +69,12 @@ class TestFirewallProxy:
         with pytest.raises(MalformedResponseException) as exc_info:
             fw_node.op_parser(cmd)
 
-        expected = f'No result field returned for: {cmd}'
+        expected = f"No result field returned for: {cmd}"
         assert expected in str(exc_info.value)
 
         fw_node.op.assert_called_with(cmd, xml=False, cmd_xml=True, vsys=fw_node.vsys)
 
     def test_is_pending_changes_true(self, fw_node):
-
         xml_text = "<response status='success'><result>yes</result></response>"
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
@@ -84,7 +82,6 @@ class TestFirewallProxy:
         assert fw_node.is_pending_changes() == True
 
     def test_is_pending_changes_false(self, fw_node):
-
         xml_text = "<response status='success'><result>no</result></response>"
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
@@ -92,7 +89,6 @@ class TestFirewallProxy:
         assert fw_node.is_pending_changes() == False
 
     def test_is_full_commit_required_true(self, fw_node):
-
         xml_text = "<response status='success'><result>yes</result></response>"
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
@@ -100,7 +96,6 @@ class TestFirewallProxy:
         assert fw_node.is_full_commit_required() == True
 
     def test_is_full_commit_required_false(self, fw_node):
-
         xml_text = "<response status='success'><result>no</result></response>"
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
@@ -108,7 +103,6 @@ class TestFirewallProxy:
         assert fw_node.is_full_commit_required() == False
 
     def test_is_panorama_configured_true(self, fw_node):
-
         xml_text = "<response status='success'><result>SomePanoramaConfig</result></response>"
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
@@ -116,7 +110,6 @@ class TestFirewallProxy:
         assert fw_node.is_panorama_configured() == True
 
     def test_is_panorama_configured_false(self, fw_node):
-
         xml_text = "<response status='success'><result></result></response>"
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
@@ -130,7 +123,7 @@ class TestFirewallProxy:
         with pytest.raises(PanoramaConfigurationMissingException) as exc_info:
             fw_node.is_panorama_connected()
 
-        expected = f'Device not configured with Panorama.'
+        expected = f"Device not configured with Panorama."
         assert expected in str(exc_info.value)
 
     def test_is_panorama_connected_no_string_response(self, fw_node):
@@ -140,7 +133,7 @@ class TestFirewallProxy:
         with pytest.raises(MalformedResponseException) as exc_info:
             fw_node.is_panorama_connected()
 
-        expected = f'Response from device is not type of string.'
+        expected = f"Response from device is not type of string."
         assert expected in str(exc_info.value)
 
     def test_is_panorama_connected_true(self, fw_node):
@@ -151,7 +144,7 @@ class TestFirewallProxy:
         </result></response>"""
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
-        
+
         assert fw_node.is_panorama_connected() == True
 
     def test_is_panorama_connected_false(self, fw_node):
@@ -162,7 +155,7 @@ class TestFirewallProxy:
         </result></response>"""
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
-        
+
         assert fw_node.is_panorama_connected() == False
 
     def test_is_panorama_connected_no_typical_structure(self, fw_node):
@@ -174,11 +167,10 @@ class TestFirewallProxy:
         with pytest.raises(MalformedResponseException) as exc_info:
             fw_node.is_panorama_connected()
 
-        expected = f'Panorama configuration block does not have typical structure: <some line : to break code>.'
+        expected = f"Panorama configuration block does not have typical structure: <some line : to break code>."
         assert expected in str(exc_info.value)
 
     def test_get_ha_configuration(self, fw_node):
-
         xml_text = """<response status='success'><result>
         {'enabled': 'yes'}
         </result></response>"""
@@ -188,7 +180,6 @@ class TestFirewallProxy:
         assert fw_node.get_ha_configuration() == """{'enabled': 'yes'}"""
 
     def test_get_nics_none(self, fw_node):
-
         xml_text = """
         <response status="success">
             <result>
@@ -203,11 +194,10 @@ class TestFirewallProxy:
         with pytest.raises(MalformedResponseException) as exc_info:
             fw_node.get_nics()
 
-        expected = f'Malformed response from device, no [hw] element present.'
+        expected = f"Malformed response from device, no [hw] element present."
         assert expected in str(exc_info.value)
 
     def test_get_nics_ok(self, fw_node):
-
         xml_text = """
         <response status="success">
             <result>
@@ -241,10 +231,9 @@ class TestFirewallProxy:
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
 
-        assert fw_node.get_nics() == {'ethernet1/1': 'up', 'ethernet1/2': 'up'}
+        assert fw_node.get_nics() == {"ethernet1/1": "up", "ethernet1/2": "up"}
 
     def test_get_nics_single_entry(self, fw_node):
-    
         xml_text = """
         <response status="success">
             <result>
@@ -266,11 +255,10 @@ class TestFirewallProxy:
         """
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
-    
-        assert fw_node.get_nics() == {'ethernet1/1': 'up'}
+
+        assert fw_node.get_nics() == {"ethernet1/1": "up"}
 
     def test_get_licenses(self, fw_node):
-
         xml_text = """
         <response status="success">
             <result>
@@ -293,15 +281,16 @@ class TestFirewallProxy:
         fw_node.op.return_value = raw_response
 
         assert fw_node.get_licenses() == {
-            'PAN-DB URL Filtering': {'authcode': None,
-                                     'base-license-name': 'PA-VM',
-                                     'description': 'Palo Alto Networks URL Filtering '
-                                                    'License',
-                                     'expired': 'no',
-                                     'expires': 'December 31, 2023',
-                                     'feature': 'PAN-DB URL Filtering',
-                                     'issued': 'April 20, 2023',
-                                     'serial': '00000000000000'},
+            "PAN-DB URL Filtering": {
+                "authcode": None,
+                "base-license-name": "PA-VM",
+                "description": "Palo Alto Networks URL Filtering " "License",
+                "expired": "no",
+                "expires": "December 31, 2023",
+                "feature": "PAN-DB URL Filtering",
+                "issued": "April 20, 2023",
+                "serial": "00000000000000",
+            },
         }
 
     def test_get_licenses_not_licensed_exception(self, fw_node):
@@ -322,7 +311,6 @@ class TestFirewallProxy:
         assert str(exception_msg.value) == "Device possibly not licenced - no license information available in the API response."
 
     def test_get_support_license(self, fw_node):
-
         xml_text = """
         <response status="success">
             <result>
@@ -350,7 +338,7 @@ class TestFirewallProxy:
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
 
-        assert fw_node.get_support_license() == {'support_expiry_date': '', 'support_level': ''}
+        assert fw_node.get_support_license() == {"support_expiry_date": "", "support_level": ""}
 
     def test_get_support_license_connectivity_exception(self, fw_node):
         fw_node.op.side_effect = PanXapiError(
@@ -360,12 +348,13 @@ class TestFirewallProxy:
         with pytest.raises(UpdateServerConnectivityException) as exception_msg:
             fw_node.get_support_license()
 
-        assert str(exception_msg.value) == "Failed to check support info due to Unknown error. Please check network connectivity and try again."
+        assert (
+            str(exception_msg.value)
+            == "Failed to check support info due to Unknown error. Please check network connectivity and try again."
+        )
 
     def test_get_support_license_panxapierror_exception(self, fw_node):
-        fw_node.op.side_effect = PanXapiError(
-            "Some other exception message."
-        )
+        fw_node.op.side_effect = PanXapiError("Some other exception message.")
 
         with pytest.raises(PanXapiError) as exception_msg:
             fw_node.get_support_license()
@@ -373,7 +362,6 @@ class TestFirewallProxy:
         assert str(exception_msg.value) == "Some other exception message."
 
     def test_get_routes(self, fw_node):
-
         xml_text = """
         <response status="success">
             <result>
@@ -397,18 +385,19 @@ class TestFirewallProxy:
         fw_node.op.return_value = raw_response
 
         assert fw_node.get_routes() == {
-            'default_0.0.0.0/0_ethernet1/1': {'age': None,
-                                  'destination': '0.0.0.0/0',
-                                  'flags': 'A S E',
-                                  'interface': 'ethernet1/1',
-                                  'metric': '10',
-                                  'nexthop': '10.10.11.1',
-                                  'route-table': 'unicast',
-                                  'virtual-router': 'default'},
+            "default_0.0.0.0/0_ethernet1/1": {
+                "age": None,
+                "destination": "0.0.0.0/0",
+                "flags": "A S E",
+                "interface": "ethernet1/1",
+                "metric": "10",
+                "nexthop": "10.10.11.1",
+                "route-table": "unicast",
+                "virtual-router": "default",
+            },
         }
 
     def test_get_arp_table(self, fw_node):
-
         xml_text = """
         <response status="success">
             <result>
@@ -433,16 +422,17 @@ class TestFirewallProxy:
         fw_node.op.return_value = raw_response
 
         assert fw_node.get_arp_table() == {
-            'ethernet1/1_10.10.11.1': {'interface': 'ethernet1/1',
-                             'ip': '10.10.11.1',
-                             'mac': 'aa:bb:cc:dd:ee:ff:ab',
-                             'port': 'ethernet1/1',
-                             'status': 'c',
-                             'ttl': '1777'},
+            "ethernet1/1_10.10.11.1": {
+                "interface": "ethernet1/1",
+                "ip": "10.10.11.1",
+                "mac": "aa:bb:cc:dd:ee:ff:ab",
+                "port": "ethernet1/1",
+                "status": "c",
+                "ttl": "1777",
+            },
         }
 
     def test_get_sessions(self, fw_node):
-
         xml_text = """
         <response status="success">
             <result>
@@ -483,38 +473,39 @@ class TestFirewallProxy:
         fw_node.op.return_value = raw_response
 
         assert fw_node.get_sessions() == [
-            {'application': 'ping',
-              'decrypt-mirror': 'False',
-              'dport': '3',
-              'dst': '8.8.8.8',
-              'dstnat': 'False',
-              'egress': 'ethernet1/1',
-              'flags': None,
-              'from': 'zone',
-              'idx': '20',
-              'ingress': 'ethernet1/1',
-              'nat': 'False',
-              'proto': '1',
-              'proxy': 'False',
-              'security-rule': 'aqll',
-              'source': '10.10.11.2',
-              'sport': '32336',
-              'srcnat': 'False',
-              'start-time': 'Wed May 31 07:59:22 2023',
-              'state': 'ACTIVE',
-              'to': 'zone',
-              'total-byte-count': '196',
-              'type': 'FLOW',
-              'vsys': 'vsys1',
-              'vsys-idx': '1',
-              'xdport': '3',
-              'xdst': '8.8.8.8',
-              'xsource': '10.10.11.2',
-              'xsport': '32336'},
+            {
+                "application": "ping",
+                "decrypt-mirror": "False",
+                "dport": "3",
+                "dst": "8.8.8.8",
+                "dstnat": "False",
+                "egress": "ethernet1/1",
+                "flags": None,
+                "from": "zone",
+                "idx": "20",
+                "ingress": "ethernet1/1",
+                "nat": "False",
+                "proto": "1",
+                "proxy": "False",
+                "security-rule": "aqll",
+                "source": "10.10.11.2",
+                "sport": "32336",
+                "srcnat": "False",
+                "start-time": "Wed May 31 07:59:22 2023",
+                "state": "ACTIVE",
+                "to": "zone",
+                "total-byte-count": "196",
+                "type": "FLOW",
+                "vsys": "vsys1",
+                "vsys-idx": "1",
+                "xdport": "3",
+                "xdst": "8.8.8.8",
+                "xsource": "10.10.11.2",
+                "xsport": "32336",
+            },
         ]
 
     def test_get_session_stats(self, fw_node):
-
         xml_text = """
         <response status="success">
             <result>
@@ -590,60 +581,59 @@ class TestFirewallProxy:
         fw_node.op.return_value = raw_response
 
         assert fw_node.get_session_stats() == {
-            'age-accel-thresh': '80',
-            'age-accel-tsf': '2',
-            'age-scan-ssf': '8',
-            'age-scan-thresh': '80',
-            'age-scan-tmo': '10',
-            'cps': '0',
-            'dis-def': '60',
-            'dis-sctp': '30',
-            'dis-tcp': '90',
-            'dis-udp': '60',
-            'icmp-unreachable-rate': '200',
-            'kbps': '0',
-            'max-pending-mcast': '0',
-            'num-active': '0',
-            'num-bcast': '0',
-            'num-gtpc': '0',
-            'num-gtpu-active': '0',
-            'num-gtpu-pending': '0',
-            'num-http2-5gc': '0',
-            'num-icmp': '0',
-            'num-imsi': '0',
-            'num-installed': '0',
-            'num-max': '1800000',
-            'num-mcast': '0',
-            'num-pfcpc': '0',
-            'num-predict': '0',
-            'num-sctp-assoc': '0',
-            'num-sctp-sess': '0',
-            'num-tcp': '0',
-            'num-udp': '0',
-            'pps': '0',
-            'tcp-cong-ctrl': '3',
-            'tcp-reject-siw-thresh': '4',
-            'tmo-5gcdelete': '15',
-            'tmo-cp': '30',
-            'tmo-def': '30',
-            'tmo-icmp': '6',
-            'tmo-sctp': '3600',
-            'tmo-sctpcookie': '60',
-            'tmo-sctpinit': '5',
-            'tmo-sctpshutdown': '60',
-            'tmo-tcp': '3600',
-            'tmo-tcp-delayed-ack': '25',
-            'tmo-tcp-unverif-rst': '30',
-            'tmo-tcphalfclosed': '120',
-            'tmo-tcphandshake': '10',
-            'tmo-tcpinit': '5',
-            'tmo-tcptimewait': '15',
-            'tmo-udp': '30',
-            'vardata-rate': '10485760',
+            "age-accel-thresh": "80",
+            "age-accel-tsf": "2",
+            "age-scan-ssf": "8",
+            "age-scan-thresh": "80",
+            "age-scan-tmo": "10",
+            "cps": "0",
+            "dis-def": "60",
+            "dis-sctp": "30",
+            "dis-tcp": "90",
+            "dis-udp": "60",
+            "icmp-unreachable-rate": "200",
+            "kbps": "0",
+            "max-pending-mcast": "0",
+            "num-active": "0",
+            "num-bcast": "0",
+            "num-gtpc": "0",
+            "num-gtpu-active": "0",
+            "num-gtpu-pending": "0",
+            "num-http2-5gc": "0",
+            "num-icmp": "0",
+            "num-imsi": "0",
+            "num-installed": "0",
+            "num-max": "1800000",
+            "num-mcast": "0",
+            "num-pfcpc": "0",
+            "num-predict": "0",
+            "num-sctp-assoc": "0",
+            "num-sctp-sess": "0",
+            "num-tcp": "0",
+            "num-udp": "0",
+            "pps": "0",
+            "tcp-cong-ctrl": "3",
+            "tcp-reject-siw-thresh": "4",
+            "tmo-5gcdelete": "15",
+            "tmo-cp": "30",
+            "tmo-def": "30",
+            "tmo-icmp": "6",
+            "tmo-sctp": "3600",
+            "tmo-sctpcookie": "60",
+            "tmo-sctpinit": "5",
+            "tmo-sctpshutdown": "60",
+            "tmo-tcp": "3600",
+            "tmo-tcp-delayed-ack": "25",
+            "tmo-tcp-unverif-rst": "30",
+            "tmo-tcphalfclosed": "120",
+            "tmo-tcphandshake": "10",
+            "tmo-tcpinit": "5",
+            "tmo-tcptimewait": "15",
+            "tmo-udp": "30",
+            "vardata-rate": "10485760",
         }
 
     def test_get_tunnels(self, fw_node):
-
         xml_text = """
         <response status="success">
             <result>
@@ -676,24 +666,27 @@ class TestFirewallProxy:
         fw_node.op.return_value = raw_response
 
         assert fw_node.get_tunnels() == {
-            'GlobalProtect-Gateway': {},
-            'GlobalProtect-site-to-site': {},
-            'IPSec': {'my-tunnel': {'gwid': '1',
-                                    'id': '1',
-                                    'inner-if': 'tunnel.1',
-                                    'localip': '0.0.0.0',  # nosec
-                                    'mon': 'off',
-                                    'name': 'my-tunnel',
-                                    'outer-if': 'ethernet1/1',
-                                    'owner': '1',
-                                    'peerip': '6.6.6.6',
-                                    'state': 'init'}},
-            'SSL-VPN': {},
-            'hop': {},
+            "GlobalProtect-Gateway": {},
+            "GlobalProtect-site-to-site": {},
+            "IPSec": {
+                "my-tunnel": {
+                    "gwid": "1",
+                    "id": "1",
+                    "inner-if": "tunnel.1",
+                    "localip": "0.0.0.0",  # nosec
+                    "mon": "off",
+                    "name": "my-tunnel",
+                    "outer-if": "ethernet1/1",
+                    "owner": "1",
+                    "peerip": "6.6.6.6",
+                    "state": "init",
+                }
+            },
+            "SSL-VPN": {},
+            "hop": {},
         }
 
     def test_get_latest_available_content_version_ok(self, fw_node):
-
         xml_text = """
         <response status="success">
             <result>
@@ -752,11 +745,10 @@ class TestFirewallProxy:
         with pytest.raises(ContentDBVersionsFormatException) as exc_info:
             fw_node.get_latest_available_content_version()
 
-        expected = f'Cannot parse list of available updates for Content DB.'
+        expected = f"Cannot parse list of available updates for Content DB."
         assert expected in str(exc_info.value)
 
     def test_get_content_db_version(self, fw_node):
-
         xml_text = """
         <response status="success">
             <result>
@@ -787,7 +779,6 @@ class TestFirewallProxy:
         assert fw_node.get_content_db_version() == "8556-7343"
 
     def test_get_ntp_servers(self, fw_node):
-
         xml_text = """
         <response status="success">
             <result>
@@ -811,19 +802,12 @@ class TestFirewallProxy:
         fw_node.op.return_value = raw_response
 
         assert fw_node.get_ntp_servers() == {
-            'ntp-server-1': {'authentication-type': 'none',
-                             'name': '0.pool.ntp.org',
-                             'reachable': 'no',
-                             'status': 'available'},
-            'ntp-server-2': {'authentication-type': 'none',
-                             'name': '1.pool.ntp.org',
-                             'reachable': 'no',
-                             'status': 'available'},
-            'synched': '1.pool.ntp.org',
+            "ntp-server-1": {"authentication-type": "none", "name": "0.pool.ntp.org", "reachable": "no", "status": "available"},
+            "ntp-server-2": {"authentication-type": "none", "name": "1.pool.ntp.org", "reachable": "no", "status": "available"},
+            "synched": "1.pool.ntp.org",
         }
 
     def test_get_disk_utilization_ok(self, fw_node):
-
         xml_text = """
         <response status="success">
             <result>
@@ -844,16 +828,16 @@ class TestFirewallProxy:
         fw_node.op.return_value = raw_response
 
         assert fw_node.get_disk_utilization() == {
-            '/': 1536,
-            '/cgroup': 8089,
-            '/dev': 8089,
-            '/dev/shm': 3072,   # nosec
-            '/opt/pancfg': 0,
-            '/opt/pancfg/mgmt/lcaas/ssl/private': 12,
-            '/opt/panlogs': 20480,
-            '/opt/panrepo': 6041,
+            "/": 1536,
+            "/cgroup": 8089,
+            "/dev": 8089,
+            "/dev/shm": 3072,  # nosec
+            "/opt/pancfg": 0,
+            "/opt/pancfg/mgmt/lcaas/ssl/private": 12,
+            "/opt/panlogs": 20480,
+            "/opt/panrepo": 6041,
         }
-    
+
     def test_get_disk_utilization_wrong_format(self, fw_node):
         xml_text = """
         <response status="success">
@@ -876,7 +860,7 @@ class TestFirewallProxy:
         with pytest.raises(WrongDiskSizeFormatException) as exc_info:
             fw_node.get_disk_utilization()
 
-        expected = f'Free disk size has wrong format.'
+        expected = f"Free disk size has wrong format."
         assert expected in str(exc_info.value)
 
     def test_get_disk_utilization_index_fail(self, fw_node):
@@ -894,7 +878,7 @@ class TestFirewallProxy:
         with pytest.raises(WrongDiskSizeFormatException) as exc_info:
             fw_node.get_disk_utilization()
 
-        expected = f'API response has wrong format.'
+        expected = f"API response has wrong format."
         assert expected in str(exc_info.value)
 
     def test_get_disk_utilization_no_unit(self, fw_node):
@@ -910,12 +894,9 @@ class TestFirewallProxy:
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
 
-        assert fw_node.get_disk_utilization() == {
-            '/opt/pancfg/mgmt/lcaas/ssl/private': 0
-        }
+        assert fw_node.get_disk_utilization() == {"/opt/pancfg/mgmt/lcaas/ssl/private": 0}
 
     def test_get_available_image_data(self, fw_node):
-
         xml_text = """
         <response status="success">
             <result>
@@ -959,26 +940,30 @@ class TestFirewallProxy:
         fw_node.op.return_value = raw_response
 
         assert fw_node.get_available_image_data() == {
-            '11.0.0': {'current': 'no',
-                       'downloaded': 'no',
-                       'filename': 'PanOS_vm-11.0.0',
-                       'latest': 'no',
-                       'release-notes': 'https://www.paloaltonetworks.com/documentation/11-0/pan-os/pan-os-release-notes',
-                       'released-on': '2022/11/17 08:45:28',
-                       'size': '1037',
-                       'size-kb': '1062271',
-                       'uploaded': 'no',
-                       'version': '11.0.0'},
-            '11.0.1': {'current': 'no',
-                       'downloaded': 'no',
-                       'filename': 'PanOS_vm-11.0.1',
-                       'latest': 'yes',
-                       'release-notes': 'https://www.paloaltonetworks.com/documentation/11-0/pan-os/pan-os-release-notes',
-                       'released-on': '2023/03/29 15:05:25',
-                       'size': '492',
-                       'size-kb': '504796',
-                       'uploaded': 'no',
-                       'version': '11.0.1'},
+            "11.0.0": {
+                "current": "no",
+                "downloaded": "no",
+                "filename": "PanOS_vm-11.0.0",
+                "latest": "no",
+                "release-notes": "https://www.paloaltonetworks.com/documentation/11-0/pan-os/pan-os-release-notes",
+                "released-on": "2022/11/17 08:45:28",
+                "size": "1037",
+                "size-kb": "1062271",
+                "uploaded": "no",
+                "version": "11.0.0",
+            },
+            "11.0.1": {
+                "current": "no",
+                "downloaded": "no",
+                "filename": "PanOS_vm-11.0.1",
+                "latest": "yes",
+                "release-notes": "https://www.paloaltonetworks.com/documentation/11-0/pan-os/pan-os-release-notes",
+                "released-on": "2023/03/29 15:05:25",
+                "size": "492",
+                "size-kb": "504796",
+                "uploaded": "no",
+                "version": "11.0.1",
+            },
         }
 
     def test_get_available_image_data_connectivity_exception(self, fw_node):
@@ -989,12 +974,13 @@ class TestFirewallProxy:
         with pytest.raises(UpdateServerConnectivityException) as exception_msg:
             fw_node.get_available_image_data()
 
-        assert str(exception_msg.value) == "Failed to check upgrade info due to Unknown error. Please check network connectivity and try again."
+        assert (
+            str(exception_msg.value)
+            == "Failed to check upgrade info due to Unknown error. Please check network connectivity and try again."
+        )
 
     def test_get_available_image_data_panxapierror_exception(self, fw_node):
-        fw_node.op.side_effect = PanXapiError(
-            "Some other exception message."
-        )
+        fw_node.op.side_effect = PanXapiError("Some other exception message.")
 
         with pytest.raises(PanXapiError) as exception_msg:
             fw_node.get_available_image_data()
@@ -1002,7 +988,6 @@ class TestFirewallProxy:
         assert str(exception_msg.value) == "Some other exception message."
 
     def test_get_mp_clock(self, fw_node):
-
         xml_text = """
         <response status="success">
             <result>Wed May 31 11:50:21 PDT 2023 </result>
@@ -1012,16 +997,15 @@ class TestFirewallProxy:
         fw_node.op.return_value = raw_response
 
         assert fw_node.get_mp_clock() == {
-            'day': '31',
-            'day_of_week': 'Wed',
-            'month': 'May',
-            'time': '11:50:21',
-            'tz': 'PDT',
-            'year': '2023',
+            "day": "31",
+            "day_of_week": "Wed",
+            "month": "May",
+            "time": "11:50:21",
+            "tz": "PDT",
+            "year": "2023",
         }
 
     def test_get_dp_clock(self, fw_node):
-
         xml_text = """
         <response status="success">
             <result>
@@ -1033,12 +1017,12 @@ class TestFirewallProxy:
         fw_node.op.return_value = raw_response
 
         assert fw_node.get_dp_clock() == {
-            'day': '31',
-            'day_of_week': 'Wed',
-            'month': 'May',
-            'time': '11:52:34',
-            'tz': 'PDT',
-            'year': '2023',
+            "day": "31",
+            "day_of_week": "Wed",
+            "month": "May",
+            "time": "11:52:34",
+            "tz": "PDT",
+            "year": "2023",
         }
 
     def test_get_certificates(self, fw_node):
@@ -1086,32 +1070,32 @@ class TestFirewallProxy:
         fw_node.op.return_value = raw_response
 
         assert fw_node.get_certificates() == {
-            'acertificate': {
-                'algorithm': 'RSA',
-                'ca': 'no',
-                'common-name': 'cert',
-                'expiry-epoch': '1718699772',
-                'issuer': 'root',
-                'issuer-hash': '5198cade',
-                'not-valid-after': 'Jun 18 08:36:12 2024 GMT',
-                'not-valid-before': 'Jun 19 08:36:12 2023 GMT',
-                'public-key': 'public-key-data',
-                'subject': 'cert',
-                'subject-hash': '5ec67661'
+            "acertificate": {
+                "algorithm": "RSA",
+                "ca": "no",
+                "common-name": "cert",
+                "expiry-epoch": "1718699772",
+                "issuer": "root",
+                "issuer-hash": "5198cade",
+                "not-valid-after": "Jun 18 08:36:12 2024 GMT",
+                "not-valid-before": "Jun 19 08:36:12 2023 GMT",
+                "public-key": "public-key-data",
+                "subject": "cert",
+                "subject-hash": "5ec67661",
             },
-            'bcertificate': {
-                'algorithm': 'EC',
-                'ca': 'no',
-                'common-name': 'cert',
-                'expiry-epoch': '1718699772',
-                'issuer': 'root',
-                'issuer-hash': '5198cade',
-                'not-valid-after': 'Jun 18 08:36:12 2024 GMT',
-                'not-valid-before': 'Jun 19 08:36:12 2023 GMT',
-                'public-key': 'public-key-data',
-                'subject': 'cert',
-                'subject-hash': '5ec67661'
-            }
+            "bcertificate": {
+                "algorithm": "EC",
+                "ca": "no",
+                "common-name": "cert",
+                "expiry-epoch": "1718699772",
+                "issuer": "root",
+                "issuer-hash": "5198cade",
+                "not-valid-after": "Jun 18 08:36:12 2024 GMT",
+                "not-valid-before": "Jun 19 08:36:12 2023 GMT",
+                "public-key": "public-key-data",
+                "subject": "cert",
+                "subject-hash": "5ec67661",
+            },
         }
 
     def test_get_certificates_no_certificate(self, fw_node):

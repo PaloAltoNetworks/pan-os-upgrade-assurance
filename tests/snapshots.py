@@ -10,20 +10,20 @@ snap1 = {
             "inner-if": "tunnel.1",
             "mon": "off",
             "owner": "1",
-            "id": "1"
+            "id": "1",
         },
         "sres": {
             "peerip": "1.2.3.4",
             "name": "sres",
             "outer-if": "ethernet1/3",
             "gwid": "2",
-            "localip": "0.0.0.0",
+            "localip": "0.0.0.0",  # nosec
             "state": "init",
             "inner-if": "tunnel.2",
             "mon": "off",
             "owner": "1",
-            "id": "2"
-        }
+            "id": "2",
+        },
     },
     "routes": {
         "default_0.0.0.0/0_ethernet1/3": {
@@ -34,7 +34,7 @@ snap1 = {
             "flags": "A S",
             "age": None,
             "interface": "ethernet1/3",
-            "route-table": "unicast"
+            "route-table": "unicast",
         },
         "default_10.26.129.0/25_ethernet1/2": {
             "virtual-router": "default",
@@ -44,7 +44,7 @@ snap1 = {
             "flags": "A S",
             "age": None,
             "interface": "ethernet1/2",
-            "route-table": "unicast"
+            "route-table": "unicast",
         },
         "default_10.26.130.0/25_ethernet1/2": {
             "virtual-router": "default",
@@ -54,7 +54,7 @@ snap1 = {
             "flags": "A S",
             "age": None,
             "interface": "ethernet1/2",
-            "route-table": "unicast"
+            "route-table": "unicast",
         },
         "default_168.63.129.16/32_ethernet1/3": {
             "virtual-router": "default",
@@ -64,8 +64,8 @@ snap1 = {
             "flags": "A S",
             "age": None,
             "interface": "ethernet1/3",
-            "route-table": "unicast"
-        }
+            "route-table": "unicast",
+        },
     },
     "session_stats": {
         "tmo-5gcdelete": "15",
@@ -115,11 +115,9 @@ snap1 = {
         "num-sctp-sess": "0",
         "tmo-tcphandshake": "10",
         "kbps": "1",
-        "num-gtpu-pending": "0"
+        "num-gtpu-pending": "0",
     },
-    "content_version": {
-        "version": "8647-7730"
-    },
+    "content_version": {"version": "8647-7730"},
     "arp_table": {
         "ethernet1/1_10.0.2.1": {
             "interface": "ethernet1/1",
@@ -127,7 +125,7 @@ snap1 = {
             "mac": "12:34:56:78:9a:bc",
             "port": "ethernet1/1",
             "status": "e",
-            "ttl": "19"
+            "ttl": "19",
         },
         "ethernet1/2_10.0.1.1": {
             "interface": "ethernet1/2",
@@ -135,8 +133,8 @@ snap1 = {
             "mac": "12:34:56:78:9a:bc",
             "port": "ethernet1/2",
             "status": "c",
-            "ttl": "153"
-        }
+            "ttl": "153",
+        },
     },
     "license": {
         "DNS Security": {
@@ -147,7 +145,7 @@ snap1 = {
             "expires": "November 01, 2023",
             "expired": "no",
             "base-license-name": "PA-VM",
-            "authcode": None
+            "authcode": None,
         },
         "AutoFocus Device License": {
             "feature": "AutoFocus Device License",
@@ -157,7 +155,7 @@ snap1 = {
             "expires": "September 25, 2031",
             "expired": "no",
             "base-license-name": "PA-VM",
-            "authcode": "S7892156"
+            "authcode": "S7892156",
         },
         "Premium": {
             "feature": "Premium",
@@ -167,7 +165,7 @@ snap1 = {
             "expires": "November 01, 2023",
             "expired": "no",
             "base-license-name": "PA-VM",
-            "authcode": None
+            "authcode": None,
         },
         "GlobalProtect Gateway": {
             "feature": "GlobalProtect Gateway",
@@ -177,7 +175,7 @@ snap1 = {
             "expires": "November 01, 2023",
             "expired": "no",
             "base-license-name": "PA-VM",
-            "authcode": None
+            "authcode": None,
         },
         "Threat Prevention": {
             "feature": "Threat Prevention",
@@ -187,7 +185,7 @@ snap1 = {
             "expires": "November 01, 2023",
             "expired": "no",
             "base-license-name": "PA-VM",
-            "authcode": None
+            "authcode": None,
         },
         "WildFire License": {
             "feature": "WildFire License",
@@ -197,7 +195,7 @@ snap1 = {
             "expires": "November 01, 2023",
             "expired": "no",
             "base-license-name": "PA-VM",
-            "authcode": None
+            "authcode": None,
         },
         "PA-VM": {
             "feature": "PA-VM",
@@ -206,7 +204,7 @@ snap1 = {
             "issued": "November 08, 2022",
             "expires": "Never",
             "expired": "no",
-            "authcode": None
+            "authcode": None,
         },
         "PAN-DB URL Filtering": {
             "feature": "PAN-DB URL Filtering",
@@ -216,17 +214,11 @@ snap1 = {
             "expires": "November 01, 2023",
             "expired": "no",
             "base-license-name": "PA-VM",
-            "authcode": None
-        }
+            "authcode": None,
+        },
     },
-    "nics": {
-        "ethernet1/1": "up",
-        "ethernet1/2": "up",
-        "ethernet1/3": "up",
-        "tunnel": "up"
-    }
+    "nics": {"ethernet1/1": "up", "ethernet1/2": "up", "ethernet1/3": "up", "tunnel": "up"},
 }
-
 
 
 snap2 = {
@@ -240,7 +232,7 @@ snap2 = {
             "inner-if": "tunnel.1",
             "mon": "off",
             "owner": "1",
-            "id": "1"
+            "id": "1",
         }
     },
     "routes": {
@@ -252,7 +244,7 @@ snap2 = {
             "flags": "A S",
             "age": None,
             "interface": "ethernet1/3",
-            "route-table": "unicast"
+            "route-table": "unicast",
         },
         "default_10.26.129.0/25_ethernet1/2": {
             "virtual-router": "default",
@@ -262,7 +254,7 @@ snap2 = {
             "flags": "A S",
             "age": None,
             "interface": "ethernet1/2",
-            "route-table": "unicast"
+            "route-table": "unicast",
         },
         "default_10.26.130.0/25_ethernet1/2": {
             "virtual-router": "default",
@@ -272,7 +264,7 @@ snap2 = {
             "flags": "A",
             "age": None,
             "interface": "ethernet1/2",
-            "route-table": "unicast"
+            "route-table": "unicast",
         },
         "default_168.63.129.16/32_ethernet1/3": {
             "virtual-router": "default",
@@ -282,8 +274,8 @@ snap2 = {
             "flags": "A S",
             "age": None,
             "interface": "ethernet1/3",
-            "route-table": "unicast"
-        }
+            "route-table": "unicast",
+        },
     },
     "session_stats": {
         "tmo-5gcdelete": "15",
@@ -333,11 +325,9 @@ snap2 = {
         "num-sctp-sess": "0",
         "tmo-tcphandshake": "10",
         "kbps": "0",
-        "num-gtpu-pending": "0"
+        "num-gtpu-pending": "0",
     },
-    "content_version": {
-        "version": "8647-7730"
-    },
+    "content_version": {"version": "8647-7730"},
     "arp_table": {
         "ethernet1/1_10.0.2.11": {
             "interface": "ethernet1/1",
@@ -345,7 +335,7 @@ snap2 = {
             "mac": "(incomplete)",
             "port": "ethernet1/1",
             "status": "i",
-            "ttl": "1"
+            "ttl": "1",
         }
     },
     "license": {
@@ -357,7 +347,7 @@ snap2 = {
             "expires": "November 01, 2023",
             "expired": "no",
             "base-license-name": "PA-VM",
-            "authcode": None
+            "authcode": None,
         },
         "Premium": {
             "feature": "Premium",
@@ -367,7 +357,7 @@ snap2 = {
             "expires": "November 01, 2023",
             "expired": "no",
             "base-license-name": "PA-VM",
-            "authcode": None
+            "authcode": None,
         },
         "GlobalProtect Gateway": {
             "feature": "GlobalProtect Gateway",
@@ -377,7 +367,7 @@ snap2 = {
             "expires": "November 01, 2023",
             "expired": "no",
             "base-license-name": "PA-VM",
-            "authcode": None
+            "authcode": None,
         },
         "Threat Prevention": {
             "feature": "Threat Prevention",
@@ -387,7 +377,7 @@ snap2 = {
             "expires": "November 01, 2023",
             "expired": "no",
             "base-license-name": "PA-VM",
-            "authcode": None
+            "authcode": None,
         },
         "WildFire License": {
             "feature": "WildFire License",
@@ -397,7 +387,7 @@ snap2 = {
             "expires": "November 01, 2023",
             "expired": "no",
             "base-license-name": "PA-VM",
-            "authcode": None
+            "authcode": None,
         },
         "PA-VM": {
             "feature": "PA-VM",
@@ -406,7 +396,7 @@ snap2 = {
             "issued": "November 08, 2022",
             "expires": "Never",
             "expired": "no",
-            "authcode": None
+            "authcode": None,
         },
         "PAN-DB URL Filtering": {
             "feature": "PAN-DB URL Filtering",
@@ -416,12 +406,8 @@ snap2 = {
             "expires": "November 01, 2023",
             "expired": "no",
             "base-license-name": "PA-VM",
-            "authcode": None
-        }
+            "authcode": None,
+        },
     },
-    "nics": {
-        "ethernet1/1": "down",
-        "ethernet1/2": "up",
-        "ethernet1/3": "up"
-    }
+    "nics": {"ethernet1/1": "down", "ethernet1/2": "up", "ethernet1/3": "up"},
 }

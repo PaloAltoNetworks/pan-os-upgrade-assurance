@@ -1,11 +1,7 @@
 import pytest
 from unittest.mock import MagicMock
 from panos_upgrade_assurance.snapshot_compare import SnapshotCompare
-from panos_upgrade_assurance.exceptions import (
-    WrongDataTypeException,
-    MissingKeyException,
-    SnapshotSchemeMismatchException
-)
+from panos_upgrade_assurance.exceptions import WrongDataTypeException, MissingKeyException, SnapshotSchemeMismatchException
 from snapshots import snap1, snap2
 
 # @pytest.fixture(autouse=False)
@@ -17,17 +13,8 @@ from snapshots import snap1, snap2
 class TestSnapshotCompare:
     def setup_method(self):
         # Set up the snapshots for testing
-        self.left_snap = {
-            'root_key': {
-                'key': 'value'
-            }
-        }
-        self.right_snap = {
-            'root_key': {
-                'key': 'other_value'
-            }
-        }
-
+        self.left_snap = {"root_key": {"key": "value"}}
+        self.right_snap = {"root_key": {"key": "other_value"}}
 
     def test_key_checker_single_key_present(self):
         key = "nics"
@@ -47,8 +34,8 @@ class TestSnapshotCompare:
             ({"key1": "value1"}, {"key1": "value1", "key2": "value2", "key3": "value3"}, ["key2", "key3"], "left snapshot"),
             ({"key1": "value1"}, {"key1": "value1", "key2": "value2", "key3": "value3"}, ["key2"], "left snapshot"),
             ({"key1": "value1", "key2": "value2", "key3": "value3"}, {"key1": "value1"}, ["key2", "key3"], "right snapshot"),
-            ({"key1": "value1", "key2": "value2", "key3": "value3"}, {"key1": "value1"}, ["key2"], "right snapshot")
-        ]
+            ({"key1": "value1", "key2": "value2", "key3": "value3"}, {"key1": "value1"}, ["key2"], "right snapshot"),
+        ],
     )
     def test_key_checker_keys_missing(self, left_snapshot, right_snapshot, key, missing):
         with pytest.raises(MissingKeyException) as exception_msg:
@@ -56,10 +43,7 @@ class TestSnapshotCompare:
 
         assert str(exception_msg.value) == f"{key} (some elements if set/list) is missing in {missing}"
 
-
-    @pytest.mark.parametrize(
-        "key", [ 123, 12.3, {"key": "value"} ]
-    )
+    @pytest.mark.parametrize("key", [123, 12.3, {"key": "value"}])
     def test_key_checker_wrong_data_type_exception(self, key):
         with pytest.raises(WrongDataTypeException) as exception_msg:
             SnapshotCompare.key_checker(snap1, snap2, key)
@@ -108,18 +92,9 @@ class TestSnapshotCompare:
         result = SnapshotCompare.calculate_diff_on_dicts(left_snapshot, right_snapshot)
 
         assert result == {
-            'added': {
-                'added_keys': [],
-                'passed': True
-            },
-            'changed': {
-                'changed_raw': {},
-                'passed': True
-            },
-            'missing': {
-                'missing_keys': [],
-                'passed': True
-            }
+            "added": {"added_keys": [], "passed": True},
+            "changed": {"changed_raw": {}, "passed": True},
+            "missing": {"missing_keys": [], "passed": True},
         }
 
     def test_calculate_diff_on_dicts_different_values(self):
@@ -129,23 +104,9 @@ class TestSnapshotCompare:
         result = SnapshotCompare.calculate_diff_on_dicts(left_snapshot, right_snapshot)
 
         assert result == {
-            'added': {
-                'added_keys': [],
-                'passed': True
-            },
-            'changed': {
-                'changed_raw': {
-                    'key1': {
-                        'left_snap': 'value1',
-                        'right_snap': 'new_value1'
-                    }
-                },
-                'passed': False
-            },
-            'missing': {
-                'missing_keys': [],
-                'passed': True
-            }
+            "added": {"added_keys": [], "passed": True},
+            "changed": {"changed_raw": {"key1": {"left_snap": "value1", "right_snap": "new_value1"}}, "passed": False},
+            "missing": {"missing_keys": [], "passed": True},
         }
 
     def test_calculate_diff_on_dicts_additional_key(self):
@@ -155,18 +116,9 @@ class TestSnapshotCompare:
         result = SnapshotCompare.calculate_diff_on_dicts(left_snapshot, right_snapshot)
 
         assert result == {
-            'added': {
-                'added_keys': ['key3'],
-                'passed': False
-            },
-            'changed': {
-                'changed_raw': {},
-                'passed': True
-            },
-            'missing': {
-                'missing_keys': [],
-                'passed': True
-            }
+            "added": {"added_keys": ["key3"], "passed": False},
+            "changed": {"changed_raw": {}, "passed": True},
+            "missing": {"missing_keys": [], "passed": True},
         }
 
     def test_calculate_diff_on_dicts_missing_key(self):
@@ -176,18 +128,9 @@ class TestSnapshotCompare:
         result = SnapshotCompare.calculate_diff_on_dicts(left_snapshot, right_snapshot)
 
         assert result == {
-            'added': {
-                'added_keys': [],
-                'passed': True
-            },
-            'changed': {
-                'changed_raw': {},
-                'passed': True
-            },
-            'missing': {
-                'missing_keys': ['key2'],
-                'passed': False
-            }
+            "added": {"added_keys": [], "passed": True},
+            "changed": {"changed_raw": {}, "passed": True},
+            "missing": {"missing_keys": ["key2"], "passed": False},
         }
 
     def test_calculate_diff_on_dicts_nested_dicts(self):
@@ -197,39 +140,22 @@ class TestSnapshotCompare:
         result = SnapshotCompare.calculate_diff_on_dicts(left_snapshot, right_snapshot)
 
         assert result == {
-            "added":{
-                "added_keys":[],
-                "passed":True
-            },
-            "changed":{
-                "changed_raw":{
-                    "key1":{
-                        "added":{
-                            "added_keys":[],
-                            "passed":True
+            "added": {"added_keys": [], "passed": True},
+            "changed": {
+                "changed_raw": {
+                    "key1": {
+                        "added": {"added_keys": [], "passed": True},
+                        "changed": {
+                            "changed_raw": {"nested_key1": {"left_snap": "value1", "right_snap": "new_value1"}},
+                            "passed": False,
                         },
-                        "changed":{
-                            "changed_raw":{
-                                "nested_key1":{
-                                    "left_snap":"value1",
-                                    "right_snap":"new_value1"
-                                }
-                            },
-                            "passed":False
-                        },
-                        "missing":{
-                            "missing_keys":[],
-                            "passed":True
-                        },
-                        "passed":False
+                        "missing": {"missing_keys": [], "passed": True},
+                        "passed": False,
                     }
                 },
-                "passed":False
+                "passed": False,
             },
-            "missing":{
-                "missing_keys":[],
-                "passed":True
-            }
+            "missing": {"missing_keys": [], "passed": True},
         }
 
     def test_calculate_diff_on_dicts_empty_dicts(self):
@@ -256,64 +182,38 @@ class TestSnapshotCompare:
     @pytest.mark.parametrize(
         "param_result, pass_returned",
         [
-            ( {                 # all passed
-                'added': {
-                    'added_keys': [],
-                    'passed': True
+            (
+                {  # all passed
+                    "added": {"added_keys": [], "passed": True},
+                    "changed": {"changed_raw": {}, "passed": True},
+                    "missing": {"missing_keys": [], "passed": True},
                 },
-                'changed': {
-                    'changed_raw': {},
-                    'passed': True
+                True,
+            ),
+            (
+                {  # mixed failed
+                    "added": {"added_keys": [], "passed": True},
+                    "changed": {"changed_raw": {}, "passed": True},
+                    "missing": {"missing_keys": ["key2"], "passed": False},
                 },
-                'missing': {
-                    'missing_keys': [],
-                    'passed': True
-                }
-            }, True ),
-            ( {                 # mixed failed
-                'added': {
-                    'added_keys': [],
-                    'passed': True
+                False,
+            ),
+            (
+                {  # all failed
+                    "added": {"added_keys": ["key3"], "passed": False},
+                    "changed": {"changed_raw": {"key1": {"left_snap": "value1", "right_snap": "new_value1"}}, "passed": False},
+                    "missing": {"missing_keys": ["key2"], "passed": False},
                 },
-                'changed': {
-                    'changed_raw': {},
-                    'passed': True
-                },
-                'missing': {
-                    'missing_keys': ['key2'],
-                    'passed': False
-                }
-            }, False ),
-            ( {                 # all failed
-                'added': {
-                    'added_keys': ['key3'],
-                    'passed': False
-                },
-                'changed': {
-                    'changed_raw': {
-                        'key1': {
-                            'left_snap': 'value1',
-                            'right_snap': 'new_value1'
-                        }
-                    },
-                    'passed': False
-                },
-                'missing': {
-                    'missing_keys': ['key2'],
-                    'passed': False
-                }
-            }, False ),
-        ]
+                False,
+            ),
+        ],
     )
     def test_calculate_passed(self, param_result, pass_returned):
-
         SnapshotCompare.calculate_passed(result=param_result)
 
         assert param_result["passed"] is pass_returned
 
-
     def test_get_diff_and_threshold_call_calculate_passed(self):
-
         snapshot_compare = SnapshotCompare(snap1, snap2)
         # NOTE do NOT use MagicMock on Class.method directly, it messes up other tests, mock self method
         snapshot_compare.calculate_passed = MagicMock()
@@ -322,7 +222,6 @@ class TestSnapshotCompare:
         snapshot_compare.calculate_passed.assert_called()
 
     def test_get_diff_and_threshold_call_calculate_diff(self):
-
         snapshot_compare = SnapshotCompare(snap1, snap2)
         snapshot_compare.calculate_diff_on_dicts = MagicMock()
         result = snapshot_compare.get_diff_and_threshold(report_type="nics")
@@ -330,97 +229,54 @@ class TestSnapshotCompare:
         snapshot_compare.calculate_diff_on_dicts.assert_called()
 
     def test_get_diff_and_threshold_count_change_false(self):
-        left_snapshot = {
-            "nics": {
-                "ethernet1/2": "up",
-                "ethernet1/3": "up",
-                "tunnel": "up"
-            }
-        }
-        right_snapshot = {
-            "nics": {
-                "ethernet1/2": "up",
-                "ethernet1/3": "down",
-                "tunnel": "up"
-            }
-        }
+        left_snapshot = {"nics": {"ethernet1/2": "up", "ethernet1/3": "up", "tunnel": "up"}}
+        right_snapshot = {"nics": {"ethernet1/2": "up", "ethernet1/3": "down", "tunnel": "up"}}
         change_threshold = 10
         snapshot_compare = SnapshotCompare(left_snapshot, right_snapshot)
-        result = snapshot_compare.get_diff_and_threshold(report_type="nics",
-                                                         count_change_threshold=change_threshold)
+        result = snapshot_compare.get_diff_and_threshold(report_type="nics", count_change_threshold=change_threshold)
 
         assert result["count_change_percentage"] == {
             "passed": False,
             "change_percentage": 33.33,
-            "change_threshold": float(change_threshold)
+            "change_threshold": float(change_threshold),
         }
 
     def test_get_diff_and_threshold_count_change_true(self):
-        left_snapshot = {
-            "nics": {
-                "ethernet1/2": "up",
-                "ethernet1/3": "up",
-                "tunnel": "up"
-            }
-        }
-        right_snapshot = {
-            "nics": {
-                "ethernet1/2": "up",
-                "ethernet1/3": "down",
-                "tunnel": "up"
-            }
-        }
+        left_snapshot = {"nics": {"ethernet1/2": "up", "ethernet1/3": "up", "tunnel": "up"}}
+        right_snapshot = {"nics": {"ethernet1/2": "up", "ethernet1/3": "down", "tunnel": "up"}}
         change_threshold = 40
 
         snapshot_compare = SnapshotCompare(left_snapshot, right_snapshot)
-        result = snapshot_compare.get_diff_and_threshold(report_type="nics",
-                                                         count_change_threshold=change_threshold)
+        result = snapshot_compare.get_diff_and_threshold(report_type="nics", count_change_threshold=change_threshold)
 
         assert result["count_change_percentage"] == {
             "passed": True,
             "change_percentage": 33.33,
-            "change_threshold": float(change_threshold)
+            "change_threshold": float(change_threshold),
         }
 
-    @pytest.mark.parametrize(
-        "count_change_threshold", [ -10, 120 ]
-    )
+    @pytest.mark.parametrize("count_change_threshold", [-10, 120])
     def test_get_diff_and_threshold_invalid_count_change_threshold(self, count_change_threshold):
-
         snapshot_compare = SnapshotCompare(snap1, snap2)
         snapshot_compare.calculate_diff_on_dicts.return_value = {
-            'added': {
-                'added_keys': [],
-                'passed': True
-            },
-            'changed': {
-                'changed_raw': {},
-                'passed': True
-            },
-            'missing': {
-                'missing_keys': [],
-                'passed': True
-            }
+            "added": {"added_keys": [], "passed": True},
+            "changed": {"changed_raw": {}, "passed": True},
+            "missing": {"missing_keys": [], "passed": True},
         }
 
-        with pytest.raises(WrongDataTypeException,
-                           match="The threshold should be a percentage value between 0 and 100."):
-            result = snapshot_compare.get_diff_and_threshold(report_type="nics",
-                                                             count_change_threshold=count_change_threshold)
-
+        with pytest.raises(WrongDataTypeException, match="The threshold should be a percentage value between 0 and 100."):
+            result = snapshot_compare.get_diff_and_threshold(report_type="nics", count_change_threshold=count_change_threshold)
 
     def test_get_count_change_percentage_no_thresholds(self):
-
         snapshot_compare = SnapshotCompare(snap1, snap2)
         assert snapshot_compare.get_count_change_percentage(report_type="session_stats") is None
-
 
     def test_get_count_change_percentage_key_checker_called_with(self):
         """Test threshold elements are extracted properly and key_checker is called"""
         report_type = "session_stats"
         thresholds = [
-            { "num-tcp": 1.5 },
-            { "num-udp": 15 },
+            {"num-tcp": 1.5},
+            {"num-udp": 15},
         ]
 
         threshold_elements = {"num-tcp", "num-udp"}
@@ -432,39 +288,37 @@ class TestSnapshotCompare:
 
         snapshot_compare.key_checker.assert_called_with(snap1[report_type], snap2[report_type], threshold_elements)
 
-
     def test_get_count_change_percentage_scheme_mismatch_exception(self):
         report_type = "session_stats"
         thresholds = [
-            { "num-tcp": 1.5 },
-            { "NON-EXISTING": 15 },
+            {"num-tcp": 1.5},
+            {"NON-EXISTING": 15},
         ]
 
         snapshot_compare = SnapshotCompare(snap1, snap2)
-        with pytest.raises(SnapshotSchemeMismatchException,
-                           match="Snapshots have missing keys in .*."):
+        with pytest.raises(SnapshotSchemeMismatchException, match="Snapshots have missing keys in .*."):
             snapshot_compare.get_count_change_percentage(report_type=report_type, thresholds=thresholds)
 
     @pytest.mark.parametrize(
         "thresholds, expected_result",
         [
-            ([ { "num-tcp": 30 }, { "num-udp": 10 } ],
-             {'num-tcp': {'change_percentage': 28.57,
-                          'change_threshold': 30.0,
-                          'passed': True},
-              'num-udp': {'change_percentage': 0.0,
-                          'change_threshold': 10.0,
-                          'passed': True},
-              'passed': True}),
-            ([ { "num-tcp": 20 }, { "num-udp": 10 } ],
-             {'num-tcp': {'change_percentage': 28.57,
-                          'change_threshold': 20.0,
-                          'passed': False},
-              'num-udp': {'change_percentage': 0.0,
-                          'change_threshold': 10.0,
-                          'passed': True},
-              'passed': False}),
-        ]
+            (
+                [{"num-tcp": 30}, {"num-udp": 10}],
+                {
+                    "num-tcp": {"change_percentage": 28.57, "change_threshold": 30.0, "passed": True},
+                    "num-udp": {"change_percentage": 0.0, "change_threshold": 10.0, "passed": True},
+                    "passed": True,
+                },
+            ),
+            (
+                [{"num-tcp": 20}, {"num-udp": 10}],
+                {
+                    "num-tcp": {"change_percentage": 28.57, "change_threshold": 20.0, "passed": False},
+                    "num-udp": {"change_percentage": 0.0, "change_threshold": 10.0, "passed": True},
+                    "passed": False,
+                },
+            ),
+        ],
     )
     def test_get_count_change_percentage(self, thresholds, expected_result):
         report_type = "session_stats"
@@ -474,90 +328,105 @@ class TestSnapshotCompare:
 
         assert result == expected_result
 
-
     @pytest.mark.parametrize(
         "reports, expected_result",
         [
-            ( ['nics'], { 'nics': {'added': {'added_keys': [], 'passed': True},
-                                   'changed': {
-                                       'changed_raw': {
-                                           'ethernet1/1': {
-                                               'left_snap': 'up',
-                                               'right_snap': 'down'
-                                           }},
-                                       'passed': False},
-                                   'missing': {
-                                       'missing_keys': ['tunnel'],
-                                       'passed': False
-                                   },
-                                   'passed': False }} ),
-            (['nics', 'ip_sec_tunnels'], { 'nics': {'added': {'added_keys': [], 'passed': True},
-                                                    'changed': {
-                                                        'changed_raw': {
-                                                            'ethernet1/1': {
-                                                                'left_snap': 'up',
-                                                                'right_snap': 'down'
-                                                            }},
-                                                        'passed': False},
-                                                    'missing': {
-                                                        'missing_keys': ['tunnel'],
-                                                        'passed': False
-                                                    },
-                                                    'passed': False },
-                                           'ip_sec_tunnels': {'added': {'added_keys': [], 'passed': True},
-                                                              'changed': {
-                                                                  'changed_raw': {
-                                                                      'ipsec_tun': {
-                                                                          'added': {'added_keys': [], 'passed': True},
-                                                                          'changed': {'changed_raw': {}, 'passed': True},
-                                                                          'missing': {
-                                                                              'missing_keys': ['gwid'],
-                                                                              'passed': False},
-                                                                          'passed': False}},
-                                                                  'passed': False},
-                                                              'missing': {
-                                                                  'missing_keys': ['sres'],
-                                                                  'passed': False},
-                                                              'passed': False}} ),
-            (['routes'], {'routes': {'added': {'added_keys': [], 'passed': True},
-                                     'changed': {
-                                         'changed_raw': {
-                                             'default_10.26.130.0/25_ethernet1/2': {
-                                                 'added': {'added_keys': [], 'passed': True},
-                                                 'changed': {
-                                                     'changed_raw': {
-                                                         'flags': {
-                                                             'left_snap': 'A S',
-                                                             'right_snap': 'A'}
-                                                     },
-                                                     'passed': False},
-                                                 'missing': {'missing_keys': [], 'passed': True},
-                                                 'passed': False}},
-                                         'passed': False},
-                                     'missing': {'missing_keys': [], 'passed': True},
-                                     'passed': False}} ),
-            ( [ { 'routes': { 'properties': ['!flags'] } } ],
-              {'routes': {'added': {'added_keys': [], 'passed': True},
-                          'changed': {'changed_raw': {}, 'passed': True},
-                          'missing': {'missing_keys': [], 'passed': True},
-                          'passed': True}} ),
+            (
+                ["nics"],
+                {
+                    "nics": {
+                        "added": {"added_keys": [], "passed": True},
+                        "changed": {"changed_raw": {"ethernet1/1": {"left_snap": "up", "right_snap": "down"}}, "passed": False},
+                        "missing": {"missing_keys": ["tunnel"], "passed": False},
+                        "passed": False,
+                    }
+                },
+            ),
+            (
+                ["nics", "ip_sec_tunnels"],
+                {
+                    "nics": {
+                        "added": {"added_keys": [], "passed": True},
+                        "changed": {"changed_raw": {"ethernet1/1": {"left_snap": "up", "right_snap": "down"}}, "passed": False},
+                        "missing": {"missing_keys": ["tunnel"], "passed": False},
+                        "passed": False,
+                    },
+                    "ip_sec_tunnels": {
+                        "added": {"added_keys": [], "passed": True},
+                        "changed": {
+                            "changed_raw": {
+                                "ipsec_tun": {
+                                    "added": {"added_keys": [], "passed": True},
+                                    "changed": {"changed_raw": {}, "passed": True},
+                                    "missing": {"missing_keys": ["gwid"], "passed": False},
+                                    "passed": False,
+                                }
+                            },
+                            "passed": False,
+                        },
+                        "missing": {"missing_keys": ["sres"], "passed": False},
+                        "passed": False,
+                    },
+                },
+            ),
+            (
+                ["routes"],
+                {
+                    "routes": {
+                        "added": {"added_keys": [], "passed": True},
+                        "changed": {
+                            "changed_raw": {
+                                "default_10.26.130.0/25_ethernet1/2": {
+                                    "added": {"added_keys": [], "passed": True},
+                                    "changed": {
+                                        "changed_raw": {"flags": {"left_snap": "A S", "right_snap": "A"}},
+                                        "passed": False,
+                                    },
+                                    "missing": {"missing_keys": [], "passed": True},
+                                    "passed": False,
+                                }
+                            },
+                            "passed": False,
+                        },
+                        "missing": {"missing_keys": [], "passed": True},
+                        "passed": False,
+                    }
+                },
+            ),
+            (
+                [{"routes": {"properties": ["!flags"]}}],
+                {
+                    "routes": {
+                        "added": {"added_keys": [], "passed": True},
+                        "changed": {"changed_raw": {}, "passed": True},
+                        "missing": {"missing_keys": [], "passed": True},
+                        "passed": True,
+                    }
+                },
+            ),
             # ( ['nics', 'arp_table'], {} ),  # TODO add test for non common keys - e.g. arp_table
-            ( [ { "session_stats": {
-                "thresholds": [
-                    {"num-max": 10},
-                    {"num-tcp": 10},
-                ]}} ],
-              {'session_stats': {'num-max': {'change_percentage': 0.0,
-                                             'change_threshold': 10.0,
-                                             'passed': True},
-                                 'num-tcp': {'change_percentage': 28.57,
-                                             'change_threshold': 10.0,
-                                             'passed': False},
-                                 'passed': False}} ),
-        ]
+            (
+                [
+                    {
+                        "session_stats": {
+                            "thresholds": [
+                                {"num-max": 10},
+                                {"num-tcp": 10},
+                            ]
+                        }
+                    }
+                ],
+                {
+                    "session_stats": {
+                        "num-max": {"change_percentage": 0.0, "change_threshold": 10.0, "passed": True},
+                        "num-tcp": {"change_percentage": 28.57, "change_threshold": 10.0, "passed": False},
+                        "passed": False,
+                    }
+                },
+            ),
+        ],
     )
     def test_compare_snapshots(self, reports, expected_result):
-
         snapshot_compare = SnapshotCompare(snap1, snap2)
         result = snapshot_compare.compare_snapshots(reports)
 
