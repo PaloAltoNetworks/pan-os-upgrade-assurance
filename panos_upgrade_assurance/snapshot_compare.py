@@ -383,10 +383,6 @@ class SnapshotCompare:
         ```
 
         """
-
-        # if not (left_side_to_compare and right_side_to_compare):
-        #     return {}
-
         result = dict(
             missing=dict(passed=True, missing_keys=[]),
             added=dict(passed=True, added_keys=[]),
@@ -407,7 +403,8 @@ class SnapshotCompare:
 
         common_keys = left_side_to_compare.keys() & right_side_to_compare.keys()
         if common_keys:
-            at_lowest_level = True if isinstance(left_side_to_compare[next(iter(common_keys))], str) else False
+            next_level_value = left_side_to_compare[next(iter(common_keys))]
+            at_lowest_level = True if isinstance(next_level_value, (str, type(None))) else False
             keys_to_check = (
                 ConfigParser(valid_elements=set(common_keys), requested_config=properties).prepare_config()
                 if at_lowest_level
@@ -601,8 +598,15 @@ class SnapshotCompare:
             missing_count = len(result["missing"]["missing_keys"])
             changed_count = len(result["changed"]["changed_raw"])
             left_total_count = len(self.left_snap[report_type].keys())
+            right_total_count = len(self.right_snap[report_type].keys())
 
-            diff = 1 if left_total_count == 0 else (added_count + missing_count + changed_count) / left_total_count
+            if left_total_count == 0 and right_total_count == 0:  # diff should be 0 when both sides are empty
+                diff = 0
+            elif left_total_count == 0:
+                diff = 1
+            else:
+                diff = (added_count + missing_count + changed_count) / left_total_count
+
             diff_percentage = round(float(diff) * 100, 2)
 
             passed = diff_percentage <= count_change_threshold
