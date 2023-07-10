@@ -884,15 +884,16 @@ class FirewallProxy(Firewall):
                     elif free_size_name == "K":
                         free_size = free_size_number / 1024
                     else:
-                        raise Exception("Free disk size has wrong format.")
+                        raise exceptions.WrongDiskSizeFormatException("Free disk size has wrong format.")
                 else:
                     free_size = float(free_size_short) / 1024 / 1024
 
-            except Exception as exp:
-                if str(exp) == "Free disk size has wrong format.":
-                    raise exceptions.WrongDiskSizeFormatException(str(exp))
-                else:
-                    raise exceptions.WrongDiskSizeFormatException("API response has wrong format.")
+            except exceptions.WrongDiskSizeFormatException:
+                raise
+            except Exception:
+                raise exceptions.MalformedResponseException(
+                    f"Reported disk space block does not have typical structure: <{row}>."
+                )
 
             result[mount_point] = floor(free_size)
 

@@ -862,6 +862,31 @@ class TestFirewallProxy:
         expected = "Free disk size has wrong format."
         assert expected in str(exc_info.value)
 
+    def test_get_disk_utilization_invalid_size(self, fw_node):
+        xml_text = """
+        <response status="success">
+            <result>
+                <![CDATA[Filesystem      Size  Used Avail Use% Mounted on
+        /dev/root       6.9G  5.1G    AG  78% /
+        none            7.9G   76K  7.9G   1% /dev
+        /dev/sda5        16G  1.2G   14G   8% /opt/pancfg
+        /dev/sda6       7.9G  1.6G  5.9G  22% /opt/panrepo
+        tmpfs            12G  8.4G  3.0G  74% /dev/shm
+        cgroup_root     7.9G     0  7.9G   0% /cgroup
+        /dev/sda8        21G   63M   20G   1% /opt/panlogs
+        tmpfs            12M     0   12M   0% /opt/pancfg/mgmt/lcaas/ssl/private
+        ]]>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_node.op.return_value = raw_response
+        with pytest.raises(
+            MalformedResponseException,
+            match=r"Reported disk space block does not have typical structure: .*$",
+        ):
+            fw_node.get_disk_utilization()
+
     def test_get_disk_utilization_index_fail(self, fw_node):
         xml_text = """
         <response status="success">
@@ -874,11 +899,11 @@ class TestFirewallProxy:
         """
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
-        with pytest.raises(WrongDiskSizeFormatException) as exc_info:
+        with pytest.raises(
+            MalformedResponseException,
+            match=r"Reported disk space block does not have typical structure: .*$",
+        ):
             fw_node.get_disk_utilization()
-
-        expected = "API response has wrong format."
-        assert expected in str(exc_info.value)
 
     def test_get_disk_utilization_no_unit(self, fw_node):
         xml_text = """
