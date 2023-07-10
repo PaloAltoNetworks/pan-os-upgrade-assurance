@@ -175,7 +175,7 @@ class TestSnapshotCompare:
         right_snapshot = {"key1": {"nested_key1": "value1"}, "key2": "value2"}
 
         with pytest.raises(WrongDataTypeException) as exception_msg:
-            result = SnapshotCompare.calculate_diff_on_dicts(left_snapshot, right_snapshot)
+            SnapshotCompare.calculate_diff_on_dicts(left_snapshot, right_snapshot)
 
         assert str(exception_msg.value) == "Unknown value format for key key1."
 
@@ -217,14 +217,14 @@ class TestSnapshotCompare:
         snapshot_compare = SnapshotCompare(snap1, snap2)
         # NOTE do NOT use MagicMock on Class.method directly, it messes up other tests, mock self method
         snapshot_compare.calculate_passed = MagicMock()
-        result = snapshot_compare.get_diff_and_threshold(report_type="nics")
+        snapshot_compare.get_diff_and_threshold(report_type="nics")
 
         snapshot_compare.calculate_passed.assert_called()
 
     def test_get_diff_and_threshold_call_calculate_diff(self):
         snapshot_compare = SnapshotCompare(snap1, snap2)
         snapshot_compare.calculate_diff_on_dicts = MagicMock()
-        result = snapshot_compare.get_diff_and_threshold(report_type="nics")
+        snapshot_compare.get_diff_and_threshold(report_type="nics")
 
         snapshot_compare.calculate_diff_on_dicts.assert_called()
 
@@ -265,7 +265,7 @@ class TestSnapshotCompare:
         }
 
         with pytest.raises(WrongDataTypeException, match="The threshold should be a percentage value between 0 and 100."):
-            result = snapshot_compare.get_diff_and_threshold(report_type="nics", count_change_threshold=count_change_threshold)
+            snapshot_compare.get_diff_and_threshold(report_type="nics", count_change_threshold=count_change_threshold)
 
     def test_get_count_change_percentage_no_thresholds(self):
         snapshot_compare = SnapshotCompare(snap1, snap2)

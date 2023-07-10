@@ -40,8 +40,8 @@ class TestConfigParser:
         with pytest.raises(
             UnknownParameterException,
             match=r"Unknown configuration parameter passed: .*$",
-        ) as exc_info:
-            parser = ConfigParser(valid_config_elements, requested_config)
+        ):
+            ConfigParser(valid_config_elements, requested_config)
 
     @pytest.mark.parametrize(
         "valid_config_elements, requested_config",

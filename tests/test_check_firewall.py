@@ -1,11 +1,9 @@
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from panos_upgrade_assurance.check_firewall import CheckFirewall
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
 from panos_upgrade_assurance.utils import CheckResult
 from panos_upgrade_assurance.utils import CheckStatus
-from panos_upgrade_assurance.utils import interpret_yes_no
-from panos.errors import PanDeviceXapiError
 from panos_upgrade_assurance.exceptions import (
     WrongDataTypeException,
     UpdateServerConnectivityException,
@@ -237,7 +235,7 @@ class TestCheckFirewall:
             },
         }
         assert check_firewall_mock.check_expired_licenses() == CheckResult(
-            reason=f"Found expired licenses:  AutoFocus Device License, PA-VM."
+            reason="Found expired licenses:  AutoFocus Device License, PA-VM."
         )
 
     def test_check_expired_licenses_false(self, check_firewall_mock):
@@ -415,7 +413,7 @@ class TestCheckFirewall:
             "synched": "LOCAL",
         }
         assert check_firewall_mock.check_ntp_synchronization() == CheckResult(
-            reason=f"No NTP synchronization in active, servers in following state: 0.pool.ntp.org - available, 1.pool.ntp.org - synched."
+            reason="No NTP synchronization in active, servers in following state: 0.pool.ntp.org - available, 1.pool.ntp.org - synched."
         )
 
     def test_check_ntp_synchronization_synched_ok(self, check_firewall_mock):
@@ -428,7 +426,7 @@ class TestCheckFirewall:
     def test_check_ntp_synchronization_synched_unknown(self, check_firewall_mock):
         check_firewall_mock._node.get_ntp_servers.return_value = {"synched": "unknown"}
         assert check_firewall_mock.check_ntp_synchronization() == CheckResult(
-            reason=f"NTP synchronization in unknown state: unknown."
+            reason="NTP synchronization in unknown state: unknown."
         )
 
     def test_check_arp_entry_none(self, check_firewall_mock):
@@ -617,7 +615,7 @@ class TestCheckFirewall:
         with pytest.raises(WrongDataTypeException) as exception_msg:
             check_firewall_mock.check_mp_dp_sync("1.0")
 
-        assert str(exception_msg.value) == f"[diff_threshold] should be of type [int] but is of type [<class 'str'>]."
+        assert str(exception_msg.value) == "[diff_threshold] should be of type [int] but is of type [<class 'str'>]."
 
     def test_check_mp_dp_sync_time_diff(self, check_firewall_mock):
         check_firewall_mock._node.get_mp_clock.return_value = {
@@ -638,7 +636,7 @@ class TestCheckFirewall:
         }
 
         assert check_firewall_mock.check_mp_dp_sync(1) == CheckResult(
-            status=CheckStatus.FAIL, reason=f"The data plane clock and management clock are different by 133.0 seconds."
+            status=CheckStatus.FAIL, reason="The data plane clock and management clock are different by 133.0 seconds."
         )
 
     def test_check_mp_dp_sync_time_synced(self, check_firewall_mock):
@@ -826,7 +824,7 @@ class TestCheckFirewall:
 
         result = check_firewall_mock.check_ssl_cert_requirements(rsa=rsa)
         assert result.status == CheckStatus.FAIL
-        assert result.reason == f"Following certificates do not meet required criteria: cert1 (size: 2048, hash: SHA256)."
+        assert result.reason == "Following certificates do not meet required criteria: cert1 (size: 2048, hash: SHA256)."
 
     def test_check_ssl_cert_requirements_failed_certs_ecdsa(self, check_firewall_mock, monkeypatch):
         ecdsa = {"hash_method": "SHA256", "key_size": 384}  # required key size
@@ -867,7 +865,7 @@ class TestCheckFirewall:
 
         result = check_firewall_mock.check_ssl_cert_requirements(ecdsa=ecdsa)
         assert result.status == CheckStatus.FAIL
-        assert result.reason == f"Following certificates do not meet required criteria: cert2 (size: 256, hash: SHA256)."
+        assert result.reason == "Following certificates do not meet required criteria: cert2 (size: 256, hash: SHA256)."
 
     def test_check_ssl_cert_requirements_success(self, check_firewall_mock):
         rsa = {"hash_method": "SHA256", "key_size": 2048}

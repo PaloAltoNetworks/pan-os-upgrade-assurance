@@ -1,7 +1,6 @@
 import pytest
 from unittest.mock import MagicMock
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
-from panos_upgrade_assurance.utils import interpret_yes_no
 from xmltodict import parse as xml_parse
 import xml.etree.ElementTree as ET
 from pan.xapi import PanXapiError
@@ -79,42 +78,42 @@ class TestFirewallProxy:
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
 
-        assert fw_node.is_pending_changes() == True
+        assert fw_node.is_pending_changes()  # assert == True
 
     def test_is_pending_changes_false(self, fw_node):
         xml_text = "<response status='success'><result>no</result></response>"
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
 
-        assert fw_node.is_pending_changes() == False
+        assert not fw_node.is_pending_changes()  # assert == False
 
     def test_is_full_commit_required_true(self, fw_node):
         xml_text = "<response status='success'><result>yes</result></response>"
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
 
-        assert fw_node.is_full_commit_required() == True
+        assert fw_node.is_full_commit_required()
 
     def test_is_full_commit_required_false(self, fw_node):
         xml_text = "<response status='success'><result>no</result></response>"
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
 
-        assert fw_node.is_full_commit_required() == False
+        assert not fw_node.is_full_commit_required()
 
     def test_is_panorama_configured_true(self, fw_node):
         xml_text = "<response status='success'><result>SomePanoramaConfig</result></response>"
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
 
-        assert fw_node.is_panorama_configured() == True
+        assert fw_node.is_panorama_configured()
 
     def test_is_panorama_configured_false(self, fw_node):
         xml_text = "<response status='success'><result></result></response>"
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
 
-        assert fw_node.is_panorama_configured() == False
+        assert not fw_node.is_panorama_configured()
 
     def test_is_panorama_connected_no_panorama(self, fw_node):
         xml_text = "<response status='success'><result></result></response>"
@@ -123,7 +122,7 @@ class TestFirewallProxy:
         with pytest.raises(PanoramaConfigurationMissingException) as exc_info:
             fw_node.is_panorama_connected()
 
-        expected = f"Device not configured with Panorama."
+        expected = "Device not configured with Panorama."
         assert expected in str(exc_info.value)
 
     def test_is_panorama_connected_no_string_response(self, fw_node):
@@ -133,7 +132,7 @@ class TestFirewallProxy:
         with pytest.raises(MalformedResponseException) as exc_info:
             fw_node.is_panorama_connected()
 
-        expected = f"Response from device is not type of string."
+        expected = "Response from device is not type of string."
         assert expected in str(exc_info.value)
 
     def test_is_panorama_connected_true(self, fw_node):
@@ -145,7 +144,7 @@ class TestFirewallProxy:
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
 
-        assert fw_node.is_panorama_connected() == True
+        assert fw_node.is_panorama_connected()
 
     def test_is_panorama_connected_false(self, fw_node):
         xml_text = """<response status='success'><result>
@@ -156,7 +155,7 @@ class TestFirewallProxy:
         raw_response = ET.fromstring(xml_text)
         fw_node.op.return_value = raw_response
 
-        assert fw_node.is_panorama_connected() == False
+        assert not fw_node.is_panorama_connected()  # assert == False
 
     def test_is_panorama_connected_no_typical_structure(self, fw_node):
         xml_text = """<response status='success'><result>
@@ -167,7 +166,7 @@ class TestFirewallProxy:
         with pytest.raises(MalformedResponseException) as exc_info:
             fw_node.is_panorama_connected()
 
-        expected = f"Panorama configuration block does not have typical structure: <some line : to break code>."
+        expected = "Panorama configuration block does not have typical structure: <some line : to break code>."
         assert expected in str(exc_info.value)
 
     def test_get_ha_configuration(self, fw_node):
@@ -194,7 +193,7 @@ class TestFirewallProxy:
         with pytest.raises(MalformedResponseException) as exc_info:
             fw_node.get_nics()
 
-        expected = f"Malformed response from device, no [hw] element present."
+        expected = "Malformed response from device, no [hw] element present."
         assert expected in str(exc_info.value)
 
     def test_get_nics_ok(self, fw_node):
@@ -745,7 +744,7 @@ class TestFirewallProxy:
         with pytest.raises(ContentDBVersionsFormatException) as exc_info:
             fw_node.get_latest_available_content_version()
 
-        expected = f"Cannot parse list of available updates for Content DB."
+        expected = "Cannot parse list of available updates for Content DB."
         assert expected in str(exc_info.value)
 
     def test_get_content_db_version(self, fw_node):
@@ -860,7 +859,7 @@ class TestFirewallProxy:
         with pytest.raises(WrongDiskSizeFormatException) as exc_info:
             fw_node.get_disk_utilization()
 
-        expected = f"Free disk size has wrong format."
+        expected = "Free disk size has wrong format."
         assert expected in str(exc_info.value)
 
     def test_get_disk_utilization_index_fail(self, fw_node):
@@ -878,7 +877,7 @@ class TestFirewallProxy:
         with pytest.raises(WrongDiskSizeFormatException) as exc_info:
             fw_node.get_disk_utilization()
 
-        expected = f"API response has wrong format."
+        expected = "API response has wrong format."
         assert expected in str(exc_info.value)
 
     def test_get_disk_utilization_no_unit(self, fw_node):
