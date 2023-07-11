@@ -16,169 +16,170 @@ from panos_upgrade_assurance.exceptions import (
 
 
 @pytest.fixture(scope="function")
-def fw_node():
-    tested_class = FirewallProxy()
-    tested_class.op = MagicMock()
-    yield tested_class
+def fw_proxy_mock():
+    fw_proxy_obj = FirewallProxy()
+    fw_proxy_obj.op = MagicMock()
+    yield fw_proxy_obj
 
 
 class TestFirewallProxy:
-    def test_op_parser_correct_response_default_params(self, fw_node):
+    def test_op_parser_correct_response_default_params(self, fw_proxy_mock):
         xml_text = "<response status='success'><result example='1'></result></response>"
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
         cmd = "Example cmd"
 
         assert (
-            fw_node.op_parser(cmd) == xml_parse(ET.tostring(raw_response.find("result"), encoding="utf8", method="xml"))["result"]
+            fw_proxy_mock.op_parser(cmd)
+            == xml_parse(ET.tostring(raw_response.find("result"), encoding="utf8", method="xml"))["result"]
         )
 
-        fw_node.op.assert_called_with(cmd, xml=False, cmd_xml=True, vsys=fw_node.vsys)
+        fw_proxy_mock.op.assert_called_with(cmd, xml=False, cmd_xml=True, vsys=fw_proxy_mock.vsys)
 
-    def test_op_parser_correct_response_custom_params(self, fw_node):
+    def test_op_parser_correct_response_custom_params(self, fw_proxy_mock):
         xml_text = "<response status='success'><result example='1'></result></response>"
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
         cmd = "Example cmd"
 
-        assert fw_node.op_parser(cmd, True, True) == raw_response.find("result")
+        assert fw_proxy_mock.op_parser(cmd, True, True) == raw_response.find("result")
 
-        fw_node.op.assert_called_with(cmd, xml=False, cmd_xml=False, vsys=fw_node.vsys)
+        fw_proxy_mock.op.assert_called_with(cmd, xml=False, cmd_xml=False, vsys=fw_proxy_mock.vsys)
 
-    def test_op_parser_incorrect(self, fw_node):
+    def test_op_parser_incorrect(self, fw_proxy_mock):
         xml_text = "<response status='fail'><result example='1'></result></response>"
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
         cmd = "Example cmd"
 
         with pytest.raises(CommandRunFailedException) as exc_info:
-            fw_node.op_parser(cmd)
+            fw_proxy_mock.op_parser(cmd)
 
         expected = f"Failed to run command: {cmd}."
         assert expected in str(exc_info.value)
 
-        fw_node.op.assert_called_with(cmd, xml=False, cmd_xml=True, vsys=fw_node.vsys)
+        fw_proxy_mock.op.assert_called_with(cmd, xml=False, cmd_xml=True, vsys=fw_proxy_mock.vsys)
 
-    def test_op_parser_none(self, fw_node):
+    def test_op_parser_none(self, fw_proxy_mock):
         xml_text = "<response status='success'><noresult example='1'></noresult></response>"
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
         cmd = "Example cmd"
 
         with pytest.raises(MalformedResponseException) as exc_info:
-            fw_node.op_parser(cmd)
+            fw_proxy_mock.op_parser(cmd)
 
         expected = f"No result field returned for: {cmd}"
         assert expected in str(exc_info.value)
 
-        fw_node.op.assert_called_with(cmd, xml=False, cmd_xml=True, vsys=fw_node.vsys)
+        fw_proxy_mock.op.assert_called_with(cmd, xml=False, cmd_xml=True, vsys=fw_proxy_mock.vsys)
 
-    def test_is_pending_changes_true(self, fw_node):
+    def test_is_pending_changes_true(self, fw_proxy_mock):
         xml_text = "<response status='success'><result>yes</result></response>"
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.is_pending_changes()  # assert == True
+        assert fw_proxy_mock.is_pending_changes()  # assert == True
 
-    def test_is_pending_changes_false(self, fw_node):
+    def test_is_pending_changes_false(self, fw_proxy_mock):
         xml_text = "<response status='success'><result>no</result></response>"
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert not fw_node.is_pending_changes()  # assert == False
+        assert not fw_proxy_mock.is_pending_changes()  # assert == False
 
-    def test_is_full_commit_required_true(self, fw_node):
+    def test_is_full_commit_required_true(self, fw_proxy_mock):
         xml_text = "<response status='success'><result>yes</result></response>"
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.is_full_commit_required()
+        assert fw_proxy_mock.is_full_commit_required()
 
-    def test_is_full_commit_required_false(self, fw_node):
+    def test_is_full_commit_required_false(self, fw_proxy_mock):
         xml_text = "<response status='success'><result>no</result></response>"
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert not fw_node.is_full_commit_required()
+        assert not fw_proxy_mock.is_full_commit_required()
 
-    def test_is_panorama_configured_true(self, fw_node):
+    def test_is_panorama_configured_true(self, fw_proxy_mock):
         xml_text = "<response status='success'><result>SomePanoramaConfig</result></response>"
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.is_panorama_configured()
+        assert fw_proxy_mock.is_panorama_configured()
 
-    def test_is_panorama_configured_false(self, fw_node):
+    def test_is_panorama_configured_false(self, fw_proxy_mock):
         xml_text = "<response status='success'><result></result></response>"
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert not fw_node.is_panorama_configured()
+        assert not fw_proxy_mock.is_panorama_configured()
 
-    def test_is_panorama_connected_no_panorama(self, fw_node):
+    def test_is_panorama_connected_no_panorama(self, fw_proxy_mock):
         xml_text = "<response status='success'><result></result></response>"
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
         with pytest.raises(PanoramaConfigurationMissingException) as exc_info:
-            fw_node.is_panorama_connected()
+            fw_proxy_mock.is_panorama_connected()
 
         expected = "Device not configured with Panorama."
         assert expected in str(exc_info.value)
 
-    def test_is_panorama_connected_no_string_response(self, fw_node):
+    def test_is_panorama_connected_no_string_response(self, fw_proxy_mock):
         xml_text = "<response status='success'><result><key1>value1</key1><key2>value2</key2></result></response>"
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
         with pytest.raises(MalformedResponseException) as exc_info:
-            fw_node.is_panorama_connected()
+            fw_proxy_mock.is_panorama_connected()
 
         expected = "Response from device is not type of string."
         assert expected in str(exc_info.value)
 
-    def test_is_panorama_connected_true(self, fw_node):
+    def test_is_panorama_connected_true(self, fw_proxy_mock):
         xml_text = """<response status='success'><result>
             Panorama Server 1 : 1.2.3.4
                 Connected     : yes
                 HA state      : disconnected
         </result></response>"""
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.is_panorama_connected()
+        assert fw_proxy_mock.is_panorama_connected()
 
-    def test_is_panorama_connected_false(self, fw_node):
+    def test_is_panorama_connected_false(self, fw_proxy_mock):
         xml_text = """<response status='success'><result>
             Panorama Server 1 : 1.2.3.4
                 Connected     : no
                 HA state      : disconnected
         </result></response>"""
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert not fw_node.is_panorama_connected()  # assert == False
+        assert not fw_proxy_mock.is_panorama_connected()  # assert == False
 
-    def test_is_panorama_connected_no_typical_structure(self, fw_node):
+    def test_is_panorama_connected_no_typical_structure(self, fw_proxy_mock):
         xml_text = """<response status='success'><result>
             some line : to break code
         </result></response>"""
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
         with pytest.raises(MalformedResponseException) as exc_info:
-            fw_node.is_panorama_connected()
+            fw_proxy_mock.is_panorama_connected()
 
         expected = "Panorama configuration block does not have typical structure: <some line : to break code>."
         assert expected in str(exc_info.value)
 
-    def test_get_ha_configuration(self, fw_node):
+    def test_get_ha_configuration(self, fw_proxy_mock):
         xml_text = """<response status='success'><result>
         {'enabled': 'yes'}
         </result></response>"""
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.get_ha_configuration() == """{'enabled': 'yes'}"""
+        assert fw_proxy_mock.get_ha_configuration() == """{'enabled': 'yes'}"""
 
-    def test_get_nics_none(self, fw_node):
+    def test_get_nics_none(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -188,15 +189,15 @@ class TestFirewallProxy:
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
         with pytest.raises(MalformedResponseException) as exc_info:
-            fw_node.get_nics()
+            fw_proxy_mock.get_nics()
 
         expected = "Malformed response from device, no [hw] element present."
         assert expected in str(exc_info.value)
 
-    def test_get_nics_ok(self, fw_node):
+    def test_get_nics_ok(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -228,11 +229,11 @@ class TestFirewallProxy:
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.get_nics() == {"ethernet1/1": "up", "ethernet1/2": "up"}
+        assert fw_proxy_mock.get_nics() == {"ethernet1/1": "up", "ethernet1/2": "up"}
 
-    def test_get_nics_single_entry(self, fw_node):
+    def test_get_nics_single_entry(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -253,11 +254,11 @@ class TestFirewallProxy:
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.get_nics() == {"ethernet1/1": "up"}
+        assert fw_proxy_mock.get_nics() == {"ethernet1/1": "up"}
 
-    def test_get_licenses(self, fw_node):
+    def test_get_licenses(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -277,9 +278,9 @@ class TestFirewallProxy:
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.get_licenses() == {
+        assert fw_proxy_mock.get_licenses() == {
             "PAN-DB URL Filtering": {
                 "authcode": None,
                 "base-license-name": "PA-VM",
@@ -292,7 +293,7 @@ class TestFirewallProxy:
             },
         }
 
-    def test_get_licenses_not_licensed_exception(self, fw_node):
+    def test_get_licenses_not_licensed_exception(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -302,14 +303,14 @@ class TestFirewallProxy:
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
         with pytest.raises(DeviceNotLicensedException) as exception_msg:
-            fw_node.get_licenses()
+            fw_proxy_mock.get_licenses()
 
         assert str(exception_msg.value) == "Device possibly not licenced - no license information available in the API response."
 
-    def test_get_support_license(self, fw_node):
+    def test_get_support_license(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -335,32 +336,32 @@ class TestFirewallProxy:
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.get_support_license() == {"support_expiry_date": "", "support_level": ""}
+        assert fw_proxy_mock.get_support_license() == {"support_expiry_date": "", "support_level": ""}
 
-    def test_get_support_license_connectivity_exception(self, fw_node):
-        fw_node.op.side_effect = PanXapiError(
+    def test_get_support_license_connectivity_exception(self, fw_proxy_mock):
+        fw_proxy_mock.op.side_effect = PanXapiError(
             "Failed to check support info due to Unknown error. Please check network connectivity and try again."
         )
 
         with pytest.raises(UpdateServerConnectivityException) as exception_msg:
-            fw_node.get_support_license()
+            fw_proxy_mock.get_support_license()
 
         assert (
             str(exception_msg.value)
             == "Failed to check support info due to Unknown error. Please check network connectivity and try again."
         )
 
-    def test_get_support_license_panxapierror_exception(self, fw_node):
-        fw_node.op.side_effect = PanXapiError("Some other exception message.")
+    def test_get_support_license_panxapierror_exception(self, fw_proxy_mock):
+        fw_proxy_mock.op.side_effect = PanXapiError("Some other exception message.")
 
         with pytest.raises(PanXapiError) as exception_msg:
-            fw_node.get_support_license()
+            fw_proxy_mock.get_support_license()
 
         assert str(exception_msg.value) == "Some other exception message."
 
-    def test_get_routes(self, fw_node):
+    def test_get_routes(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -381,9 +382,9 @@ class TestFirewallProxy:
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.get_routes() == {
+        assert fw_proxy_mock.get_routes() == {
             "default_0.0.0.0/0_ethernet1/1": {
                 "age": None,
                 "destination": "0.0.0.0/0",
@@ -396,7 +397,7 @@ class TestFirewallProxy:
             },
         }
 
-    def test_get_arp_table(self, fw_node):
+    def test_get_arp_table(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -418,9 +419,9 @@ class TestFirewallProxy:
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.get_arp_table() == {
+        assert fw_proxy_mock.get_arp_table() == {
             "ethernet1/1_10.10.11.1": {
                 "interface": "ethernet1/1",
                 "ip": "10.10.11.1",
@@ -431,7 +432,7 @@ class TestFirewallProxy:
             },
         }
 
-    def test_get_sessions(self, fw_node):
+    def test_get_sessions(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -469,9 +470,9 @@ class TestFirewallProxy:
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.get_sessions() == [
+        assert fw_proxy_mock.get_sessions() == [
             {
                 "application": "ping",
                 "decrypt-mirror": "False",
@@ -504,7 +505,7 @@ class TestFirewallProxy:
             },
         ]
 
-    def test_get_session_stats(self, fw_node):
+    def test_get_session_stats(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -577,9 +578,9 @@ class TestFirewallProxy:
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.get_session_stats() == {
+        assert fw_proxy_mock.get_session_stats() == {
             "age-accel-thresh": "80",
             "age-accel-tsf": "2",
             "age-scan-ssf": "8",
@@ -632,7 +633,7 @@ class TestFirewallProxy:
             "vardata-rate": "10485760",
         }
 
-    def test_get_tunnels(self, fw_node):
+    def test_get_tunnels(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -662,9 +663,9 @@ class TestFirewallProxy:
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.get_tunnels() == {
+        assert fw_proxy_mock.get_tunnels() == {
             "GlobalProtect-Gateway": {},
             "GlobalProtect-site-to-site": {},
             "IPSec": {
@@ -685,7 +686,7 @@ class TestFirewallProxy:
             "hop": {},
         }
 
-    def test_get_latest_available_content_version_ok(self, fw_node):
+    def test_get_latest_available_content_version_ok(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -733,21 +734,21 @@ class TestFirewallProxy:
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.get_latest_available_content_version() == "8698-7988"
+        assert fw_proxy_mock.get_latest_available_content_version() == "8698-7988"
 
-    def test_get_latest_available_content_version_parse_fail(self, fw_node):
+    def test_get_latest_available_content_version_parse_fail(self, fw_proxy_mock):
         xml_text = "<response status='success'><result>Not Parsable</result></response>"
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
         with pytest.raises(ContentDBVersionsFormatException) as exc_info:
-            fw_node.get_latest_available_content_version()
+            fw_proxy_mock.get_latest_available_content_version()
 
         expected = "Cannot parse list of available updates for Content DB."
         assert expected in str(exc_info.value)
 
-    def test_get_content_db_version(self, fw_node):
+    def test_get_content_db_version(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -773,11 +774,11 @@ class TestFirewallProxy:
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.get_content_db_version() == "8556-7343"
+        assert fw_proxy_mock.get_content_db_version() == "8556-7343"
 
-    def test_get_ntp_servers(self, fw_node):
+    def test_get_ntp_servers(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -798,15 +799,15 @@ class TestFirewallProxy:
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.get_ntp_servers() == {
+        assert fw_proxy_mock.get_ntp_servers() == {
             "ntp-server-1": {"authentication-type": "none", "name": "0.pool.ntp.org", "reachable": "no", "status": "available"},
             "ntp-server-2": {"authentication-type": "none", "name": "1.pool.ntp.org", "reachable": "no", "status": "available"},
             "synched": "1.pool.ntp.org",
         }
 
-    def test_get_disk_utilization_ok(self, fw_node):
+    def test_get_disk_utilization_ok(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -824,9 +825,9 @@ class TestFirewallProxy:
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.get_disk_utilization() == {
+        assert fw_proxy_mock.get_disk_utilization() == {
             "/": 1536,
             "/cgroup": 8089,
             "/dev": 8089,
@@ -837,7 +838,7 @@ class TestFirewallProxy:
             "/opt/panrepo": 6041,
         }
 
-    def test_get_disk_utilization_wrong_format(self, fw_node):
+    def test_get_disk_utilization_wrong_format(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -855,14 +856,14 @@ class TestFirewallProxy:
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
         with pytest.raises(WrongDiskSizeFormatException) as exc_info:
-            fw_node.get_disk_utilization()
+            fw_proxy_mock.get_disk_utilization()
 
         expected = "Free disk size has wrong format."
         assert expected in str(exc_info.value)
 
-    def test_get_disk_utilization_invalid_size(self, fw_node):
+    def test_get_disk_utilization_invalid_size(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -880,14 +881,14 @@ class TestFirewallProxy:
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
         with pytest.raises(
             MalformedResponseException,
             match=r"Reported disk space block does not have typical structure: .*$",
         ):
-            fw_node.get_disk_utilization()
+            fw_proxy_mock.get_disk_utilization()
 
-    def test_get_disk_utilization_index_fail(self, fw_node):
+    def test_get_disk_utilization_index_fail(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -898,14 +899,14 @@ class TestFirewallProxy:
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
         with pytest.raises(
             MalformedResponseException,
             match=r"Reported disk space block does not have typical structure: .*$",
         ):
-            fw_node.get_disk_utilization()
+            fw_proxy_mock.get_disk_utilization()
 
-    def test_get_disk_utilization_no_unit(self, fw_node):
+    def test_get_disk_utilization_no_unit(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -916,11 +917,11 @@ class TestFirewallProxy:
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.get_disk_utilization() == {"/opt/pancfg/mgmt/lcaas/ssl/private": 0}
+        assert fw_proxy_mock.get_disk_utilization() == {"/opt/pancfg/mgmt/lcaas/ssl/private": 0}
 
-    def test_get_available_image_data(self, fw_node):
+    def test_get_available_image_data(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -961,9 +962,9 @@ class TestFirewallProxy:
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.get_available_image_data() == {
+        assert fw_proxy_mock.get_available_image_data() == {
             "11.0.0": {
                 "current": "no",
                 "downloaded": "no",
@@ -990,37 +991,37 @@ class TestFirewallProxy:
             },
         }
 
-    def test_get_available_image_data_connectivity_exception(self, fw_node):
-        fw_node.op.side_effect = PanXapiError(
+    def test_get_available_image_data_connectivity_exception(self, fw_proxy_mock):
+        fw_proxy_mock.op.side_effect = PanXapiError(
             "Failed to check upgrade info due to Unknown error. Please check network connectivity and try again."
         )
 
         with pytest.raises(UpdateServerConnectivityException) as exception_msg:
-            fw_node.get_available_image_data()
+            fw_proxy_mock.get_available_image_data()
 
         assert (
             str(exception_msg.value)
             == "Failed to check upgrade info due to Unknown error. Please check network connectivity and try again."
         )
 
-    def test_get_available_image_data_panxapierror_exception(self, fw_node):
-        fw_node.op.side_effect = PanXapiError("Some other exception message.")
+    def test_get_available_image_data_panxapierror_exception(self, fw_proxy_mock):
+        fw_proxy_mock.op.side_effect = PanXapiError("Some other exception message.")
 
         with pytest.raises(PanXapiError) as exception_msg:
-            fw_node.get_available_image_data()
+            fw_proxy_mock.get_available_image_data()
 
         assert str(exception_msg.value) == "Some other exception message."
 
-    def test_get_mp_clock(self, fw_node):
+    def test_get_mp_clock(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>Wed May 31 11:50:21 PDT 2023 </result>
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.get_mp_clock() == {
+        assert fw_proxy_mock.get_mp_clock() == {
             "day": "31",
             "day_of_week": "Wed",
             "month": "May",
@@ -1029,7 +1030,7 @@ class TestFirewallProxy:
             "year": "2023",
         }
 
-    def test_get_dp_clock(self, fw_node):
+    def test_get_dp_clock(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -1038,9 +1039,9 @@ class TestFirewallProxy:
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.get_dp_clock() == {
+        assert fw_proxy_mock.get_dp_clock() == {
             "day": "31",
             "day_of_week": "Wed",
             "month": "May",
@@ -1049,7 +1050,7 @@ class TestFirewallProxy:
             "year": "2023",
         }
 
-    def test_get_certificates(self, fw_node):
+    def test_get_certificates(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -1091,9 +1092,9 @@ class TestFirewallProxy:
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.get_certificates() == {
+        assert fw_proxy_mock.get_certificates() == {
             "acertificate": {
                 "algorithm": "RSA",
                 "ca": "no",
@@ -1122,7 +1123,7 @@ class TestFirewallProxy:
             },
         }
 
-    def test_get_certificates_no_certificate(self, fw_node):
+    def test_get_certificates_no_certificate(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -1139,6 +1140,6 @@ class TestFirewallProxy:
         </response>
         """
         raw_response = ET.fromstring(xml_text)
-        fw_node.op.return_value = raw_response
+        fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_node.get_certificates() == {}
+        assert fw_proxy_mock.get_certificates() == {}

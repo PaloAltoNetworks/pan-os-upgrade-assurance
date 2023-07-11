@@ -4,18 +4,8 @@ from panos_upgrade_assurance.snapshot_compare import SnapshotCompare
 from panos_upgrade_assurance.exceptions import WrongDataTypeException, MissingKeyException, SnapshotSchemeMismatchException
 from snapshots import snap1, snap2
 
-# @pytest.fixture(autouse=False)
-# def snapshot_compare():
-#     compare = SnapshotCompare(snap1, snap2)
-#     yield compare
-
 
 class TestSnapshotCompare:
-    def setup_method(self):
-        # Set up the snapshots for testing
-        self.left_snap = {"root_key": {"key": "value"}}
-        self.right_snap = {"root_key": {"key": "other_value"}}
-
     def test_key_checker_single_key_present(self):
         key = "nics"
         SnapshotCompare.key_checker(snap1, snap2, key)
