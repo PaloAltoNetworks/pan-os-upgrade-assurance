@@ -871,23 +871,29 @@ class FirewallProxy(Firewall):
             row_items_trimmed = [item for item in row_items if item != ""]
 
             mount_point = row_items_trimmed[-1]
-            free_size_short = row_items_trimmed[3]
-            free_size_name = free_size_short[-1]
-            free_size_number = float(free_size_short[0:-1])
+            try:
+                free_size_short = row_items_trimmed[3]
+                free_size_name = free_size_short[-1]
+                free_size_number = float(free_size_short[0:-1])
 
-            if isinstance(free_size_name, str):
-                if free_size_name == "G":
-                    free_size = free_size_number * 1024
-                elif free_size_name == "M":
-                    free_size = free_size_number
-                elif free_size_name == "K":
-                    free_size = free_size_number / 1024
+                if not free_size_name.isnumeric():
+                    if free_size_name == "G":
+                        free_size = free_size_number * 1024
+                    elif free_size_name == "M":
+                        free_size = free_size_number
+                    elif free_size_name == "K":
+                        free_size = free_size_number / 1024
+                    else:
+                        raise exceptions.WrongDiskSizeFormatException("Free disk size has wrong format.")
+                else:
+                    free_size = float(free_size_short) / 1024 / 1024
 
-            elif isinstance(free_size_name, int):
-                free_size = free_size_short / 1024 / 1024
-
-            else:
-                raise exceptions.WrongDiskSizeFormatException("Free disk size has wrong format.")
+            except exceptions.WrongDiskSizeFormatException:
+                raise
+            except Exception:
+                raise exceptions.MalformedResponseException(
+                    f"Reported disk space block does not have typical structure: <{row}>."
+                )
 
             result[mount_point] = floor(free_size)
 
@@ -947,7 +953,7 @@ class FirewallProxy(Firewall):
             if str(exp) == "Failed to check upgrade info due to Unknown error. Please check network connectivity and try again.":
                 raise exceptions.UpdateServerConnectivityException(str(exp)) from exp
             else:
-                raise exceptions.exp
+                raise
 
         images = dict(image_data["sw-updates"]["versions"])["entry"]
         for image in images if isinstance(images, list) else [images]:
@@ -1077,7 +1083,7 @@ class FirewallProxy(Firewall):
 
         result = dict()
 
-        if "certificate" in shared_config:
+        if "certificate" in shared_config:  # NOTE this causes exception if shared config has no sub-elements
             certificates = shared_config["certificate"]["entry"]
             for certificate in certificates if isinstance(certificates, list) else [certificates]:
                 certificate.pop("private-key")
