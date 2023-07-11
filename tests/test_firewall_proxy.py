@@ -648,7 +648,7 @@ class TestFirewallProxy:
                         <gwid>1</gwid>
                         <inner-if>tunnel.1</inner-if>
                         <outer-if>ethernet1/1</outer-if>
-                        <localip>0.0.0.0</localip>
+                        <localip>1.2.3.4</localip>
                         <peerip>6.6.6.6</peerip>
                         <state>init</state>
                         <mon>off</mon>
@@ -673,7 +673,7 @@ class TestFirewallProxy:
                     "gwid": "1",
                     "id": "1",
                     "inner-if": "tunnel.1",
-                    "localip": "0.0.0.0",  # nosec
+                    "localip": "1.2.3.4",
                     "mon": "off",
                     "name": "my-tunnel",
                     "outer-if": "ethernet1/1",

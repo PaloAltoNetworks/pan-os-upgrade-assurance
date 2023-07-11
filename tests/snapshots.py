@@ -17,7 +17,7 @@ snap1 = {
             "name": "sres",
             "outer-if": "ethernet1/3",
             "gwid": "2",
-            "localip": "0.0.0.0",  # nosec
+            "localip": "5.6.7.8",
             "state": "init",
             "inner-if": "tunnel.2",
             "mon": "off",

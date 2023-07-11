@@ -475,7 +475,7 @@ class CheckFirewall:
                         result.status = CheckStatus.ERROR
                         result.reason = exception_text
 
-            if not result:
+            if result.status is CheckStatus.FAIL:  # NOTE skip for SUCCESS and ERROR
                 reason_suffix = (
                     f"older then the request one ({required_version})."
                     if version
