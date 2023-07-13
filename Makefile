@@ -10,6 +10,9 @@ format_check:
 format:
 	black panos_upgrade_assurance
 
+test_coverage:
+	pytest --cov panos_upgrade_assurance --cov-report=term-missing --cov-report=xml:coverage.xml
+
 documentation:
 	pydoc-markdown
 
@@ -26,4 +29,4 @@ check_line_length:
 		done < "$$FILE"; \
 	done
 
-all: lint format security documentation
+all: lint format security test_coverage documentation

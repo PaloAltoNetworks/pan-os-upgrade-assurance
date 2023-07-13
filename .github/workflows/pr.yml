@@ -36,6 +36,17 @@ jobs:
       python_version: ${{ needs.pyversion.outputs.pyversion }}
       poetry_version: 1.4.2
 
+  unit_tests:
+    name: Unit Tests
+    needs: [pyversion]
+    uses: ./.github/workflows/sub_unittest.yml
+    with:
+      python_version: ${{ needs.pyversion.outputs.pyversion }}
+      poetry_version: 1.4.2
+    permissions:
+      contents: read
+      pull-requests: write
+
   documentation_check:
     name: API documentation
     needs: [pyversion]
@@ -48,6 +59,7 @@ jobs:
     name: Fetch the updated documentation
     needs:
       - code_format
+      - unit_tests
       - documentation_check
     runs-on: ubuntu-latest
     steps:
