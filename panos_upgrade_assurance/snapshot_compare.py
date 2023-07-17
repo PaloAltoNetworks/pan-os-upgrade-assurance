@@ -404,7 +404,7 @@ class SnapshotCompare:
         common_keys = left_side_to_compare.keys() & right_side_to_compare.keys()
         if common_keys:
             next_level_value = left_side_to_compare[next(iter(common_keys))]
-            at_lowest_level = True if isinstance(next_level_value, (str, type(None))) else False
+            at_lowest_level = True if not isinstance(next_level_value, dict) else False
             keys_to_check = (
                 ConfigParser(valid_elements=set(common_keys), requested_config=properties).prepare_config()
                 if at_lowest_level
