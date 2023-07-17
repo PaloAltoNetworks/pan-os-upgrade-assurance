@@ -118,7 +118,9 @@ class SnapshotCompare:
                 report_type = report
                 report_config = {"report_type": report_type}
             else:
-                raise exceptions.WrongDataTypeException(f"Wrong configuration format for report: {report}.")
+                raise exceptions.WrongDataTypeException(
+                    f"Wrong configuration format for report: {report}."
+                )  # NOTE checks are already validated in ConfigParser - this is never executed.
 
             self.key_checker(self.left_snap, self.right_snap, report_type)
             result.update({report_type: self._functions_mapping[report_type](**report_config)})
@@ -383,10 +385,6 @@ class SnapshotCompare:
         ```
 
         """
-
-        if not (left_side_to_compare and right_side_to_compare):
-            return {}
-
         result = dict(
             missing=dict(passed=True, missing_keys=[]),
             added=dict(passed=True, added_keys=[]),
@@ -406,36 +404,38 @@ class SnapshotCompare:
                 result["added"]["added_keys"].append(key)
 
         common_keys = left_side_to_compare.keys() & right_side_to_compare.keys()
-        at_lowest_level = True if isinstance(right_side_to_compare[list(common_keys)[0]], str) else False
-        keys_to_check = (
-            ConfigParser(valid_elements=set(common_keys), requested_config=properties).prepare_config()
-            if at_lowest_level
-            else common_keys
-        )
+        if common_keys:
+            next_level_value = left_side_to_compare[next(iter(common_keys))]
+            at_lowest_level = True if not isinstance(next_level_value, dict) else False
+            keys_to_check = (
+                ConfigParser(valid_elements=set(common_keys), requested_config=properties).prepare_config()
+                if at_lowest_level
+                else common_keys
+            )
 
-        item_changed = False
-        for key in keys_to_check:
-            if right_side_to_compare[key] != left_side_to_compare[key]:
-                if isinstance(left_side_to_compare[key], str):
-                    result["changed"]["changed_raw"][key] = dict(
-                        left_snap=left_side_to_compare[key],
-                        right_snap=right_side_to_compare[key],
-                    )
-                    item_changed = True
-                elif isinstance(left_side_to_compare[key], dict):
-                    nested_results = SnapshotCompare.calculate_diff_on_dicts(
-                        left_side_to_compare=left_side_to_compare[key],
-                        right_side_to_compare=right_side_to_compare[key],
-                        properties=properties,
-                    )
-
-                    SnapshotCompare.calculate_passed(nested_results)
-                    if not nested_results["passed"]:
-                        result["changed"]["changed_raw"][key] = nested_results
+            item_changed = False
+            for key in keys_to_check:
+                if right_side_to_compare[key] != left_side_to_compare[key]:
+                    if isinstance(left_side_to_compare[key], str):
+                        result["changed"]["changed_raw"][key] = dict(
+                            left_snap=left_side_to_compare[key],
+                            right_snap=right_side_to_compare[key],
+                        )
                         item_changed = True
-                else:
-                    raise exceptions.WrongDataTypeException(f"Unknown value format for key {key}.")
-            result["changed"]["passed"] = not item_changed
+                    elif isinstance(left_side_to_compare[key], dict):
+                        nested_results = SnapshotCompare.calculate_diff_on_dicts(
+                            left_side_to_compare=left_side_to_compare[key],
+                            right_side_to_compare=right_side_to_compare[key],
+                            properties=properties,
+                        )
+
+                        SnapshotCompare.calculate_passed(nested_results)
+                        if not nested_results["passed"]:
+                            result["changed"]["changed_raw"][key] = nested_results
+                            item_changed = True
+                    else:
+                        raise exceptions.WrongDataTypeException(f"Unknown value format for key {key}.")
+                result["changed"]["passed"] = not item_changed
 
         return result
 
@@ -585,7 +585,7 @@ class SnapshotCompare:
         """
         result = {}
 
-        diff = SnapshotCompare.calculate_diff_on_dicts(
+        diff = self.calculate_diff_on_dicts(
             left_side_to_compare=self.left_snap[report_type],
             right_side_to_compare=self.right_snap[report_type],
             properties=properties,
@@ -600,8 +600,15 @@ class SnapshotCompare:
             missing_count = len(result["missing"]["missing_keys"])
             changed_count = len(result["changed"]["changed_raw"])
             left_total_count = len(self.left_snap[report_type].keys())
+            right_total_count = len(self.right_snap[report_type].keys())
 
-            diff = 1 if left_total_count == 0 else (added_count + missing_count + changed_count) / left_total_count
+            if left_total_count == 0 and right_total_count == 0:  # diff should be 0 when both sides are empty
+                diff = 0
+            elif left_total_count == 0:
+                diff = 1
+            else:
+                diff = (added_count + missing_count + changed_count) / left_total_count
+
             diff_percentage = round(float(diff) * 100, 2)
 
             passed = diff_percentage <= count_change_threshold
@@ -617,7 +624,7 @@ class SnapshotCompare:
             )
 
         if result:
-            SnapshotCompare.calculate_passed(result)
+            self.calculate_passed(result)
         else:
             result = None
         return result
@@ -752,7 +759,7 @@ class SnapshotCompare:
             element_type, threshold_value = list(element.items())[0]
             result.update(
                 {
-                    element_type: SnapshotCompare.calculate_change_percentage(
+                    element_type: self.calculate_change_percentage(
                         first_value=self.left_snap[report_type][element_type],
                         second_value=self.right_snap[report_type][element_type],
                         threshold=threshold_value,
@@ -760,5 +767,5 @@ class SnapshotCompare:
                 }
             )
 
-        SnapshotCompare.calculate_passed(result)
+        self.calculate_passed(result)
         return result

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "panos-upgrade-assurance"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = ["Palo Alto Networks"]
 readme = "README.md"
@@ -30,6 +30,9 @@ flake8 = "^6.0"
 black = "^23.3"
 bandit = "^1.7"
 flake8-pyproject = "^1.2"
+pytest = "^7.2.1"
+pytest-cov = "^4.0.0"
+deepdiff = "^6.3.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -37,7 +40,10 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.bandit]
 exclude_dirs = ["docs", ".venv", ".github", "docker_image", "dist"]
-skips = ["B405"]
+skips = ["B405", "B314"]
+
+[tool.bandit.assert_used]
+skips = ['*_test.py', '*test_*.py']
 
 [tool.black]
 line-length = 130

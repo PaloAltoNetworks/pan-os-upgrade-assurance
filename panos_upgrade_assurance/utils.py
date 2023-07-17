@@ -309,7 +309,7 @@ def interpret_yes_no(boolstr: str) -> bool:
     return True if boolstr == "yes" else False
 
 
-def printer(report: dict, indent_level: int = 0) -> None:
+def printer(report: dict, indent_level: int = 0) -> None:  # pragma: no cover - exclude from pytest coverage
     """Print reports in human friendly format.
 
     # Parameters

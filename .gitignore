@@ -59,3 +59,4 @@ poetry.lock
 sidebar.json
 .python-version
 requirements.txt
+.coverage
