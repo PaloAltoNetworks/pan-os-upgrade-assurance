@@ -58,13 +58,15 @@ class CheckFirewall:
 
     """
 
-    def __init__(self, node: FirewallProxy) -> None:
+    def __init__(self, node: FirewallProxy, skip_force_locale: Optional[bool] = False) -> None:
         """CheckFirewall constructor.
 
         # Parameters
 
         node (FirewallProxy): Object representing a device against which checks and/or snapshots are run. See
             [`FirewallProxy`](/panos/docs/panos-upgrade-assurance/api/firewall_proxy#class-firewallproxy) class' documentation.
+        skip_force_locale (bool, optional): (defaults to `False`) Use with caution, when set to `True` will skip setting locale to
+            en_US.UTF-8 for the module which will parse the datetime strings in checks with current locale setting.
 
         """
         self._node = node
@@ -93,9 +95,10 @@ class CheckFirewall:
             CheckType.MP_DP_CLOCK_SYNC: self.check_mp_dp_sync,
             CheckType.CERTS: self.check_ssl_cert_requirements,
         }
-        locale.setlocale(
-            locale.LC_ALL, "en_US.UTF-8"
-        )  # force locale for datetime string parsing when non-English locale is set on host
+        if not skip_force_locale:
+            locale.setlocale(
+                locale.LC_ALL, "en_US.UTF-8"
+            )  # force locale for datetime string parsing when non-English locale is set on host
 
     def check_pending_changes(self) -> CheckResult:
         """Check if there are pending changes on device.
