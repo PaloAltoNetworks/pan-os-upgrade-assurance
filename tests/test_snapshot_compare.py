@@ -262,6 +262,21 @@ class TestSnapshotCompare:
         with pytest.raises(WrongDataTypeException, match="The threshold should be a percentage value between 0 and 100."):
             snapshot_compare.get_diff_and_threshold(report_type="nics", count_change_threshold=count_change_threshold)
 
+    @pytest.mark.parametrize(
+        "left_snapshot, right_snapshot, expected_change_pct",
+        [
+            ({"nics": {}}, {"nics": {}}, 0),
+            ({"nics": {}}, {"nics": {"ethernet1/2": "up", "ethernet1/3": "down", "tunnel": "up"}}, 100),
+            ({"nics": {"ethernet1/2": "up", "ethernet1/3": "up", "tunnel": "up"}}, {"nics": {}}, 100),
+        ],
+    )
+    def test_get_diff_and_threshold_empty_dicts_count_change(self, left_snapshot, right_snapshot, expected_change_pct):
+        change_threshold = 40
+        snapshot_compare = SnapshotCompare(left_snapshot, right_snapshot)
+        result = snapshot_compare.get_diff_and_threshold(report_type="nics", count_change_threshold=change_threshold)
+
+        assert result["count_change_percentage"]["change_percentage"] == expected_change_pct
+
     def test_get_count_change_percentage_no_thresholds(self):
         snapshot_compare = SnapshotCompare(snap1, snap2)
         assert snapshot_compare.get_count_change_percentage(report_type="session_stats") is None
