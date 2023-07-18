@@ -59,11 +59,10 @@ jobs:
 
   unit_tests:
     name: Validate all Unit Tests pass
-    needs: [pyversion]
+    needs: pyversion
     uses: ./.github/workflows/sub_unittest.yml
     with:
       python_version: ${{ needs.pyversion.outputs.pyversion }}
-      poetry_version: 1.4.2
 
   documentation_check:
     name: Validate that the API documentation is up to date

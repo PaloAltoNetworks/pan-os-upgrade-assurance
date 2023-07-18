@@ -37,14 +37,13 @@ jobs:
 
   unit_tests:
     name: Unit Tests
-    needs: [pyversion]
-    uses: ./.github/workflows/sub_unittest.yml
-    with:
-      python_version: ${{ needs.pyversion.outputs.pyversion }}
-      poetry_version: 1.4.2
+    needs: pyversion
     permissions:
       contents: read
       pull-requests: write
+    uses: ./.github/workflows/sub_unittest.yml
+    with:
+      python_version: ${{ needs.pyversion.outputs.pyversion }}
 
   documentation_check:
     name: API documentation
