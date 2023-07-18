@@ -934,7 +934,7 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         checks_configuration = ["check1", [123]]
         report_style = False
 
-        with pytest.raises(WrongDataTypeException) as exception_msg:
+        with pytest.raises(WrongDataTypeException):
             check_firewall_mock.run_readiness_checks(checks_configuration, report_style)
 
         # raise exceptions.WrongDataTypeException(f"Wrong configuration format for check: {check}.")
@@ -964,7 +964,7 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
     def test_run_snapshots_wrong_data_type_exception(self, check_firewall_mock):
         snapshots_config = ["snapshot1", 123]
 
-        with pytest.raises(WrongDataTypeException) as exception_msg:
+        with pytest.raises(WrongDataTypeException):
             check_firewall_mock.run_snapshots(snapshots_config)
 
         # raise exceptions.WrongDataTypeException(f"Wrong configuration format for snapshot: {snap_type}.")
