@@ -9,7 +9,7 @@ on:
       - reopened
       - synchronize
       - ready_for_review
-    branches: ['main']
+    branches: main
 
 permissions:
   contents: read
@@ -30,25 +30,35 @@ jobs:
 
   code_format:
     name: Formatting and security
-    needs: [pyversion]
+    needs: pyversion
     uses: ./.github/workflows/sub_format.yml
     with:
       python_version: ${{ needs.pyversion.outputs.pyversion }}
-      poetry_version: 1.4.2
 
   documentation_check:
     name: API documentation
-    needs: [pyversion]
+    needs: pyversion
     uses: ./.github/workflows/sub_docs.yml
     with:
       python_version: ${{ needs.pyversion.outputs.pyversion }}
-      poetry_version: 1.4.2
+
+  docker_image_test_build:
+    name: Build Docker image
+    needs: pyversion
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/docker.yml
+    with:
+      publish: false
+      python_version: ${{ needs.pyversion.outputs.pyversion }}
 
   store_documentation:
     name: Fetch the updated documentation
     needs:
       - code_format
       - documentation_check
+      - docker_image_test_build
     runs-on: ubuntu-latest
     steps:
       - name: checkout code
