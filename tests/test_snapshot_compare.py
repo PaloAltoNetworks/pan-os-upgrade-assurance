@@ -154,7 +154,11 @@ class TestSnapshotCompare:
 
         result = SnapshotCompare.calculate_diff_on_dicts(left_snapshot, right_snapshot)
 
-        assert result == {}
+        assert result == {
+            'missing': {'passed': True, 'missing_keys': []},
+            'added': {'passed': True, 'added_keys': []},
+            'changed': {'passed': True, 'changed_raw': {}}
+        }
 
     # TODO test_calculate_diff_on_dicts properties flag
 
