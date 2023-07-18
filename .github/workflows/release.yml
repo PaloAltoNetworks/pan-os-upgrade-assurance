@@ -38,7 +38,7 @@ jobs:
 
   pyversion:
     name: Discover minimum Python version
-    needs: [rc]
+    needs: rc
     if: needs.rc.outputs.rc == 'true'
     runs-on: ubuntu-latest
     outputs:
@@ -52,11 +52,10 @@ jobs:
 
   code_format:
     name: Validate code formatting
-    needs: [pyversion]
+    needs: pyversion
     uses: ./.github/workflows/sub_format.yml
     with:
       python_version: ${{ needs.pyversion.outputs.pyversion }}
-      poetry_version: 1.4.2
 
   unit_tests:
     name: Validate all Unit Tests pass
@@ -68,11 +67,10 @@ jobs:
 
   documentation_check:
     name: Validate that the API documentation is up to date
-    needs: [pyversion]
+    needs: pyversion
     uses: ./.github/workflows/sub_docs.yml
     with:
       python_version: ${{ needs.pyversion.outputs.pyversion }}
-      poetry_version: 1.4.2
 
   release:
     name: Create a new release
@@ -83,6 +81,7 @@ jobs:
       - code_format
       - unit_tests
       - documentation_check
+      - pyversion
     concurrency: release
     permissions:
       contents: write
@@ -97,15 +96,14 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: ${{ needs.pyversion.outputs.pyversion }}
 
       - name: Install Poetry
         uses: Gr1N/setup-poetry@v8
-        with:
-          poetry-version: 1.4.2
 
-      - name: Create Poetry venv
-        run: poetry install
+      - name: Create Poetry venv 
+        run: |
+          poetry env use ${{ needs.pyversion.outputs.pyversion }}
 
       - name: Bump package version
         env:
@@ -130,12 +128,28 @@ jobs:
         run: |
           poetry publish --build --skip-existing
 
+  docker_image_build:
+    name: Build and Publish Docker image
+    needs: 
+      - rc
+      - release
+      - pyversion
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/docker.yml
+    with:
+      publish: true
+      python_version: ${{ needs.pyversion.outputs.pyversion }}
+      tag_name: v${{ needs.rc.outputs.ver }}
 
   cleanup_pandev:
     name: Cleanup documentation release PRs @PAN.DEV
     runs-on: ubuntu-latest
     if: needs.release.outputs.released == 'true'
-    needs: release
+    needs: 
+      - docker_image_build
+      - release
     steps:
       - name: cleanup old PRs
         uses: actions/github-script@v6
@@ -177,7 +191,9 @@ jobs:
   store_documentation:
     name: Fetch the updated documentation
     if: needs.release.outputs.released == 'true'
-    needs: release
+    needs: 
+      - docker_image_build
+      - release
     runs-on: ubuntu-latest
     steps:
       - name: checkout code
