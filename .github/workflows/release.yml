@@ -57,6 +57,13 @@ jobs:
     with:
       python_version: ${{ needs.pyversion.outputs.pyversion }}
 
+  unit_tests:
+    name: Validate all Unit Tests pass
+    needs: pyversion
+    uses: ./.github/workflows/sub_unittest.yml
+    with:
+      python_version: ${{ needs.pyversion.outputs.pyversion }}
+
   documentation_check:
     name: Validate that the API documentation is up to date
     needs: pyversion
@@ -71,6 +78,7 @@ jobs:
     needs:
       - rc
       - code_format
+      - unit_tests
       - documentation_check
       - pyversion
     concurrency: release

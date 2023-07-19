@@ -35,6 +35,16 @@ jobs:
     with:
       python_version: ${{ needs.pyversion.outputs.pyversion }}
 
+  unit_tests:
+    name: Unit Tests
+    needs: pyversion
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/sub_unittest.yml
+    with:
+      python_version: ${{ needs.pyversion.outputs.pyversion }}
+
   documentation_check:
     name: API documentation
     needs: pyversion
@@ -57,6 +67,7 @@ jobs:
     name: Fetch the updated documentation
     needs:
       - code_format
+      - unit_tests
       - documentation_check
       - docker_image_test_build
     runs-on: ubuntu-latest

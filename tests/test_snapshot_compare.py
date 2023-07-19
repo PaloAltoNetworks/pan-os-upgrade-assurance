@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import MagicMock
+from deepdiff import DeepDiff
 from panos_upgrade_assurance.snapshot_compare import SnapshotCompare
 from panos_upgrade_assurance.exceptions import WrongDataTypeException, MissingKeyException, SnapshotSchemeMismatchException
 from snapshots import snap1, snap2
@@ -154,7 +155,11 @@ class TestSnapshotCompare:
 
         result = SnapshotCompare.calculate_diff_on_dicts(left_snapshot, right_snapshot)
 
-        assert result == {}
+        assert result == {
+            "missing": {"passed": True, "missing_keys": []},
+            "added": {"passed": True, "added_keys": []},
+            "changed": {"passed": True, "changed_raw": {}},
+        }
 
     # TODO test_calculate_diff_on_dicts properties flag
 
@@ -256,6 +261,21 @@ class TestSnapshotCompare:
 
         with pytest.raises(WrongDataTypeException, match="The threshold should be a percentage value between 0 and 100."):
             snapshot_compare.get_diff_and_threshold(report_type="nics", count_change_threshold=count_change_threshold)
+
+    @pytest.mark.parametrize(
+        "left_snapshot, right_snapshot, expected_change_pct",
+        [
+            ({"nics": {}}, {"nics": {}}, 0),
+            ({"nics": {}}, {"nics": {"ethernet1/2": "up", "ethernet1/3": "down", "tunnel": "up"}}, 100),
+            ({"nics": {"ethernet1/2": "up", "ethernet1/3": "up", "tunnel": "up"}}, {"nics": {}}, 100),
+        ],
+    )
+    def test_get_diff_and_threshold_empty_dicts_count_change(self, left_snapshot, right_snapshot, expected_change_pct):
+        change_threshold = 40
+        snapshot_compare = SnapshotCompare(left_snapshot, right_snapshot)
+        result = snapshot_compare.get_diff_and_threshold(report_type="nics", count_change_threshold=change_threshold)
+
+        assert result["count_change_percentage"]["change_percentage"] == expected_change_pct
 
     def test_get_count_change_percentage_no_thresholds(self):
         snapshot_compare = SnapshotCompare(snap1, snap2)
@@ -394,7 +414,17 @@ class TestSnapshotCompare:
                     }
                 },
             ),
-            # ( ['nics', 'arp_table'], {} ),  # TODO add test for non common keys - e.g. arp_table
+            (
+                ["arp_table"],
+                {
+                    "arp_table": {
+                        "added": {"added_keys": ["ethernet1/1_10.0.2.11"], "passed": False},
+                        "changed": {"changed_raw": {}, "passed": True},
+                        "missing": {"missing_keys": ["ethernet1/2_10.0.1.1", "ethernet1/1_10.0.2.1"], "passed": False},
+                        "passed": False,
+                    }
+                },
+            ),
             (
                 [
                     {
@@ -420,7 +450,9 @@ class TestSnapshotCompare:
         snapshot_compare = SnapshotCompare(snap1, snap2)
         result = snapshot_compare.compare_snapshots(reports)
 
-        assert result == expected_result
+        assert not DeepDiff(
+            result, expected_result, ignore_order=True
+        )  # assert == doesnt work for nested objects and unordered lists
 
     # NOTE reports are already validated in ConfigParser called from the compare_snapshots method
     # so below check is never executed
