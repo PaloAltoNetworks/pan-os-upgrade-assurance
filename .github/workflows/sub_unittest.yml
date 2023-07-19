@@ -17,6 +17,9 @@ jobs:
   unittests:
     name: Verify unit tests are successful
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: ${{ github.event_name == 'pull_request' && 'write' || 'none' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
