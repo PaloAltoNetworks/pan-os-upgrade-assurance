@@ -828,14 +828,14 @@ class TestFirewallProxy:
         fw_proxy_mock.op.return_value = raw_response
 
         assert fw_proxy_mock.get_disk_utilization() == {
-            '/': 31744,
-            '/dev': 16384,
-            '/dev/shm': 16384,
-            '/opt/pancfg': 100,
-            '/opt/pancfg/mgmt/lcaas/ssl/private': 0,
-            '/opt/panlogs': 69632,
-            '/opt/panraid/ld1': 1782579,
-            '/opt/panrepo': 20480,
+            "/": 31744,
+            "/dev": 16384,
+            "/dev/shm": 16384,
+            "/opt/pancfg": 100,
+            "/opt/pancfg/mgmt/lcaas/ssl/private": 0,
+            "/opt/panlogs": 69632,
+            "/opt/panraid/ld1": 1782579,
+            "/opt/panrepo": 20480,
         }
 
     def test_get_disk_utilization_wrong_format(self, fw_proxy_mock):
