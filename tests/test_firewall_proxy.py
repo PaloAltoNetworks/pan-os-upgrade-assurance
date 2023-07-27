@@ -830,7 +830,7 @@ class TestFirewallProxy:
         assert fw_proxy_mock.get_disk_utilization() == {
             "/": 31744,
             "/dev": 16384,
-            "/dev/shm": 16384,
+            "/dev/shm": 16384,  # nosec
             "/opt/pancfg": 100,
             "/opt/pancfg/mgmt/lcaas/ssl/private": 0,
             "/opt/panlogs": 69632,
