@@ -949,10 +949,10 @@ class CheckFirewall:
         for check in checks_list:
             if isinstance(check, dict):
                 check_type, check_config = next(iter(check.items()))
-                # check_result = self._check_method_mapping[check_type](check_config)
+                if check_config == None:
+                    check_config = {}
             elif isinstance(check, str):
                 check_type, check_config = check, {}
-                # check_result = self._check_method_mapping[check_type]()
             else:
                 raise exceptions.WrongDataTypeException(
                     f"Wrong configuration format for check: {check}."
