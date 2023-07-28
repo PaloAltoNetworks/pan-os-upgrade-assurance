@@ -113,7 +113,7 @@ class SnapshotCompare:
         for report in reports:
             if isinstance(report, dict):
                 report_type, report_config = list(report.items())[0]
-                if report_config == None:
+                if report_config is None:
                     report_config = {}
                 report_config.update({"report_type": report_type})
             elif isinstance(report, str):

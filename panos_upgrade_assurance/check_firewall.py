@@ -949,7 +949,7 @@ class CheckFirewall:
         for check in checks_list:
             if isinstance(check, dict):
                 check_type, check_config = next(iter(check.items()))
-                if check_config == None:
+                if check_config is None:
                     check_config = {}
             elif isinstance(check, str):
                 check_type, check_config = check, {}
