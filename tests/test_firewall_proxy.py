@@ -811,15 +811,15 @@ class TestFirewallProxy:
         xml_text = """
         <response status="success">
             <result>
-                <![CDATA[Filesystem      Size  Used Avail Use% Mounted on
-        /dev/root       6.9G  5.1G  1.5G  78% /
-        none            7.9G   76K  7.9G   1% /dev
-        /dev/sda5        16G  1.2G   14K   8% /opt/pancfg
-        /dev/sda6       7.9G  1.6G  5.9G  22% /opt/panrepo
-        tmpfs            12G  8.4G  3.0G  74% /dev/shm
-        cgroup_root     7.9G     0  7.9G   0% /cgroup
-        /dev/sda8        21G   63M   20G   1% /opt/panlogs
-        tmpfs            12M     0   12M   0% /opt/pancfg/mgmt/lcaas/ssl/private
+                <![CDATA[ Filesystem Size Used Avail Use% Mounted on
+        /dev/root       38G  5.0G  31G    14% /
+        none            16G  136K  16G     1% /dev
+        /dev/md5       100M  0     100M   12% /opt/pancfg
+        /dev/md6        23G  2.2G  20G    11% /opt/panrepo
+        tmpfs           16G  253M  16G     2% /dev/shm
+        /dev/md9       1.8T  4.1G  1.7T    1% /opt/panraid/ld1
+        /dev/md8        73G  1.2G  68G     2% /opt/panlogs
+        tmpfs          1.0M  4.0K  1020K   1% /opt/pancfg/mgmt/lcaas/ssl/private
         ]]>
             </result>
         </response>
@@ -828,14 +828,14 @@ class TestFirewallProxy:
         fw_proxy_mock.op.return_value = raw_response
 
         assert fw_proxy_mock.get_disk_utilization() == {
-            "/": 1536,
-            "/cgroup": 8089,
-            "/dev": 8089,
-            "/dev/shm": 3072,  # nosec
-            "/opt/pancfg": 0,
-            "/opt/pancfg/mgmt/lcaas/ssl/private": 12,
-            "/opt/panlogs": 20480,
-            "/opt/panrepo": 6041,
+            "/": 31744,
+            "/dev": 16384,
+            "/dev/shm": 16384,  # nosec
+            "/opt/pancfg": 100,
+            "/opt/pancfg/mgmt/lcaas/ssl/private": 0,
+            "/opt/panlogs": 69632,
+            "/opt/panraid/ld1": 1782579,
+            "/opt/panrepo": 20480,
         }
 
     def test_get_disk_utilization_wrong_format(self, fw_proxy_mock):
