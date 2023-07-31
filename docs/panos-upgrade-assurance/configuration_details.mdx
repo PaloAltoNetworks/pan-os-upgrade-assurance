@@ -976,34 +976,75 @@ The reporting part is actually the result of comparison of two snapshots. It is 
 
 Each report can be run with default or custom configuration. The following example shows reports with additional configuration (where applicable):
 
+```mdx-code-block
+<Tabs>
+<TabItem value="python" label="Python" default>
+```
+
 ```python showLineNumbers
-[
-  {'ip_sec_tunnels': {
-    'properties': ['state']
-  }},
-  {'arp_table': {
-    'properties': ['!ttl'],
-    'count_change_threshold': 10
-  }},
-  {'nics': {
-    'count_change_threshold': 10
-  }},
-  {'license': {
-    'properties': ['!serial']
-  }},
-  {'routes: {
-    'properties': ['!flags'],
-    'count_change_threshold': 10
-  }},
-  'content_version',
-  {'session_stats': {
-    'thresholds': [
-      {'num-max': 10},
-      {'num-tcp': 10},
-    ]
-  }}
+reports = [
+    {'ip_sec_tunnels': {
+        'properties': ['state']
+    }},
+    {'arp_table': {
+        'properties': ['!ttl'],
+        'count_change_threshold': 10
+    }},
+    {'nics': {
+        'count_change_threshold': 10
+    }},
+    {'license': {
+        'properties': ['!serial']
+    }},
+    {'routes': {
+        'properties': ['!flags'],
+        'count_change_threshold': 10
+    }},
+    'content_version',
+    {'session_stats': {
+        'thresholds': [
+            {'num-max': 10},
+            {'num-tcp': 10},
+        ]
+    }}
 ]
 ```
+
+```mdx-code-block
+</TabItem>
+<TabItem value="ansible" label="YAML" default>
+```
+
+```yaml showLineNumbers
+reports:
+  - ip_sec_tunnels:
+      properties:
+        - "state"
+  - arp_table:
+      properties:
+        - "!ttl"
+      count_change_threshold: 10
+  - nics:
+      count_change_threshold: 10
+  - license:
+      properties:
+        - "!serial"
+  - routes:
+      properties:
+        - "!flags"
+      count_change_threshold: 10
+  - content_version
+  - session_stats:
+      thresholds:
+        - num-max: 10
+        - num-tcp: 10
+```
+
+```mdx-code-block
+</TabItem>
+</Tabs>
+```
+
 
 For most reports, a generic comparison method is used ([`SnapshotCompare.get_diff_and_threshold()`](/panos/docs/panos-upgrade-assurance/api/snapshot_compare#snapshotcompareget_diff_and_threshold)). It produces the standardized dictionary. For details, see documentation for this method. Common method assigns a report result to a report area providing a dictionary where keys are report areas and values are report results.
 
@@ -1031,12 +1072,40 @@ The following configuration:
 
 This report produces the standardized dictionary.
 
-```python showLineNumbers
-{
-  'properties': ['!ttl'],
-  'count_change_threshold': 10
-}
+```mdx-code-block
+<Tabs>
+<TabItem value="python" label="Python" default>
 ```
+
+```python showLineNumbers
+reports = [
+    {
+        'arp_table': {
+            'properties': ['!ttl'],
+            'count_change_threshold': 10
+        }
+    }
+]
+```
+
+```mdx-code-block
+</TabItem>
+<TabItem value="ansible" label="YAML" default>
+```
+
+```yaml showLineNumbers
+reports:
+  - arp_table:
+      properties:
+        - '!ttl'
+      count_change_threshold: 10
+```
+
+```mdx-code-block
+</TabItem>
+</Tabs>
+```
+
 
 ### `content_version`
 
@@ -1064,11 +1133,38 @@ captured in snapshots.
 
 This report produces the standardized dictionary.
 
-```python showLineNumbers
-{
-  'properties': ['state']
-}
+```mdx-code-block
+<Tabs>
+<TabItem value="python" label="Python" default>
 ```
+
+```python showLineNumbers
+reports = [
+    {
+        'ip_sec_tunnels': {
+            'properties': ['state']
+        }
+    }
+]
+```
+
+```mdx-code-block
+</TabItem>
+<TabItem value="ansible" label="YAML" default>
+```
+
+```yaml showLineNumbers
+reports:
+  - ip_sec_tunnels:
+      properties:
+        - 'state'
+```
+
+```mdx-code-block
+</TabItem>
+</Tabs>
+```
+
 
 ### `license`
 
@@ -1090,10 +1186,36 @@ snapshots. It will ignore the `serial` property.
 
 This report produces the standardized dictionary.
 
+```mdx-code-block
+<Tabs>
+<TabItem value="python" label="Python" default>
+```
+
 ```python showLineNumbers
-{
-  'properties': ['!serial']
-}
+reports = [
+    {
+        'license': {
+            'properties': ['!serial']
+        }
+    }
+]
+```
+
+```mdx-code-block
+</TabItem>
+<TabItem value="ansible" label="YAML" default>
+```
+
+```yaml showLineNumbers
+reports:
+  - license:
+      properties:
+        - '!serial'
+```
+
+```mdx-code-block
+</TabItem>
+</Tabs>
 ```
 
 ### `nics`
@@ -1116,10 +1238,36 @@ The following configuration provides both: change in NICs\' state (implicitly) a
 
 This report produces the standardized dictionary.
 
+```mdx-code-block
+<Tabs>
+<TabItem value="python" label="Python" default>
+```
+
 ```python showLineNumbers
-{
-  'count_change_threshold': 10
-}
+reports = [
+    {
+        'nics': {
+            'count_change_threshold': 10
+        }
+    }
+]
+```
+
+```mdx-code-block
+</TabItem>
+<TabItem value="ansible" label="YAML" default>
+```
+
+```yaml showLineNumbers
+reports:
+  - nics:
+      count_change_threshold: 10
+
+```
+
+```mdx-code-block
+</TabItem>
+</Tabs>
 ```
 
 ### `routes`
@@ -1147,11 +1295,38 @@ The following configuration:
 
 This report produces the standardized dictionary.
 
+```mdx-code-block
+<Tabs>
+<TabItem value="python" label="Python" default>
+```
+
 ```python showLineNumbers
-{
-  'properties': ['!flags'],
-  'count_change_threshold': 10
-}
+reports = [
+    {
+        'routes': {
+            'properties': ['!flags'],
+            'count_change_threshold': 10
+        }
+    }
+]
+```
+
+```mdx-code-block
+</TabItem>
+<TabItem value="ansible" label="YAML" default>
+```
+
+```yaml showLineNumbers
+reports:
+  - routes:
+      properties:
+        - '!flags'
+      count_change_threshold: 10
+```
+
+```mdx-code-block
+</TabItem>
+</Tabs>
 ```
 
 ### `session_stats`
@@ -1174,13 +1349,40 @@ The following configuration compares only stats for `num-max` and `num-tcp`. For
 
 This report produces a `dict` as documented in the [`SnapshotCompare.get_count_change_percentage()`](/panos/docs/panos-upgrade-assurance/api/snapshot_compare#snapshotcompareget_count_change_percentage) method documentation.
 
+```mdx-code-block
+<Tabs>
+<TabItem value="python" label="Python" default>
+```
+
 ```python showLineNumbers
-{
-  'thresholds': [
-    {'num-max': 10},
-    {'num-tcp': 10},
-  ]
-}
+reports = [
+    {
+        'session_stats': {
+            'thresholds': [
+                {'num-max': 10},
+                {'num-tcp': 10}
+            ]
+        }
+    }
+]
+```
+
+```mdx-code-block
+</TabItem>
+<TabItem value="ansible" label="YAML" default>
+```
+
+```yaml showLineNumbers
+reports:
+  - session_stats:
+      thresholds:
+        - num-max: 10
+        - num-tcp: 10
+```
+
+```mdx-code-block
+</TabItem>
+</Tabs>
 ```
 
 [cfgprs]: /panos/docs/panos-upgrade-assurance/api/utils#class-configparser
