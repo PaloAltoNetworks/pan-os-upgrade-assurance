@@ -833,7 +833,12 @@ The output of the [`CheckFirewall.run_snapshots()`](/panos/docs/panos-upgrade-as
 
 The sample output containing a snapshot for *route tables*, *licenses*, and *IPSec tunnels* is shown below (one element per each area):
 
-```json
+```mdx-code-block
+<Tabs>
+<TabItem value="json" label="JSON" default>
+```
+
+```json showLineNumbers
 {
   "ip_sec_tunnels": {
     "ipsec_tun": {
@@ -876,10 +881,20 @@ The sample output containing a snapshot for *route tables*, *licenses*, and *IPS
 }
 ```
 
+```mdx-code-block
+</TabItem>
+</Tabs>
+```
+
 Following state areas are available:
 
-```yaml
-[
+```mdx-code-block
+<Tabs>
+<TabItem value="python" label="Python" default>
+```
+
+```python showLineNumbers
+snapshots_config = [
   'nics',
   'routes',
   'license',
@@ -888,6 +903,27 @@ Following state areas are available:
   'session_stats',
   'ip_sec_tunnels',
 ]
+```
+
+```mdx-code-block
+</TabItem>
+<TabItem value="ansible" label="YAML" default>
+```
+
+```yaml showLineNumbers
+snapshots_config:
+  - nics
+  - routes
+  - license
+  - arp_table
+  - content_version
+  - session_stats
+  - ip_sec_tunnels
+```
+
+```mdx-code-block
+</TabItem>
+</Tabs>
 ```
 
 Please see the sections below for details of each state snapshot:
@@ -942,7 +978,7 @@ Each report can be run with default or custom configuration. The following examp
 
 ```python showLineNumbers
 [
-  {'ip_sec_tunnels: {
+  {'ip_sec_tunnels': {
     'properties': ['state']
   }},
   {'arp_table': {
