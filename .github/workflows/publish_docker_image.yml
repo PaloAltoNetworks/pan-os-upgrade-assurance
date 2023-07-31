@@ -1,0 +1,26 @@
+name: Publish Docker image
+run-name: Publish a Docker image for release ${{ github.ref_name }}
+
+permissions:
+  contents: read
+
+on:
+  release:
+    types: released
+
+jobs:
+  pyversion:
+    name: Discover minimum Python version
+    uses: ./.github/workflows/_discover_python_ver.yml
+
+  docker_image_build:
+    name: Build and Publish Docker image
+    needs: pyversion
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/_docker.yml
+    with:
+      publish: true
+      python_version: ${{ needs.pyversion.outputs.pyversion }}
+      tag_name: ${{ github.ref_name }}

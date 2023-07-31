@@ -18,15 +18,7 @@ jobs:
 
   pyversion:
     name: Discover minimum Python version
-    runs-on: ubuntu-latest
-    outputs:
-      pyversion: ${{ steps.pyversion.outputs.pyversion }}
-    steps:
-      - name: checkout code
-        uses: actions/checkout@v3
-      - name: discover Python version
-        id: pyversion
-        uses: ./.github/actions/discover_python_version
+    uses: ./.github/workflows/_discover_python_ver.yml
 
   code_format:
     name: Formatting and security
@@ -58,7 +50,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    uses: ./.github/workflows/docker.yml
+    uses: ./.github/workflows/_docker.yml
     with:
       publish: false
       python_version: ${{ needs.pyversion.outputs.pyversion }}

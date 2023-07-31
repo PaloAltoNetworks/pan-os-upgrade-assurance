@@ -40,15 +40,8 @@ jobs:
     name: Discover minimum Python version
     needs: rc
     if: needs.rc.outputs.rc == 'true'
-    runs-on: ubuntu-latest
-    outputs:
-      pyversion: ${{ steps.pyversion.outputs.pyversion }}
-    steps:
-      - name: checkout code
-        uses: actions/checkout@v3
-      - name: discover Python version
-        id: pyversion
-        uses: ./.github/actions/discover_python_version
+    uses: ./.github/workflows/_discover_python_ver.yml
+
 
   code_format:
     name: Validate code formatting
@@ -127,27 +120,11 @@ jobs:
         run: |
           poetry publish --build --skip-existing
 
-  docker_image_build:
-    name: Build and Publish Docker image
-    needs: 
-      - rc
-      - release
-      - pyversion
-    permissions:
-      contents: read
-      packages: write
-    uses: ./.github/workflows/docker.yml
-    with:
-      publish: true
-      python_version: ${{ needs.pyversion.outputs.pyversion }}
-      tag_name: v${{ needs.rc.outputs.ver }}
-
   cleanup_pandev:
     name: Cleanup documentation release PRs @PAN.DEV
     runs-on: ubuntu-latest
     if: needs.release.outputs.released == 'true'
     needs: 
-      - docker_image_build
       - release
     steps:
       - name: cleanup old PRs
@@ -191,7 +168,6 @@ jobs:
     name: Fetch the updated documentation
     if: needs.release.outputs.released == 'true'
     needs: 
-      - docker_image_build
       - release
     runs-on: ubuntu-latest
     steps:
