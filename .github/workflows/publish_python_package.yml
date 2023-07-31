@@ -1,4 +1,4 @@
-name: Publish Python package
+name: (publish) Python package
 run-name: Publish a Python package for release ${{ github.event.release.tag_name }}
 
 on:

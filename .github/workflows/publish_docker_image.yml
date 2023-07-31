@@ -1,5 +1,5 @@
-name: Publish Docker image
-run-name: Publish a Docker image for release ${{ github.ref_name }}
+name: (publish) Docker image
+run-name: Publish a Docker image for release ${{ github.event.release.tag_name }}
 
 permissions:
   contents: read
@@ -23,4 +23,4 @@ jobs:
     with:
       publish: true
       python_version: ${{ needs.pyversion.outputs.pyversion }}
-      tag_name: ${{ github.ref_name }}
+      tag_name: ${{ github.event.release.tag_name }}
