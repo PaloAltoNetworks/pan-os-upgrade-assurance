@@ -114,12 +114,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish to PyPI
-        env:
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
-        run: |
-          poetry publish --build --skip-existing
-
   cleanup_pandev:
     name: Cleanup documentation release PRs @PAN.DEV
     runs-on: ubuntu-latest
