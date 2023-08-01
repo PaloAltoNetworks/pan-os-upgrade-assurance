@@ -1093,3 +1093,101 @@ class FirewallProxy(Firewall):
                 result[cert_name] = certificate
 
         return result
+
+    def get_jobs(self) -> dict:
+        """Get details on all jobs.
+
+        This method retrieves all jobs and their details, this means running, pending, finished, etc.
+
+        The actual API command is `show jobs all`.
+
+        # Returns
+
+        dict: All jobs found on the device, indexed by the ID of a job.
+
+        ```python showLineNumbers title="Sample output"
+        {'1': {'description': None,
+            'details': {'line': ['ID population failed',
+                                    'Client logrcvr registered in the middle of a '
+                                    'commit/validate. Aborting current '
+                                    'commit/validate.',
+                                    'Commit failed',
+                                    'Failed to commit policy to device']},
+            'positionInQ': '0',
+            'progress': '100',
+            'queued': 'NO',
+            'result': 'FAIL',
+            'status': 'FIN',
+            'stoppable': 'no',
+            'tdeq': '00:28:32',
+            'tenq': '2023/08/01 00:28:32',
+            'tfin': '2023/08/01 00:28:36',
+            'type': 'AutoCom',
+            'user': None,
+            'warnings': None},
+        '2': {'description': None,
+            'details': {'line': ['Configuration committed successfully',
+                                    'Successfully committed last configuration']},
+            'positionInQ': '0',
+            'progress': '100',
+            'queued': 'NO',
+            'result': 'OK',
+            'status': 'FIN',
+            'stoppable': 'no',
+            'tdeq': '00:28:40',
+            'tenq': '2023/08/01 00:28:40',
+            'tfin': '2023/08/01 00:29:20',
+            'type': 'AutoCom',
+            'user': None,
+            'warnings': None},
+        '3': {'description': None,
+            'details': None,
+            'positionInQ': '0',
+            'progress': '30',
+            'queued': 'NO',
+            'result': 'PEND',
+            'status': 'ACT',
+            'stoppable': 'yes',
+            'tdeq': '00:58:59',
+            'tenq': '2023/08/01 00:58:59',
+            'tfin': None,
+            'type': 'Downld',
+            'user': None,
+            'warnings': None}}
+        ```
+
+        """
+        jobs = self.op_parser(cmd="show jobs all")
+        results = dict()
+
+        for job in jobs["job"]:
+            jid = job["id"]
+            job.pop("id")
+            results[jid] = job
+
+        return results
+
+    def get_update_schedules(self) -> dict:
+        """Get schedules for all dynamic updates.
+
+        This method gets all scheduled running on a device. This includes the ones pushed from Panorama.
+
+        The actual API command is `<show><config><effective-running><xpath>devices/entry/deviceconfig/system/update-schedule</xpath></effective-running></config></show>`.
+
+        # Returns
+
+        dict: All dynamic updates schedules, key is the entity type to update, like: threats, wildfire, etc.
+
+        ```python showLineNumbers title="Sample output"
+        {'threats': {'recurring': {'weekly': {'action': 'download-only',
+                                      'at': '01:02',
+                                      'day-of-week': 'wednesday'}}},
+        'wildfire': {'recurring': {'real-time': None}}}
+        ```
+
+        """
+        schedules = self.op_parser(
+            cmd="<show><config><effective-running><xpath>devices/entry/deviceconfig/system/update-schedule</xpath></effective-running></config></show>",
+            cmd_in_xml=True)
+
+        return schedules["update-schedule"]
