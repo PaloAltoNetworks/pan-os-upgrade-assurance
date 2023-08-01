@@ -256,6 +256,7 @@ checks_configuration = [
     "active_support",
     'candidate_config',
     'expired_licenses',
+    'jobs',
     'ntp_sync',
     'panorama',
     # tests below have optional configuration
@@ -296,6 +297,7 @@ checks_configuration:
   - "active_support"
   - "candidate_config"
   - "expired_licenses"
+  - "jobs"
   - "ntp_sync"
   - "panorama"
   # tests below have optional configuration
@@ -704,6 +706,14 @@ checks_configuration:
 </Tabs>
 ```
 
+### `jobs`
+
+Verify if there are any running/pending jobs in the job queue. Any job with a status different than `FIN` will cause
+the check to fail.
+
+Does not require configuration.
+
+**Method**: [`CheckFirewall.check_non_finished_jobs()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallcheck_non_finished_jobs)
 
 ### `ntp_sync`
 
