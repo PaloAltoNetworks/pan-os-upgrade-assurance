@@ -28,6 +28,8 @@ class CheckType:
     FREE_DISK_SPACE = "free_disk_space"
     MP_DP_CLOCK_SYNC = "planes_clock_sync"
     CERTS = "certificates_requirements"
+    JOBS = "jobs"
+    UPDATES = "dynamic_updates"
 
 
 class SnapType:
@@ -334,3 +336,6 @@ def printer(report: dict, indent_level: int = 0) -> None:  # pragma: no cover - 
                 printer(v, indent_level + 1)
             else:
                 print(f"{delim * indent_level} {k}: {v}")
+
+def distance_in_minutes(**kwargs) -> int:
+    pass

@@ -11,6 +11,7 @@ from panos_upgrade_assurance.utils import (
     SnapType,
     CheckStatus,
     SupportedHashes,
+    distance_in_minutes,
 )
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
 from panos_upgrade_assurance import exceptions
@@ -94,11 +95,15 @@ class CheckFirewall:
             CheckType.FREE_DISK_SPACE: self.check_free_disk_space,
             CheckType.MP_DP_CLOCK_SYNC: self.check_mp_dp_sync,
             CheckType.CERTS: self.check_ssl_cert_requirements,
+            CheckType.JOBS: self.check_non_finished_jobs,
+            CheckType.UPDATES: self.check_scheduled_updates,
         }
         if not skip_force_locale:
             locale.setlocale(
                 locale.LC_ALL, "en_US.UTF-8"
             )  # force locale for datetime string parsing when non-English locale is set on host
+
+        self._now = datetime.now()
 
     def check_pending_changes(self) -> CheckResult:
         """Check if there are pending changes on device.
@@ -868,6 +873,110 @@ class CheckFirewall:
             return result
 
         result.status = CheckStatus.SUCCESS
+        return result
+
+    def check_non_finished_jobs(self) -> CheckResult:
+        """Check for any job with status different than FIN.
+
+        # Returns
+
+        CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking \
+            value of:
+
+        * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when all jobs are in FIN state.
+        * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise, `CheckResult.reason`
+            field contains information about the 1<sup>st</sup> job found with status different than FIN (job ID and the actual
+            status).
+
+        """
+        result = CheckResult()
+
+        all_jobs = self._node.get_jobs()
+
+        for jid, job in all_jobs.items():
+            if job["status"] != "FIN":
+                result.reason = f"At least one job (ID={jid}) is not in finished state (state={job['status']})."
+                return result
+
+        result.status = CheckStatus.SUCCESS
+        return result
+
+    def _calculate_time_distance(self, schedule_type: str, schedule: dict) -> (int, str):
+        """
+        """
+        time_distance = 0
+        details = "unsupported schedule type"
+
+        if schedule_type == 'none':
+            time_distance = -1
+            details = "disabled"
+        elif schedule_type == 'daily':
+            pass
+        elif schedule_type == 'hourly':
+            time_distance = 60
+            details = 'every hour'
+        elif schedule_type == 'weekly':
+            pass
+        elif schedule_type.split('-')[0] == 'every':
+            if schedule_type.split('-')[1] == 'min':
+                time_distance = 1
+                details = 'every minute'
+            elif schedule_type.split('-')[1] == 'hour':
+                time_distance = 60
+                details = 'hourly'
+            elif schedule_type.split('-')[1].isnumeric():
+                time_distance = int(schedule_type.split('-')[1])
+                details = f'every {time_distance} minutes'
+            else:
+                raise exceptions.MalformedResponseException(f'Unknown schedule type: {schedule_type}.')
+        elif schedule_type == 'real-time':
+            details = 'unpredictable (real-time)'
+        else:
+            raise exceptions.MalformedResponseException(f'Unknown schedule type: {schedule_type}.')
+
+        return time_distance, details
+
+    def check_scheduled_updates(self, test_window: int = 60) -> CheckResult:
+        """
+        """
+        if not isinstance(test_window, int):
+            raise exceptions.WrongDataTypeException(f"The test_windows parameter should be of type <class int>, got {type(test_window)} instead.")
+
+        result = CheckResult()
+
+        schedules = self._node.get_update_schedules()
+        if not schedules:
+            result.status = CheckStatus.SKIPPED
+            result.reason = "No scheduled job present on the device."
+            return result
+
+        if test_window < 60:
+            result.status = CheckStatus.ERROR
+            result.reason = "Schedules test window is below the supported, safe minimum of 60 minutes."
+            return result
+
+        for name, schedule in schedules.items():
+            if "recurring" not in schedule.keys():
+                raise exceptions.MalformedResponseException(f"Schedule {name} has malformed configuration, missing a schedule..")
+            if len(schedule) != 1:
+                raise exceptions.MalformedResponseException(f"Schedule {name} has malformed configuration: {schedule}")
+
+        schedules_in_window = []
+        for name, schedule in schedules.items():
+            schedule_details = schedule['recurring']
+            time_distance, details = self._calculate_time_distance(
+                    schedule_type=schedule_details.keys()[0],
+                    schedule=schedule_details.values()[0]
+                )
+            if time_distance >= 0 and time_distance <= test_window:
+                schedules_in_window.append(f"{name}: {details}")
+
+        if schedules_in_window:
+            result.status = f"Following schedules fall into test window: {', '.join(schedules_in_window)}."
+            return result
+
+        result.status = CheckStatus.SUCCESS
+
         return result
 
     def get_content_db_version(self) -> Dict[str, str]:
