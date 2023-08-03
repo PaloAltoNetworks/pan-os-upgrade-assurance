@@ -1,7 +1,8 @@
 from typing import Optional, Union, List, Dict
-from math import ceil
-from datetime import datetime
+from math import ceil, floor
+from datetime import datetime, timedelta
 import locale
+import time
 
 from panos_upgrade_assurance.utils import (
     CheckResult,
@@ -102,8 +103,6 @@ class CheckFirewall:
             locale.setlocale(
                 locale.LC_ALL, "en_US.UTF-8"
             )  # force locale for datetime string parsing when non-English locale is set on host
-
-        self._now = datetime.now()
 
     def check_pending_changes(self) -> CheckResult:
         """Check if there are pending changes on device.
@@ -737,16 +736,7 @@ class CheckFirewall:
         mp_clock = self._node.get_mp_clock()
         dp_clock = self._node.get_dp_clock()
 
-        mp_dt = datetime.strptime(
-            f"{mp_clock['year']}-{mp_clock['month']}-{mp_clock['day']} {mp_clock['time']}",
-            "%Y-%b-%d %H:%M:%S",
-        )
-        dp_dt = datetime.strptime(
-            f"{dp_clock['year']}-{dp_clock['month']}-{dp_clock['day']} {dp_clock['time']}",
-            "%Y-%b-%d %H:%M:%S",
-        )
-
-        time_fluctuation = abs((mp_dt - dp_dt).total_seconds())
+        time_fluctuation = abs((mp_clock - dp_clock).total_seconds())
         if time_fluctuation > diff_threshold:
             result.reason = f"The data plane clock and management clock are different by {time_fluctuation} seconds."
         else:
@@ -907,16 +897,35 @@ class CheckFirewall:
         time_distance = 0
         details = "unsupported schedule type"
 
-        if schedule_type == 'none':
-            time_distance = -1
-            details = "disabled"
-        elif schedule_type == 'daily':
-            pass
+        if schedule_type == 'daily':
+            occurrence = schedule['at']
+            next_occurrence = datetime.strptime(f"{str(self._mp_now.date())} {occurrence}", '%Y-%m-%d %H:%M')
+
+            if self._mp_now > next_occurrence:
+                next_occurrence = next_occurrence + timedelta(days=1)
+            diff = next_occurrence - self._mp_now
+            time_distance = (floor(diff.total_seconds()/60))
+            details = f"at {next_occurrence.time()}"
+
         elif schedule_type == 'hourly':
             time_distance = 60
             details = 'every hour'
         elif schedule_type == 'weekly':
-            pass
+            occurrence_time = schedule['at']
+            occurrence_day = schedule['day-of-week']
+            occurrence_wday = time.strptime(occurrence_day, "%A").tm_wday
+            now_wday = self._mp_now.weekday()
+
+            diff_days = (0 if occurrence_wday >= now_wday else 7) + occurrence_wday - now_wday
+            next_occurrence_date = (self._mp_now + timedelta(days=diff_days)).date()
+            next_occurrence = datetime.strptime(f"{str(next_occurrence_date)} {occurrence_time}", '%Y-%m-%d %H:%M')
+
+            if self._mp_now > next_occurrence:
+                next_occurrence = next_occurrence + timedelta(days=7)
+            diff = next_occurrence - self._mp_now
+            time_distance = (floor(diff.total_seconds()/60))
+            details = f"in {str(diff).split('.')[0]}"
+            
         elif schedule_type.split('-')[0] == 'every':
             if schedule_type.split('-')[1] == 'min':
                 time_distance = 1
@@ -944,6 +953,8 @@ class CheckFirewall:
 
         result = CheckResult()
 
+        self._mp_now = self._node.get_mp_clock()
+
         schedules = self._node.get_update_schedules()
         if not schedules:
             result.status = CheckStatus.SKIPPED
@@ -953,6 +964,10 @@ class CheckFirewall:
         if test_window < 60:
             result.status = CheckStatus.ERROR
             result.reason = "Schedules test window is below the supported, safe minimum of 60 minutes."
+            return result
+        if test_window > 10080:
+            result.status = CheckStatus.ERROR
+            result.reason = "Schedules test window is set to over 1 week. This test will always fail."
             return result
 
         for name, schedule in schedules.items():
@@ -964,15 +979,20 @@ class CheckFirewall:
         schedules_in_window = []
         for name, schedule in schedules.items():
             schedule_details = schedule['recurring']
-            time_distance, details = self._calculate_time_distance(
-                    schedule_type=schedule_details.keys()[0],
-                    schedule=schedule_details.values()[0]
-                )
-            if time_distance >= 0 and time_distance <= test_window:
-                schedules_in_window.append(f"{name}: {details}")
+
+            if 'sync-to-peer' in schedule_details:
+                schedule_details.pop('sync-to-peer')
+
+            if 'none' not in schedule_details:
+                time_distance, details = self._calculate_time_distance(
+                        schedule_type=next(iter(schedule_details.keys())),
+                        schedule=next(iter(schedule_details.values()))
+                    )
+                if time_distance <= test_window:
+                    schedules_in_window.append(f"{name} ({details})")
 
         if schedules_in_window:
-            result.status = f"Following schedules fall into test window: {', '.join(schedules_in_window)}."
+            result.reason = f"Following schedules fall into test window: {', '.join(schedules_in_window)}."
             return result
 
         result.status = CheckStatus.SUCCESS

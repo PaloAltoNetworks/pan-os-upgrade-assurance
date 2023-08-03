@@ -854,7 +854,7 @@ __Returns__
 ### `FirewallProxy.get_mp_clock`
 
 ```python
-def get_mp_clock() -> dict
+def get_mp_clock() -> datetime
 ```
 
 Get the clock information from management plane.

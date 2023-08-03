@@ -6,6 +6,7 @@ from panos_upgrade_assurance.utils import printer
 from panos.panorama import Panorama
 from argparse import ArgumentParser
 from getpass import getpass
+from pprint import pprint
 
 if __name__ == "__main__":
 
@@ -18,11 +19,15 @@ if __name__ == "__main__":
     check_node = CheckFirewall(firewall)
 
     checks = [
+        # "planes_clock_sync",
         {"dynamic_updates": {
-            "test_window": 30
+            "test_window": 500
         }}
     ]
 
+    pprint(firewall.get_update_schedules())
+    pprint(firewall.get_mp_clock())
+    # exit()
     check_readiness = check_node.run_readiness_checks(
         checks_configuration=checks,
         # report_style=True
