@@ -336,6 +336,3 @@ def printer(report: dict, indent_level: int = 0) -> None:  # pragma: no cover - 
                 printer(v, indent_level + 1)
             else:
                 print(f"{delim * indent_level} {k}: {v}")
-
-def distance_in_minutes(**kwargs) -> int:
-    pass

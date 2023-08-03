@@ -971,18 +971,7 @@ class FirewallProxy(Firewall):
 
         # Returns
 
-        dict: The clock information represented as a dictionary.
-
-        ```python showLineNumbers title="Sample output"
-        {
-            'time': '00:41:36',
-            'tz': 'PDT',
-            'day': '19',
-            'month': 'Apr',
-            'year': '2023',
-            'day_of_week': 'Wed'
-        }
-        ```
+        datetime: The clock information represented as a `datetime` object.
 
         """
         time_string = self.op_parser(cmd="show clock")
@@ -1009,18 +998,7 @@ class FirewallProxy(Firewall):
 
         # Returns
 
-        dict: The clock information represented as a dictionary.
-
-        ```python showLineNumbers title="Sample output"
-        {
-            'time': '00:41:36',
-            'tz': 'PDT',
-            'day': '19',
-            'month': 'Apr',
-            'year': '2023',
-            'day_of_week': 'Wed'
-        }
-        ```
+        datetime: The clock information represented as a `datetime` object.
 
         """
         response = self.op_parser(cmd="show clock more")
@@ -1197,6 +1175,7 @@ class FirewallProxy(Firewall):
         """
         schedules = self.op_parser(
             cmd="<show><config><effective-running><xpath>devices/entry/deviceconfig/system/update-schedule</xpath></effective-running></config></show>",
-            cmd_in_xml=True)
+            cmd_in_xml=True,
+        )
 
         return schedules["update-schedule"]

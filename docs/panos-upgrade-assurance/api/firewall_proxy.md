@@ -864,18 +864,7 @@ The actual API command is `show clock`.
 __Returns__
 
 
-`dict`: The clock information represented as a dictionary.
-
-```python showLineNumbers title="Sample output"
-{
-    'time': '00:41:36',
-    'tz': 'PDT',
-    'day': '19',
-    'month': 'Apr',
-    'year': '2023',
-    'day_of_week': 'Wed'
-}
-```
+`datetime`: The clock information represented as a `datetime` object.
 
 ### `FirewallProxy.get_dp_clock`
 
@@ -890,18 +879,7 @@ The actual API command is `show clock more`.
 __Returns__
 
 
-`dict`: The clock information represented as a dictionary.
-
-```python showLineNumbers title="Sample output"
-{
-    'time': '00:41:36',
-    'tz': 'PDT',
-    'day': '19',
-    'month': 'Apr',
-    'year': '2023',
-    'day_of_week': 'Wed'
-}
-```
+`datetime`: The clock information represented as a `datetime` object.
 
 ### `FirewallProxy.get_certificates`
 

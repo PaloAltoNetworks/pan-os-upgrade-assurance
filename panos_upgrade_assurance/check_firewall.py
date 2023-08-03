@@ -12,7 +12,6 @@ from panos_upgrade_assurance.utils import (
     SnapType,
     CheckStatus,
     SupportedHashes,
-    distance_in_minutes,
 )
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
 from panos_upgrade_assurance import exceptions
@@ -892,64 +891,110 @@ class CheckFirewall:
         return result
 
     def _calculate_time_distance(self, schedule_type: str, schedule: dict) -> (int, str):
-        """
+        """A method that calculates the time distance between two `datetime` objects.
+
+        :::note
+        This method is used only by [`CheckFirewall.check_scheduled_updates()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallcheck_scheduled_updates) method and it expects some information
+        to be already available.
+        :::
+
+        # Parameters
+
+        schedule_type (str): A schedule type returned by PanOS, can be one of: `every-*`, `hourly`, `daily`, `weekly`,
+            `real-time`.
+        schedule (dict): Value of the `recurring` key in the API response, see [`FirewallProxy.get_update_schedules()`](/panos/docs/panos-upgrade-assurance/api/firewall_proxy#firewallproxyget_update_schedules)
+            documentation for details.
+
+        # Raises
+
+        MalformedResponseException: Thrown then the `schedule_type` is not recognizable.
+
+        # Returns
+
+        tuple(int, str): A tuple containing the calculated time difference (in minutes) and human-readable description.
+
         """
         time_distance = 0
         details = "unsupported schedule type"
 
-        if schedule_type == 'daily':
-            occurrence = schedule['at']
-            next_occurrence = datetime.strptime(f"{str(self._mp_now.date())} {occurrence}", '%Y-%m-%d %H:%M')
+        if schedule_type == "daily":
+            occurrence = schedule["at"]
+            next_occurrence = datetime.strptime(f"{str(self._mp_now.date())} {occurrence}", "%Y-%m-%d %H:%M")
 
             if self._mp_now > next_occurrence:
                 next_occurrence = next_occurrence + timedelta(days=1)
             diff = next_occurrence - self._mp_now
-            time_distance = (floor(diff.total_seconds()/60))
+            time_distance = floor(diff.total_seconds() / 60)
             details = f"at {next_occurrence.time()}"
 
-        elif schedule_type == 'hourly':
+        elif schedule_type == "hourly":
             time_distance = 60
-            details = 'every hour'
-        elif schedule_type == 'weekly':
-            occurrence_time = schedule['at']
-            occurrence_day = schedule['day-of-week']
+            details = "every hour"
+        elif schedule_type == "weekly":
+            occurrence_time = schedule["at"]
+            occurrence_day = schedule["day-of-week"]
             occurrence_wday = time.strptime(occurrence_day, "%A").tm_wday
             now_wday = self._mp_now.weekday()
 
             diff_days = (0 if occurrence_wday >= now_wday else 7) + occurrence_wday - now_wday
             next_occurrence_date = (self._mp_now + timedelta(days=diff_days)).date()
-            next_occurrence = datetime.strptime(f"{str(next_occurrence_date)} {occurrence_time}", '%Y-%m-%d %H:%M')
+            next_occurrence = datetime.strptime(f"{str(next_occurrence_date)} {occurrence_time}", "%Y-%m-%d %H:%M")
 
             if self._mp_now > next_occurrence:
                 next_occurrence = next_occurrence + timedelta(days=7)
             diff = next_occurrence - self._mp_now
-            time_distance = (floor(diff.total_seconds()/60))
+            time_distance = floor(diff.total_seconds() / 60)
             details = f"in {str(diff).split('.')[0]}"
-            
-        elif schedule_type.split('-')[0] == 'every':
-            if schedule_type.split('-')[1] == 'min':
+
+        elif schedule_type.split("-")[0] == "every":
+            if schedule_type.split("-")[1] == "min":
                 time_distance = 1
-                details = 'every minute'
-            elif schedule_type.split('-')[1] == 'hour':
+                details = "every minute"
+            elif schedule_type.split("-")[1] == "hour":
                 time_distance = 60
-                details = 'hourly'
-            elif schedule_type.split('-')[1].isnumeric():
-                time_distance = int(schedule_type.split('-')[1])
-                details = f'every {time_distance} minutes'
+                details = "hourly"
+            elif schedule_type.split("-")[1].isnumeric():
+                time_distance = int(schedule_type.split("-")[1])
+                details = f"every {time_distance} minutes"
             else:
-                raise exceptions.MalformedResponseException(f'Unknown schedule type: {schedule_type}.')
-        elif schedule_type == 'real-time':
-            details = 'unpredictable (real-time)'
+                raise exceptions.MalformedResponseException(f"Unknown schedule type: {schedule_type}.")
+        elif schedule_type == "real-time":
+            details = "unpredictable (real-time)"
         else:
-            raise exceptions.MalformedResponseException(f'Unknown schedule type: {schedule_type}.')
+            raise exceptions.MalformedResponseException(f"Unknown schedule type: {schedule_type}.")
 
         return time_distance, details
 
     def check_scheduled_updates(self, test_window: int = 60) -> CheckResult:
-        """
+        """Check if any Dynamic Update job is scheduled to run within the specified time window.
+
+        # Parameters
+
+        test_window (int, optional): (defaults to 60 minutes). A time window in minutes to look for an update job occurrence.
+            Has to be a value between `60` and `10080` (1 week equivalent). The time window is calculated based on the device's
+            local time (taken from the management plane).
+
+        # Raises
+
+        MalformedResponseException: Thrown in case API response does not meet expectations.
+
+        # Returns
+
+        CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking \
+            value of:
+
+        * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when there is no update job
+            planned within the test time window.
+        * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise, `CheckResult.reason`
+            field contains information about the planned jobs with next occurrence time provided if possible.
+        * [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when the `test_window` parameter
+            does not meet criteria.
+
         """
         if not isinstance(test_window, int):
-            raise exceptions.WrongDataTypeException(f"The test_windows parameter should be of type <class int>, got {type(test_window)} instead.")
+            raise exceptions.WrongDataTypeException(
+                f"The test_windows parameter should be of type <class int>, got {type(test_window)} instead."
+            )
 
         result = CheckResult()
 
@@ -978,16 +1023,15 @@ class CheckFirewall:
 
         schedules_in_window = []
         for name, schedule in schedules.items():
-            schedule_details = schedule['recurring']
+            schedule_details = schedule["recurring"]
 
-            if 'sync-to-peer' in schedule_details:
-                schedule_details.pop('sync-to-peer')
+            if "sync-to-peer" in schedule_details:
+                schedule_details.pop("sync-to-peer")
 
-            if 'none' not in schedule_details:
+            if "none" not in schedule_details:
                 time_distance, details = self._calculate_time_distance(
-                        schedule_type=next(iter(schedule_details.keys())),
-                        schedule=next(iter(schedule_details.values()))
-                    )
+                    schedule_type=next(iter(schedule_details.keys())), schedule=next(iter(schedule_details.values()))
+                )
                 if time_distance <= test_window:
                     schedules_in_window.append(f"{name} ({details})")
 

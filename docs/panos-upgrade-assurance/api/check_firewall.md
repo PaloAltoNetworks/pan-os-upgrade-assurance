@@ -483,7 +483,30 @@ __Returns__
 def _calculate_time_distance(schedule_type: str, schedule: dict) -> (int, str)
 ```
 
+A method that calculates the time distance between two `datetime` objects.
 
+:::note
+This method is used only by [`CheckFirewall.check_scheduled_updates()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallcheck_scheduled_updates) method and it expects some information
+to be already available.
+:::
+
+__Parameters__
+
+
+- __schedule_type__ (`str`): A schedule type returned by PanOS, can be one of: `every-*`, `hourly`, `daily`, `weekly`,
+    `real-time`.
+- __schedule__ (`dict`): Value of the `recurring` key in the API response, see [`FirewallProxy.get_update_schedules()`](/panos/docs/panos-upgrade-assurance/api/firewall_proxy#firewallproxyget_update_schedules)
+    documentation for details.
+
+__Raises__
+
+
+- `MalformedResponseException`: Thrown then the `schedule_type` is not recognizable.
+
+__Returns__
+
+
+`tuple(int, str)`: A tuple containing the calculated time difference (in minutes) and human-readable description.
 
 ### `CheckFirewall.check_scheduled_updates`
 
@@ -491,7 +514,31 @@ def _calculate_time_distance(schedule_type: str, schedule: dict) -> (int, str)
 def check_scheduled_updates(test_window: int = 60) -> CheckResult
 ```
 
+Check if any Dynamic Update job is scheduled to run within the specified time window.
 
+__Parameters__
+
+
+- __test_window__ (`int, optional`): (defaults to 60 minutes). A time window in minutes to look for an update job occurrence.
+    Has to be a value between `60` and `10080` (1 week equivalent). The time window is calculated based on the device's
+    local time (taken from the management plane).
+
+__Raises__
+
+
+- `MalformedResponseException`: Thrown in case API response does not meet expectations.
+
+__Returns__
+
+
+`CheckResult`: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking             value of:
+
+* [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when there is no update job
+    planned within the test time window.
+* [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise, `CheckResult.reason`
+    field contains information about the planned jobs with next occurrence time provided if possible.
+* [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when the `test_window` parameter
+    does not meet criteria.
 
 ### `CheckFirewall.get_content_db_version`
 
