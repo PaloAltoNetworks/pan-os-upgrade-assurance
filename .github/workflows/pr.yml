@@ -114,12 +114,12 @@ jobs:
         id: pr
         uses: peter-evans/create-pull-request@v5
         with:
+          push-to-fork: PaloAltoNetworks/panos-upgrade-assurance-pan.dev
           token: ${{ secrets.CLSC_PAT }}
           delete-branch: true
-          branch: "pua_${{ github.event.pull_request.head.ref }}"
+          branch: "${{ github.event.pull_request.head.ref }}"
           title: "[PAN-OS Upgrade Assurance][${{ github.event.pull_request.head.ref }}] documentation PREVIEW - do NOT MERGE"
           commit-message: "docs: PanOS Upgrade Assurance documentation update"
-          labels: DO NOT MERGE, netsec
           body: |
             # Description
             
