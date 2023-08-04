@@ -34,10 +34,7 @@ jobs:
             if (prs_list.length > 0){
               console.log("Removing obsolete PRs:")
               for (let pr of prs_list){
-                if (
-                  pr.head.label.includes("PaloAltoNetworks:v")
-                  && pr.head.repo.full_name == "PaloAltoNetworks/panos-upgrade-assurance-pan.dev"
-                ){
+                if (pr.head.label.includes("PaloAltoNetworks:pua_release_v")) {
                   console.log(" - removing PR (#" + pr.number + ") " + pr.title + " -> " + pr.url)
 
                   await github.rest.pulls.update({
@@ -100,7 +97,7 @@ jobs:
         with:
           token: ${{ secrets.CLSC_PAT }}
           delete-branch: true
-          branch: "upgeade_assurance_${{ github.event.release.tag_name }}"
+          branch: "pua_release_${{ github.event.release.tag_name }}"
           title: "[PAN-OS Upgrade Assurance] documentation update for release: ${{ github.event.release.tag_name }}"
           commit-message: "docs: PanOS Upgrade Assurance documentation update"
           labels: netsec
