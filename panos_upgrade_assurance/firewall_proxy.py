@@ -877,7 +877,9 @@ class FirewallProxy(Firewall):
                 free_size_number = float(free_size_short[0:-1])
 
                 if not free_size_name.isnumeric():
-                    if free_size_name == "G":
+                    if free_size_name == "T":
+                        free_size = free_size_number * 1024 * 1024
+                    elif free_size_name == "G":
                         free_size = free_size_number * 1024
                     elif free_size_name == "M":
                         free_size = free_size_number
