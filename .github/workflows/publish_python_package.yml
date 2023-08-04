@@ -1,0 +1,40 @@
+name: (publish) Python package
+run-name: Publish a Python package for release ${{ github.event.release.tag_name }}
+
+on:
+  release:
+    types: released
+
+permissions:
+  contents: read
+
+jobs:
+  pyversion:
+    name: Discover minimum Python version
+    uses: ./.github/workflows/_discover_python_ver.yml
+
+  package:
+    name: Publish Python package
+    runs-on: ubuntu-latest
+    needs: pyversion
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ needs.pyversion.outputs.pyversion }}
+
+      - name: Install Poetry
+        uses: Gr1N/setup-poetry@v8
+
+      - name: Create Poetry venv 
+        run: |
+          poetry env use ${{ needs.pyversion.outputs.pyversion }}
+      
+      - name: Publish to PyPI
+        env:
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          poetry publish --build --skip-existing
