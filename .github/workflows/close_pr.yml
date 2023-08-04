@@ -35,7 +35,7 @@ jobs:
             let prs_list = prs.data
 
             for (let pr of prs_list){
-              if (pr.head.label == "PaloAltoNetworks:${{ github.event.pull_request.head.ref }}"){
+              if (pr.head.label == "PaloAltoNetworks:pua_prev_${{ github.event.pull_request.head.ref }}"){
                 await github.rest.pulls.update({
                   owner: "PaloAltoNetworks",
                   repo: "pan.dev",
