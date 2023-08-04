@@ -61,3 +61,4 @@ sidebar.json
 requirements.txt
 .coverage
 openssl.cnf
+coverage.xml
