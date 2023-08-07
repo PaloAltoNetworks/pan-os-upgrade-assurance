@@ -60,3 +60,4 @@ sidebar.json
 .python-version
 requirements.txt
 .coverage
+coverage.xml
