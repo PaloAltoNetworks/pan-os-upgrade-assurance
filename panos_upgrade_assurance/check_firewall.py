@@ -883,19 +883,25 @@ class CheckFirewall:
         * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise, `CheckResult.reason`
             field contains information about the 1<sup>st</sup> job found with status different than FIN (job ID and the actual
             status).
+        * [`CheckStatus.SKIPPED`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when there are no jobs on a
+            device.
 
         """
         result = CheckResult()
 
         all_jobs = self._node.get_jobs()
 
-        for jid, job in all_jobs.items():
-            if job["status"] != "FIN":
-                result.reason = f"At least one job (ID={jid}) is not in finished state (state={job['status']})."
-                return result
-
-        result.status = CheckStatus.SUCCESS
-        return result
+        if all_jobs:
+            for jid, job in all_jobs.items():
+                if job["status"] != "FIN":
+                    result.reason = f"At least one job (ID={jid}) is not in finished state (state={job['status']})."
+                    return result
+            result.status = CheckStatus.SUCCESS
+            return result
+        else:
+            result.status = CheckStatus.SKIPPED
+            result.reason = "No jobs found on device. This is unusually, please investigate."
+            return result
 
     def get_content_db_version(self) -> Dict[str, str]:
         """Get Content DB version.

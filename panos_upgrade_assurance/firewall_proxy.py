@@ -1160,9 +1160,10 @@ class FirewallProxy(Firewall):
         jobs = self.op_parser(cmd="show jobs all")
         results = dict()
 
-        for job in jobs["job"]:
-            jid = job["id"]
-            job.pop("id")
-            results[jid] = job
+        if jobs:
+            for job in jobs["job"]:
+                jid = job["id"]
+                job.pop("id")
+                results[jid] = job
 
         return results

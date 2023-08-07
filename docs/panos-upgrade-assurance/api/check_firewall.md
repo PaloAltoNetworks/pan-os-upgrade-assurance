@@ -476,6 +476,8 @@ __Returns__
 * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise, `CheckResult.reason`
     field contains information about the 1<sup>st</sup> job found with status different than FIN (job ID and the actual
     status).
+* [`CheckStatus.SKIPPED`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when there are no jobs on a
+    device.
 
 ### `CheckFirewall.get_content_db_version`
 

@@ -909,6 +909,90 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
 
         assert check_firewall_mock.check_ssl_cert_requirements(rsa=rsa, ecdsa=ecdsa) == CheckResult(status=CheckStatus.SUCCESS)
 
+    def test_check_jobs_success(self, check_firewall_mock):
+        jobs = {
+            "4": {
+                "tenq": "2023/08/07 04:00:40",
+                "tdeq": "04:00:40",
+                "user": "Auto update agent",
+                "type": "WildFire",
+                "status": "FIN",
+                "queued": "NO",
+                "stoppable": "no",
+                "result": "OK",
+                "tfin": "2023/08/07 04:00:45",
+                "description": None,
+                "positionInQ": "0",
+                "progress": "2023/08/07 04:00:45",
+                "details": {"line": ["Configuration committed successfully", "Successfully committed last configuration"]},
+                "warnings": None,
+            },
+            "1": {
+                "tenq": "2023/08/07 03:59:57",
+                "tdeq": "03:59:57",
+                "user": None,
+                "type": "AutoCom",
+                "status": "FIN",
+                "queued": "NO",
+                "stoppable": "no",
+                "result": "OK",
+                "tfin": "2023/08/07 04:00:28",
+                "description": None,
+                "positionInQ": "0",
+                "progress": "100",
+                "details": {"line": ["Configuration committed successfully", "Successfully committed last configuration"]},
+                "warnings": None,
+            },
+        }
+
+        check_firewall_mock._node.get_jobs = lambda: jobs
+
+        assert check_firewall_mock.check_non_finished_jobs() == CheckResult(status=CheckStatus.SUCCESS)
+
+    def test_check_jobs_failure(self, check_firewall_mock):
+        jobs = {
+            "4": {
+                "tenq": "2023/08/07 04:00:40",
+                "tdeq": "04:00:40",
+                "user": "Auto update agent",
+                "type": "WildFire",
+                "status": "ACC",
+                "queued": "NO",
+                "stoppable": "no",
+                "result": "OK",
+                "tfin": "2023/08/07 04:00:45",
+                "description": None,
+                "positionInQ": "0",
+                "progress": "2023/08/07 04:00:45",
+                "details": {"line": ["Configuration committed successfully", "Successfully committed last configuration"]},
+                "warnings": None,
+            },
+            "1": {
+                "tenq": "2023/08/07 03:59:57",
+                "tdeq": "03:59:57",
+                "user": None,
+                "type": "AutoCom",
+                "status": "FIN",
+                "queued": "NO",
+                "stoppable": "no",
+                "result": "OK",
+                "tfin": "2023/08/07 04:00:28",
+                "description": None,
+                "positionInQ": "0",
+                "progress": "100",
+                "details": {"line": ["Configuration committed successfully", "Successfully committed last configuration"]},
+                "warnings": None,
+            },
+        }
+        check_firewall_mock._node.get_jobs = lambda: jobs
+        result = CheckResult(status=CheckStatus.FAIL, reason="At least one job (ID=4) is not in finished state (state=ACC).")
+        assert check_firewall_mock.check_non_finished_jobs() == result
+
+    def test_check_jobs_no_jobs(self, check_firewall_mock):
+        check_firewall_mock._node.get_jobs = lambda: {}
+        result = CheckResult(status=CheckStatus.SKIPPED, reason="No jobs found on device. This is unusually, please investigate.")
+        assert check_firewall_mock.check_non_finished_jobs() == result
+
     def test_run_readiness_checks(self, check_firewall_mock):
         check_firewall_mock._check_method_mapping = {
             "check1": MagicMock(return_value=True),

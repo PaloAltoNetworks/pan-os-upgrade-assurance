@@ -1050,6 +1050,105 @@ class TestFirewallProxy:
             "year": "2023",
         }
 
+    def test_get_jobs(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <job>
+                <tenq>2023/08/07 04:00:40</tenq>
+                <tdeq>04:00:40</tdeq>
+                <id>4</id>
+                <user>Auto update agent</user>
+                <type>WildFire</type>
+                <status>FIN</status>
+                <queued>NO</queued>
+                <stoppable>no</stoppable>
+                <result>OK</result>
+                <tfin>2023/08/07 04:00:45</tfin>
+                <description/>
+                <positionInQ>0</positionInQ>
+                <progress>2023/08/07 04:00:45</progress>
+                <details>
+                    <line>Configuration committed successfully</line>
+                    <line>Successfully committed last configuration</line>
+                </details>
+                <warnings/>
+                </job>
+                <job>
+                <tenq>2023/08/07 03:59:57</tenq>
+                <tdeq>03:59:57</tdeq>
+                <id>1</id>
+                <user/>
+                <type>AutoCom</type>
+                <status>FIN</status>
+                <queued>NO</queued>
+                <stoppable>no</stoppable>
+                <result>OK</result>
+                <tfin>2023/08/07 04:00:28</tfin>
+                <description/>
+                <positionInQ>0</positionInQ>
+                <progress>100</progress>
+                <details>
+                    <line>Configuration committed successfully</line>
+                    <line>Successfully committed last configuration</line>
+                </details>
+                <warnings/>
+                </job>
+            </result>
+        </response>
+        """
+
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_jobs() == {
+            "4": {
+                "tenq": "2023/08/07 04:00:40",
+                "tdeq": "04:00:40",
+                "user": "Auto update agent",
+                "type": "WildFire",
+                "status": "FIN",
+                "queued": "NO",
+                "stoppable": "no",
+                "result": "OK",
+                "tfin": "2023/08/07 04:00:45",
+                "description": None,
+                "positionInQ": "0",
+                "progress": "2023/08/07 04:00:45",
+                "details": {"line": ["Configuration committed successfully", "Successfully committed last configuration"]},
+                "warnings": None,
+            },
+            "1": {
+                "tenq": "2023/08/07 03:59:57",
+                "tdeq": "03:59:57",
+                "user": None,
+                "type": "AutoCom",
+                "status": "FIN",
+                "queued": "NO",
+                "stoppable": "no",
+                "result": "OK",
+                "tfin": "2023/08/07 04:00:28",
+                "description": None,
+                "positionInQ": "0",
+                "progress": "100",
+                "details": {"line": ["Configuration committed successfully", "Successfully committed last configuration"]},
+                "warnings": None,
+            },
+        }
+
+    def test_get_jobs_no_jobs(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+            </result>
+        </response>
+        """
+
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_jobs() == {}
+
     def test_get_certificates(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
