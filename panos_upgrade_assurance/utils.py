@@ -159,6 +159,7 @@ class ConfigParser:
         self,
         valid_elements: Iterable,
         requested_config: Optional[List[Union[str, dict]]] = None,
+        ignore_invalid_config: Optional[bool] = False
     ):
         """ConfigParser constructor.
 
@@ -168,13 +169,19 @@ class ConfigParser:
         * if `requested_config` is `None` we immediately treat it as if `all`  was passed implicitly
             (see [`dialect`](/panos/docs/panos-upgrade-assurance/dialect)) - it's expanded to `valid_elements`
         * `_requested_config_names` is introduced as `requested_config` stripped of any element configurations. Additionally, we
-            do verification if elements of this variable match `valid_elements`. An exception is thrown if not.
+            do verification if all elements of this variable match `valid_elements`, if not, an exception is thrown by default.
+            `request_config` is checked at top level level key in case of nested dictionaries within the list.
+        * if `ignore_invalid_config` is set to `True`, we ignore any invalid configurations passed in the `requested_config` -
+            (no exception thrown) and we remove these invalid configurations from `_requested_config_names` and
+            `requested_config`.
 
         # Parameters
 
         valid_elements (iterable): Valid elements against which we check the requested config.
         requested_config (list, optional): (defaults to `None`) A list of requested configuration items with an optional
             configuration.
+        ignore_invalid_config (bool, optional): (defaults to `False`) Whether to ignore invalid configurations in
+            `requested_config` or throw an exception.
 
         # Raises
 
@@ -188,9 +195,19 @@ class ConfigParser:
             self._requested_config_names = set(
                 [ConfigParser._extract_element_name(config_keyword) for config_keyword in self.requested_config]
             )
+
+            non_existing_keys = set()
             for config_name in self._requested_config_names:
                 if not self._is_element_included(element=config_name):
-                    raise exceptions.UnknownParameterException(f"Unknown configuration parameter passed: {config_name}.")
+                    non_existing_keys.add(config_name)
+
+            if not ignore_invalid_config:  # if invalid config is not accepted
+                if non_existing_keys:      # and non existing keys found
+                    raise exceptions.UnknownParameterException(f"Unknown configuration parameters passed: {non_existing_keys}.")
+            else:               # invalid config is accepted
+                self._requested_config_names.difference_update(non_existing_keys)  # remove non-existing keys
+                self._remove_invalid_requested_config(invalid_keys=non_existing_keys)
+
         else:
             self._requested_config_names = set(valid_elements)
             self.requested_config = list(valid_elements)  # Meaning 'all' valid tests
@@ -247,6 +264,18 @@ class ConfigParser:
                 )
         else:
             raise exceptions.WrongDataTypeException("Config definition is neither string or dict")
+
+    def _remove_invalid_requested_config(self, invalid_keys: set) -> None:
+        """Remove invalid keys from the requested configuration (`self.requested_config`).
+
+        # Parameters
+
+        invalid_keys (set): A set of keys to remove from `self.requested_config`.
+        """
+
+        for config_element in self.requested_config[:]:
+            if ConfigParser._extract_element_name(config_element) in invalid_keys:
+                self.requested_config.remove(config_element)
 
     def _expand_all(self) -> None:
         """Expand key word `'all'` to  `self.valid_elements`.

@@ -235,10 +235,10 @@ class SnapshotCompare:
     ) -> Dict[str, dict]:
         """The static method to calculate a difference between two dictionaries.
 
-        By default dictionaries are compared by going down all nested levels, to the point where key-value pairs are just strings
-        or numbers. It is possible to configure which keys from these pairs should be compared (by default we compare all
-        available keys). This is done using the `properties` parameter. It's a list of the bottom most level keys. For example,
-        when comparing route tables snapshots are formatted like:
+        By default dictionaries are compared by going down all nested levels. It is possible to configure which keys on each
+        level should be compared (by default we compare all available keys). This is done using the `properties` parameter.
+        It's a list of keys that can be compared or skipped on each level. For example, when comparing route tables snapshots are
+        formatted like:
 
         ```python showLineNumbers
         {
@@ -258,8 +258,9 @@ class SnapshotCompare:
         }
         ```
 
-        The bottom most level keys are:
+        The keys to process here can be:
 
+        - 'default_0.0.0.0/0_ethernet1/3',
         - `virtual-router`,
         - `destination`,
         - `nexthop`,
@@ -405,11 +406,11 @@ class SnapshotCompare:
 
         common_keys = left_side_to_compare.keys() & right_side_to_compare.keys()
         if common_keys:
-            next_level_value = left_side_to_compare[next(iter(common_keys))]
-            at_lowest_level = True if not isinstance(next_level_value, dict) else False
             keys_to_check = (
-                ConfigParser(valid_elements=set(common_keys), requested_config=properties).prepare_config()
-                if at_lowest_level
+                ConfigParser(valid_elements=set(common_keys),
+                             requested_config=properties,
+                             ignore_invalid_config=True).prepare_config()
+                if properties
                 else common_keys
             )
 

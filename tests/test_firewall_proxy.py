@@ -273,6 +273,27 @@ class TestFirewallProxy:
                         <base-license-name>PA-VM</base-license-name>
                         <authcode />
                     </entry>
+                    <entry>
+                        <feature>Logging Service</feature>
+                        <description>Device Logging Service</description>
+                        <serial>00000000000</serial>
+                        <issued>June 29, 2022</issued>
+                        <expires>August 04, 2024</expires>
+                        <expired>no</expired>
+                        <custom>
+                            <_Log_Storage_TB>7</_Log_Storage_TB>
+                        </custom>
+                        <authcode/>
+                    </entry>
+                    <entry>
+                        <feature>Premium</feature>
+                        <description>24 x 7 phone support; advanced replacement hardware service</description>
+                        <serial>00000000000</serial>
+                        <issued>May 02, 2023</issued>
+                        <expires>June 30, 2028</expires>
+                        <expired>no</expired>
+                        <authcode>12345678</authcode>
+                    </entry>
                 </licenses>
             </result>
         </response>
@@ -281,15 +302,38 @@ class TestFirewallProxy:
         fw_proxy_mock.op.return_value = raw_response
 
         assert fw_proxy_mock.get_licenses() == {
-            "PAN-DB URL Filtering": {
-                "authcode": None,
-                "base-license-name": "PA-VM",
-                "description": "Palo Alto Networks URL Filtering " "License",
-                "expired": "no",
-                "expires": "December 31, 2023",
-                "feature": "PAN-DB URL Filtering",
-                "issued": "April 20, 2023",
-                "serial": "00000000000000",
+            'Logging Service': {
+                'authcode': None,
+                'custom': {
+                    '_Log_Storage_TB': '7'
+                },
+                'description': 'Device Logging Service',
+                'expired': 'no',
+                'expires': 'August 04, 2024',
+                'feature': 'Logging Service',
+                'issued': 'June 29, 2022',
+                'serial': '00000000000'
+            },
+            'PAN-DB URL Filtering': {
+                'authcode': None,
+                'base-license-name': 'PA-VM',
+                'description': 'Palo Alto Networks URL Filtering '
+                'License',
+                'expired': 'no',
+                'expires': 'December 31, 2023',
+                'feature': 'PAN-DB URL Filtering',
+                'issued': 'April 20, 2023',
+                'serial': '00000000000000'
+            },
+            'Premium': {
+                'authcode': '12345678',
+                'description': '24 x 7 phone support; advanced replacement '
+                'hardware service',
+                'expired': 'no',
+                'expires': 'June 30, 2028',
+                'feature': 'Premium',
+                'issued': 'May 02, 2023',
+                'serial': '00000000000'
             },
         }
 
