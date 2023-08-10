@@ -94,6 +94,7 @@ class CheckFirewall:
             CheckType.FREE_DISK_SPACE: self.check_free_disk_space,
             CheckType.MP_DP_CLOCK_SYNC: self.check_mp_dp_sync,
             CheckType.CERTS: self.check_ssl_cert_requirements,
+            CheckType.JOBS: self.check_non_finished_jobs,
         }
         if not skip_force_locale:
             locale.setlocale(
@@ -869,6 +870,38 @@ class CheckFirewall:
 
         result.status = CheckStatus.SUCCESS
         return result
+
+    def check_non_finished_jobs(self) -> CheckResult:
+        """Check for any job with status different than FIN.
+
+        # Returns
+
+        CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking \
+            value of:
+
+        * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when all jobs are in FIN state.
+        * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise, `CheckResult.reason`
+            field contains information about the 1<sup>st</sup> job found with status different than FIN (job ID and the actual
+            status).
+        * [`CheckStatus.SKIPPED`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when there are no jobs on a
+            device.
+
+        """
+        result = CheckResult()
+
+        all_jobs = self._node.get_jobs()
+
+        if all_jobs:
+            for jid, job in all_jobs.items():
+                if job["status"] != "FIN":
+                    result.reason = f"At least one job (ID={jid}) is not in finished state (state={job['status']})."
+                    return result
+            result.status = CheckStatus.SUCCESS
+            return result
+        else:
+            result.status = CheckStatus.SKIPPED
+            result.reason = "No jobs found on device. This is unusual, please investigate."
+            return result
 
     def get_content_db_version(self) -> Dict[str, str]:
         """Get Content DB version.

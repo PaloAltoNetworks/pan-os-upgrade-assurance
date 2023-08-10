@@ -28,6 +28,7 @@ class CheckType:
     FREE_DISK_SPACE = "free_disk_space"
     MP_DP_CLOCK_SYNC = "planes_clock_sync"
     CERTS = "certificates_requirements"
+    JOBS = "jobs"
 
 
 class SnapType:
