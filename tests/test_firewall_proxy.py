@@ -1055,44 +1055,44 @@ class TestFirewallProxy:
         <response status="success">
             <result>
                 <job>
-                <tenq>2023/08/07 04:00:40</tenq>
-                <tdeq>04:00:40</tdeq>
-                <id>4</id>
-                <user>Auto update agent</user>
-                <type>WildFire</type>
-                <status>FIN</status>
-                <queued>NO</queued>
-                <stoppable>no</stoppable>
-                <result>OK</result>
-                <tfin>2023/08/07 04:00:45</tfin>
-                <description/>
-                <positionInQ>0</positionInQ>
-                <progress>2023/08/07 04:00:45</progress>
-                <details>
-                    <line>Configuration committed successfully</line>
-                    <line>Successfully committed last configuration</line>
-                </details>
-                <warnings/>
+                    <tenq>2023/08/07 04:00:40</tenq>
+                    <tdeq>04:00:40</tdeq>
+                    <id>4</id>
+                    <user>Auto update agent</user>
+                    <type>WildFire</type>
+                    <status>FIN</status>
+                    <queued>NO</queued>
+                    <stoppable>no</stoppable>
+                    <result>OK</result>
+                    <tfin>2023/08/07 04:00:45</tfin>
+                    <description/>
+                    <positionInQ>0</positionInQ>
+                    <progress>2023/08/07 04:00:45</progress>
+                    <details>
+                        <line>Configuration committed successfully</line>
+                        <line>Successfully committed last configuration</line>
+                    </details>
+                    <warnings/>
                 </job>
                 <job>
-                <tenq>2023/08/07 03:59:57</tenq>
-                <tdeq>03:59:57</tdeq>
-                <id>1</id>
-                <user/>
-                <type>AutoCom</type>
-                <status>FIN</status>
-                <queued>NO</queued>
-                <stoppable>no</stoppable>
-                <result>OK</result>
-                <tfin>2023/08/07 04:00:28</tfin>
-                <description/>
-                <positionInQ>0</positionInQ>
-                <progress>100</progress>
-                <details>
-                    <line>Configuration committed successfully</line>
-                    <line>Successfully committed last configuration</line>
-                </details>
-                <warnings/>
+                    <tenq>2023/08/07 03:59:57</tenq>
+                    <tdeq>03:59:57</tdeq>
+                    <id>1</id>
+                    <user/>
+                    <type>AutoCom</type>
+                    <status>FIN</status>
+                    <queued>NO</queued>
+                    <stoppable>no</stoppable>
+                    <result>OK</result>
+                    <tfin>2023/08/07 04:00:28</tfin>
+                    <description/>
+                    <positionInQ>0</positionInQ>
+                    <progress>100</progress>
+                    <details>
+                        <line>Configuration committed successfully</line>
+                        <line>Successfully committed last configuration</line>
+                    </details>
+                    <warnings/>
                 </job>
             </result>
         </response>

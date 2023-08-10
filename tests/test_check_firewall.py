@@ -990,7 +990,7 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
 
     def test_check_jobs_no_jobs(self, check_firewall_mock):
         check_firewall_mock._node.get_jobs = lambda: {}
-        result = CheckResult(status=CheckStatus.SKIPPED, reason="No jobs found on device. This is unusually, please investigate.")
+        result = CheckResult(status=CheckStatus.SKIPPED, reason="No jobs found on device. This is unusual, please investigate.")
         assert check_firewall_mock.check_non_finished_jobs() == result
 
     def test_run_readiness_checks(self, check_firewall_mock):

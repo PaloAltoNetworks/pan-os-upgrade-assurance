@@ -900,7 +900,7 @@ class CheckFirewall:
             return result
         else:
             result.status = CheckStatus.SKIPPED
-            result.reason = "No jobs found on device. This is unusually, please investigate."
+            result.reason = "No jobs found on device. This is unusual, please investigate."
             return result
 
     def get_content_db_version(self) -> Dict[str, str]:
