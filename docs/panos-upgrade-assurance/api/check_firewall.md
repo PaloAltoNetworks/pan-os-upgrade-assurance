@@ -459,28 +459,11 @@ __Returns__
 * [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when the certificate's
     properties (installed or required) are not supported.
 
-### `CheckFirewall.check_non_finished_jobs`
-
-```python
-def check_non_finished_jobs() -> CheckResult
-```
-
-Check for any job with status different than FIN.
-
-__Returns__
-
-
-`CheckResult`: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking             value of:
-
-* [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when all jobs are in FIN state.
-* [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise, `CheckResult.reason`
-    field contains information about the 1<sup>st</sup> job found with status different than FIN (job ID and the actual
-    status).
-
 ### `CheckFirewall._calculate_time_distance`
 
 ```python
-def _calculate_time_distance(schedule_type: str, schedule: dict) -> (int, str)
+def _calculate_time_distance(now_dt: datetime, schedule_type: str,
+                             schedule: dict) -> (int, str)
 ```
 
 A method that calculates the time distance between two `datetime` objects.
@@ -493,6 +476,7 @@ to be already available.
 __Parameters__
 
 
+- __now_dt__ (`datetime`): A `datetime` object representing the current moment in time.
 - __schedule_type__ (`str`): A schedule type returned by PanOS, can be one of: `every-*`, `hourly`, `daily`, `weekly`,
     `real-time`.
 - __schedule__ (`dict`): Value of the `recurring` key in the API response, see [`FirewallProxy.get_update_schedules()`](/panos/docs/panos-upgrade-assurance/api/firewall_proxy#firewallproxyget_update_schedules)

@@ -95,7 +95,6 @@ class CheckFirewall:
             CheckType.FREE_DISK_SPACE: self.check_free_disk_space,
             CheckType.MP_DP_CLOCK_SYNC: self.check_mp_dp_sync,
             CheckType.CERTS: self.check_ssl_cert_requirements,
-            CheckType.JOBS: self.check_non_finished_jobs,
             CheckType.UPDATES: self.check_scheduled_updates,
         }
         if not skip_force_locale:
@@ -864,33 +863,7 @@ class CheckFirewall:
         result.status = CheckStatus.SUCCESS
         return result
 
-    def check_non_finished_jobs(self) -> CheckResult:
-        """Check for any job with status different than FIN.
-
-        # Returns
-
-        CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking \
-            value of:
-
-        * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when all jobs are in FIN state.
-        * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise, `CheckResult.reason`
-            field contains information about the 1<sup>st</sup> job found with status different than FIN (job ID and the actual
-            status).
-
-        """
-        result = CheckResult()
-
-        all_jobs = self._node.get_jobs()
-
-        for jid, job in all_jobs.items():
-            if job["status"] != "FIN":
-                result.reason = f"At least one job (ID={jid}) is not in finished state (state={job['status']})."
-                return result
-
-        result.status = CheckStatus.SUCCESS
-        return result
-
-    def _calculate_time_distance(self, schedule_type: str, schedule: dict) -> (int, str):
+    def _calculate_time_distance(self, now_dt: datetime, schedule_type: str, schedule: dict) -> (int, str):
         """A method that calculates the time distance between two `datetime` objects.
 
         :::note
@@ -900,6 +873,7 @@ class CheckFirewall:
 
         # Parameters
 
+        now_dt (datetime): A `datetime` object representing the current moment in time.
         schedule_type (str): A schedule type returned by PanOS, can be one of: `every-*`, `hourly`, `daily`, `weekly`,
             `real-time`.
         schedule (dict): Value of the `recurring` key in the API response, see [`FirewallProxy.get_update_schedules()`](/panos/docs/panos-upgrade-assurance/api/firewall_proxy#firewallproxyget_update_schedules)
@@ -919,11 +893,11 @@ class CheckFirewall:
 
         if schedule_type == "daily":
             occurrence = schedule["at"]
-            next_occurrence = datetime.strptime(f"{str(self._mp_now.date())} {occurrence}", "%Y-%m-%d %H:%M")
+            next_occurrence = datetime.strptime(f"{str(now_dt.date())} {occurrence}", "%Y-%m-%d %H:%M")
 
-            if self._mp_now > next_occurrence:
+            if now_dt > next_occurrence:
                 next_occurrence = next_occurrence + timedelta(days=1)
-            diff = next_occurrence - self._mp_now
+            diff = next_occurrence - now_dt
             time_distance = floor(diff.total_seconds() / 60)
             details = f"at {next_occurrence.time()}"
 
@@ -934,15 +908,15 @@ class CheckFirewall:
             occurrence_time = schedule["at"]
             occurrence_day = schedule["day-of-week"]
             occurrence_wday = time.strptime(occurrence_day, "%A").tm_wday
-            now_wday = self._mp_now.weekday()
+            now_wday = now_dt.weekday()
 
             diff_days = (0 if occurrence_wday >= now_wday else 7) + occurrence_wday - now_wday
-            next_occurrence_date = (self._mp_now + timedelta(days=diff_days)).date()
+            next_occurrence_date = (now_dt + timedelta(days=diff_days)).date()
             next_occurrence = datetime.strptime(f"{str(next_occurrence_date)} {occurrence_time}", "%Y-%m-%d %H:%M")
 
-            if self._mp_now > next_occurrence:
+            if now_dt > next_occurrence:
                 next_occurrence = next_occurrence + timedelta(days=7)
-            diff = next_occurrence - self._mp_now
+            diff = next_occurrence - now_dt
             time_distance = floor(diff.total_seconds() / 60)
             details = f"in {str(diff).split('.')[0]}"
 
@@ -998,7 +972,7 @@ class CheckFirewall:
 
         result = CheckResult()
 
-        self._mp_now = self._node.get_mp_clock()
+        mp_now = self._node.get_mp_clock()
 
         schedules = self._node.get_update_schedules()
         if not schedules:
@@ -1030,7 +1004,9 @@ class CheckFirewall:
 
             if "none" not in schedule_details:
                 time_distance, details = self._calculate_time_distance(
-                    schedule_type=next(iter(schedule_details.keys())), schedule=next(iter(schedule_details.values()))
+                    now_dt=mp_now,
+                    schedule_type=next(iter(schedule_details.keys())),
+                    schedule=next(iter(schedule_details.values())),
                 )
                 if time_distance <= test_window:
                     schedules_in_window.append(f"{name} ({details})")

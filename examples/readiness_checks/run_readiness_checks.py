@@ -83,7 +83,6 @@ if __name__ == "__main__":
         "panorama",
         "ntp_sync",
         "candidate_config",
-        "check_non_finished_jobs",
         "active_support",
         # checks below have optional configuration
         {

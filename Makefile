@@ -29,4 +29,4 @@ check_line_length:
 		done < "$$FILE"; \
 	done
 
-all: format lint security test_coverage documentation
+all: lint format security test_coverage documentation

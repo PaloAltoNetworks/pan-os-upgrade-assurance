@@ -13,6 +13,7 @@ from panos_upgrade_assurance.exceptions import (
     DeviceNotLicensedException,
     UpdateServerConnectivityException,
 )
+from datetime import datetime
 
 
 @pytest.fixture(scope="function")
@@ -1021,14 +1022,9 @@ class TestFirewallProxy:
         raw_response = ET.fromstring(xml_text)
         fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_proxy_mock.get_mp_clock() == {
-            "day": "31",
-            "day_of_week": "Wed",
-            "month": "May",
-            "time": "11:50:21",
-            "tz": "PDT",
-            "year": "2023",
-        }
+        response = datetime.strptime("Wed May 31 11:50:21 2023", "%a %b %d %H:%M:%S %Y")
+
+        assert fw_proxy_mock.get_mp_clock() == response
 
     def test_get_dp_clock(self, fw_proxy_mock):
         xml_text = """
@@ -1041,14 +1037,9 @@ class TestFirewallProxy:
         raw_response = ET.fromstring(xml_text)
         fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_proxy_mock.get_dp_clock() == {
-            "day": "31",
-            "day_of_week": "Wed",
-            "month": "May",
-            "time": "11:52:34",
-            "tz": "PDT",
-            "year": "2023",
-        }
+        response = datetime.strptime("Wed May 31 11:52:34 2023", "%a %b %d %H:%M:%S %Y")
+
+        assert fw_proxy_mock.get_dp_clock() == response
 
     def test_get_certificates(self, fw_proxy_mock):
         xml_text = """
@@ -1143,3 +1134,65 @@ class TestFirewallProxy:
         fw_proxy_mock.op.return_value = raw_response
 
         assert fw_proxy_mock.get_certificates() == {}
+
+    def test_get_update_schedules(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <update-schedule>
+                <threats>
+                    <recurring>
+                    <sync-to-peer>yes</sync-to-peer>
+                    <daily>
+                        <at>15:30</at>
+                        <action>download-and-install</action>
+                    </daily>
+                    </recurring>
+                </threats>
+                <anti-virus>
+                    <recurring>
+                    <daily>
+                        <at>07:45</at>
+                        <action>download-and-install</action>
+                    </daily>
+                    </recurring>
+                </anti-virus>
+                </update-schedule>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        response = {
+            "anti-virus": {"recurring": {"daily": {"action": "download-and-install", "at": "07:45"}}},
+            "threats": {"recurring": {"daily": {"action": "download-and-install", "at": "15:30"}, "sync-to-peer": "yes"}},
+        }
+
+        assert fw_proxy_mock.get_update_schedules() == response
+
+    def test_get_update_schedules_empty_response(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_update_schedules() == {}
+
+    def test_get_update_schedules_no_update_schedules_key(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <some-element>
+                </some-element>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_update_schedules() == {}
