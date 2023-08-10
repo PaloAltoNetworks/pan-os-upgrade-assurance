@@ -863,7 +863,7 @@ class CheckFirewall:
         result.status = CheckStatus.SUCCESS
         return result
 
-    def _calculate_time_distance(self, now_dt: datetime, schedule_type: str, schedule: dict) -> (int, str):
+    def _calculate_schedule_time_diff(self, now_dt: datetime, schedule_type: str, schedule: dict) -> (int, str):
         """A method that calculates the time distance between two `datetime` objects.
 
         :::note
@@ -926,7 +926,7 @@ class CheckFirewall:
                 details = "every minute"
             elif schedule_type.split("-")[1] == "hour":
                 time_distance = 60
-                details = "hourly"
+                details = "every hour"
             elif schedule_type.split("-")[1].isnumeric():
                 time_distance = int(schedule_type.split("-")[1])
                 details = f"every {time_distance} minutes"
@@ -989,21 +989,20 @@ class CheckFirewall:
             result.reason = "Schedules test window is set to over 1 week. This test will always fail."
             return result
 
+        schedules_in_window = []
         for name, schedule in schedules.items():
             if "recurring" not in schedule.keys():
                 raise exceptions.MalformedResponseException(f"Schedule {name} has malformed configuration, missing a schedule..")
             if len(schedule) != 1:
                 raise exceptions.MalformedResponseException(f"Schedule {name} has malformed configuration: {schedule}")
 
-        schedules_in_window = []
-        for name, schedule in schedules.items():
             schedule_details = schedule["recurring"]
 
             if "sync-to-peer" in schedule_details:
                 schedule_details.pop("sync-to-peer")
 
             if "none" not in schedule_details:
-                time_distance, details = self._calculate_time_distance(
+                time_distance, details = self._calculate_schedule_time_diff(
                     now_dt=mp_now,
                     schedule_type=next(iter(schedule_details.keys())),
                     schedule=next(iter(schedule_details.values())),

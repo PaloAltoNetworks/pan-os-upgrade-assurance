@@ -922,20 +922,22 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
             ("2023-08-07 00:00:00", "real-time", None, 0, "unpredictable (real-time)"),  # this is Monday
         ],
     )
-    def test__calculate_time_distance(
+    def test__calculate_schedule_time_diff(
         self, param_now_dts, param_schedule_type, param_schedule, param_time_d, param_details, check_firewall_mock
     ):
         mock_now_dt = datetime.strptime(param_now_dts, "%Y-%m-%d %H:%M:%S")
 
-        time_delta, delta_reason = check_firewall_mock._calculate_time_distance(mock_now_dt, param_schedule_type, param_schedule)
+        time_delta, delta_reason = check_firewall_mock._calculate_schedule_time_diff(
+            mock_now_dt, param_schedule_type, param_schedule
+        )
 
         assert time_delta == param_time_d
         assert delta_reason == param_details
 
     @pytest.mark.parametrize("param_schedule_type", ["every-something", "something"])
-    def test__calculate_time_distance_exception(self, param_schedule_type, check_firewall_mock):
+    def test__calculate_schedule_time_diff_exception(self, param_schedule_type, check_firewall_mock):
         with pytest.raises(MalformedResponseException) as exception_msg:
-            check_firewall_mock._calculate_time_distance(datetime.now(), param_schedule_type, None)
+            check_firewall_mock._calculate_schedule_time_diff(datetime.now(), param_schedule_type, None)
 
         assert str(exception_msg.value) == f"Unknown schedule type: {param_schedule_type}."
 

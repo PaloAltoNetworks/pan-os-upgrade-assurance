@@ -459,11 +459,11 @@ __Returns__
 * [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when the certificate's
     properties (installed or required) are not supported.
 
-### `CheckFirewall._calculate_time_distance`
+### `CheckFirewall._calculate_schedule_time_diff`
 
 ```python
-def _calculate_time_distance(now_dt: datetime, schedule_type: str,
-                             schedule: dict) -> (int, str)
+def _calculate_schedule_time_diff(now_dt: datetime, schedule_type: str,
+                                  schedule: dict) -> (int, str)
 ```
 
 A method that calculates the time distance between two `datetime` objects.
