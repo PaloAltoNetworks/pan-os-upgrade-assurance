@@ -289,6 +289,11 @@ class TestConfigParser:
             (valid_check_types, ["all"], valid_check_types),
             (
                 valid_check_types,
+                [{"ha": None}, "content_version", {"free_disk_space": {"image_version": "10.1.1"}}],
+                [{"ha": None}, "content_version", {"free_disk_space": {"image_version": "10.1.1"}}],
+            ),
+            (
+                valid_check_types,
                 ["!ha", "!ntp_sync"],
                 list(set(valid_check_types) - {"ha", "ntp_sync"}),
             ),

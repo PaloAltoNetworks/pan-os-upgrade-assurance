@@ -929,6 +929,23 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         check_firewall_mock._check_method_mapping["check1"].assert_called_once_with()
         check_firewall_mock._check_method_mapping["check2"].assert_called_once_with(param1=123)
 
+    def test_run_readiness_checks_empty_dict(self, check_firewall_mock):
+        check_firewall_mock._check_method_mapping = {
+            "check1": MagicMock(return_value=True),
+        }
+
+        checks_configuration = [{"check1": None}]
+        report_style = False
+
+        result = check_firewall_mock.run_readiness_checks(checks_configuration, report_style)
+
+        expected_result = {
+            "check1": {"state": True, "reason": "True"},
+        }
+        assert result == expected_result
+
+        check_firewall_mock._check_method_mapping["check1"].assert_called_once_with()
+
     def test_run_readiness_checks_wrong_data_type_exception(self, check_firewall_mock):
         # Set up the input parameters for the method
         checks_configuration = ["check1", [123]]
