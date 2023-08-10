@@ -1084,7 +1084,7 @@ class FirewallProxy(Firewall):
     def get_update_schedules(self) -> dict:
         """Get schedules for all dynamic updates.
 
-        This method gets all scheduled running on a device. This includes the ones pushed from Panorama.
+        This method gets scheduled dynamic updates on a device. This includes the ones pushed from Panorama.
 
         The actual API command is `<show><config><effective-running><xpath>devices/entry/deviceconfig/system/update-schedule</xpath></effective-running></config></show>`.
 
