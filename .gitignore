@@ -59,6 +59,7 @@ poetry.lock
 sidebar.json
 .python-version
 requirements.txt
+openssl.cnf
 .coverage
 openssl.cnf
 coverage.xml

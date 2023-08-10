@@ -84,7 +84,13 @@ if __name__ == "__main__":
         "ntp_sync",
         "candidate_config",
         "active_support",
+        "jobs",
         # checks below have optional configuration
+        {"ha": {"skip_config_sync": True, "ignore_non_functional": True}},
+        {"content_version": {"version": "8635-7675"}},
+        {"expired_licenses": {"skip_licenses": ["Threat Prevention"]}},
+        {"planes_clock_sync": {"diff_threshold": 2}},
+        {"free_disk_space": {"image_version": "10.1.6-h6"}},
         {
             "certificates_requirements": {
                 "ecdsa": {
@@ -96,12 +102,7 @@ if __name__ == "__main__":
                 }
             }
         },
-        {"content_version": {"version": "8635-7675"}},
         {"dynamic_updates": {"test_window": 500}},
-        {"expired_licenses": {"skip_licenses": ["Threat Prevention"]}},
-        {"ha": {"skip_config_sync": True, "ignore_non_functional": True}},
-        {"free_disk_space": {"image_version": "10.1.6-h6"}},
-        {"planes_clock_sync": {"diff_threshold": 2}},
         # checks below require additional configuration
         {
             "session_exist": {
