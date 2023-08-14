@@ -169,7 +169,7 @@ class ConfigParser:
         * if `requested_config` is `None` we immediately treat it as if `all`  was passed implicitly
             (see [`dialect`](/panos/docs/panos-upgrade-assurance/dialect)) - it's expanded to `valid_elements`
         * `_requested_config_names` is introduced as `requested_config` stripped of any element configurations. Additionally, we
-            do verification if all elements of this variable match `valid_elements`, if not, an exception is thrown by default.
+            do verification if all elements of this variable match `valid_elements`, if they do not, an exception is thrown by default.
             `request_config` is checked at top level level key in case of nested dictionaries within the list.
         * if `ignore_invalid_config` is set to `True`, we ignore any invalid configurations passed in the `requested_config` -
             (no exception thrown) and we remove these invalid configurations from `_requested_config_names` and
