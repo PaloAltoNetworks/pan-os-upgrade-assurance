@@ -1171,7 +1171,7 @@ class FirewallProxy(Firewall):
         schedules = self.get_parser(
             xml_path="/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/update-schedule"
         )
-        if "update-schedule" not in schedules:
+        if schedules is None or "update-schedule" not in schedules:
             return {}
 
         return schedules["update-schedule"]

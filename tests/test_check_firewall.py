@@ -947,7 +947,24 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
             (
                 "2023-08-07 00:00:00",  # this is Monday
                 120,
-                {"anti-virus": {"recurring": {"daily": {"action": "download-and-install", "at": "07:45"}}}},
+                {
+                    "anti-virus": {
+                        "@ptpl": "lab",  # a template provided config
+                        "@src": "tpl",
+                        "recurring": {
+                            "@ptpl": "lab",
+                            "@src": "tpl",
+                            "daily": {
+                                "@ptpl": "lab",
+                                "@src": "tpl",
+                                "action": {"#text": "download-and-install", "@ptpl": "lab", "@src": "tpl"},
+                                "at": {"#text": "03:30", "@ptpl": "lab", "@src": "tpl"},
+                            },
+                            "sync-to-peer": {"#text": "yes", "@ptpl": "lab", "@src": "tpl"},
+                            "threshold": {"#text": "15", "@ptpl": "lab", "@src": "tpl"},
+                        },
+                    }
+                },
                 CheckResult(CheckStatus.SUCCESS, ""),
             ),
             (
