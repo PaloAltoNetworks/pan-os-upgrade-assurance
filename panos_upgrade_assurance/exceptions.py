@@ -37,6 +37,12 @@ class CommandRunFailedException(FirewallProxyException):
     pass
 
 
+class GetXpathConfigFailedException(FirewallProxyException):
+    """Used when XAPI does not return a `success` state when running a `get` operation."""
+
+    pass
+
+
 class MalformedResponseException(FirewallProxyException):
     """A generic exception class used when a response does not meet the expected standards."""
 

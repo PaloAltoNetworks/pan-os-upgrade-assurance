@@ -35,8 +35,7 @@ Execute a command on node, parse, and return response.
 
 This is just a wrapper around the
 [`Firewall.op()`](https://pan-os-python.readthedocs.io/en/latest/module-firewall.html#panos.firewall.Firewall.op) method.
-It additionally does basic error handling and tries to extract the actual device
-response.
+It additionally does basic error handling and tries to extract the actual device response.
 
 __Parameters__
 
@@ -52,6 +51,36 @@ __Raises__
 - `CommandRunFailedException`: An exception is raised if the command run status returned by a device is not successful.
 - `MalformedResponseException`: An exception is raised when a response is not parsable, no `result` element is found in the
     XML response.
+
+__Returns__
+
+`dict, xml.etree.ElementTree.Element`: The actual command output. A type is defined by the `return_xml` parameter.
+
+### `FirewallProxy.get_parser`
+
+```python
+def get_parser(xml_path: str,
+               return_xml: Optional[bool] = False) -> Union[dict, ET.Element]
+```
+
+Execute a configuration get command on a node, parse and return response.
+
+This is a wrapper around the
+[`pan.xapi.get()` method](https://github.com/kevinsteves/pan-python/blob/master/doc/pan.xapi.rst#getxpathnone)
+from the [`pan-python` package](https://pypi.org/project/pan-python/).
+It does a basic error handling and tries to extract the actual response.
+
+__Parameters__
+
+
+- __xml_path__ (`str`): An XPATH pointing to the config to be retrieved.
+- __return_xml__ (`bool`): (defaults to `False`) When set to `True`, the return data is an             [`XML object`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element)
+    instead of a Python dictionary.
+
+__Raises__
+
+
+- `GetXpathConfigFailedException`: This exception is raised when XPATH is not provided or does not exist.
 
 __Returns__
 
@@ -942,20 +971,48 @@ def get_update_schedules() -> dict
 
 Get schedules for all dynamic updates.
 
-This method gets scheduled dynamic updates on a device. This includes the ones pushed from Panorama.
+This method gets scheduled dynamic updates on a device. This includes the ones pushed from Panorama,
+but it does not include the ones configured via `Panorama/Device Deployment/Dynamic Updates/Schedules`.
 
-The actual API command is `<show><config><effective-running><xpath>devices/entry/deviceconfig/system/update-schedule</xpath></effective-running></config></show>`.
+The actual XMLAPI command run here is `config/get` with XPATH set to
+`/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/update-schedule`.
 
 __Returns__
 
 
 `dict`: All dynamic updates schedules, key is the entity type to update, like: threats, wildfire, etc.
 
-```python showLineNumbers title="Sample output"
-{'threats': {'recurring': {'weekly': {'action': 'download-only',
-                              'at': '01:02',
-                              'day-of-week': 'wednesday'}}},
-'wildfire': {'recurring': {'real-time': None}}}
+```python showLineNumbers title="Sample output, showing values coming from Panorama"
+{'@ptpl': 'lab',
+'@src': 'tpl',
+'anti-virus': {'@ptpl': 'lab',
+                '@src': 'tpl',
+                'recurring': {'@ptpl': 'lab',
+                            '@src': 'tpl',
+                            'hourly': {'@ptpl': 'lab',
+                                        '@src': 'tpl',
+                                        'action': {'`text`': 'download-and-install',
+                                                    '@ptpl': 'lab',
+                                                    '@src': 'tpl'},
+                                        'at': {'`text`': '0',
+                                                '@ptpl': 'lab',
+                                                '@src': 'tpl'}}}},
+'global-protect-clientless-vpn': {'@ptpl': 'lab',
+                                '@src': 'tpl',
+                                'recurring': {'@ptpl': 'lab',
+                                                '@src': 'tpl',
+                                                'weekly': {'@ptpl': 'lab',
+                                                            '@src': 'tpl',
+                                                            'action': {'`text`': 'download-only',
+                                                                    '@ptpl': 'lab',
+                                                                    '@src': 'tpl'},
+                                                            'at': {'`text`': '20:00',
+                                                                '@ptpl': 'lab',
+                                                                '@src': 'tpl'},
+                                                            'day-of-week': {'`text`': 'wednesday',
+                                                                            '@ptpl': 'lab',
+                                                                            '@src': 'tpl'}}}}
+}
 ```
 
 ### `FirewallProxy.get_jobs`

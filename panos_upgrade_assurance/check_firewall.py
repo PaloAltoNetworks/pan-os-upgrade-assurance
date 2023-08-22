@@ -868,17 +868,19 @@ class CheckFirewall:
         """A method that calculates the time distance between two `datetime` objects.
 
         :::note
-        This method is used only by [`CheckFirewall.check_scheduled_updates()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallcheck_scheduled_updates) method and it expects some information
+        This method is used only by [`CheckFirewall.check_scheduled_updates()`](#checkfirewallcheck_scheduled_updates) method and it expects some information
         to be already available.
         :::
 
         # Parameters
 
-        now_dt (datetime): A `datetime` object representing the current moment in time.
+        now_dt (datetime): A `datetime` object representing the current moment in time. Ideally this should be the device's local
+            time, taken from the management plane clock.
         schedule_type (str): A schedule type returned by PanOS, can be one of: `every-*`, `hourly`, `daily`, `weekly`,
             `real-time`.
-        schedule (dict): Value of the `recurring` key in the API response, see [`FirewallProxy.get_update_schedules()`](/panos/docs/panos-upgrade-assurance/api/firewall_proxy#firewallproxyget_update_schedules)
-            documentation for details.
+        schedule (dict): Value of the `recurring` key in the API response, see
+            [`FirewallProxy.get_update_schedules()`](/panos/docs/panos-upgrade-assurance/api/firewall_proxy#firewallproxyget_update_schedules)
+            documentation for details. Both formats (locally configured and pushed from a Panorama template) are supported.
 
         # Raises
 
@@ -893,7 +895,7 @@ class CheckFirewall:
         details = "unsupported schedule type"
 
         if schedule_type == "daily":
-            occurrence = schedule["at"]
+            occurrence = schedule["at"] if isinstance(schedule["at"], str) else schedule["at"]["#text"]
             next_occurrence = datetime.strptime(f"{str(now_dt.date())} {occurrence}", "%Y-%m-%d %H:%M")
 
             if now_dt > next_occurrence:
@@ -906,8 +908,10 @@ class CheckFirewall:
             time_distance = 60
             details = "every hour"
         elif schedule_type == "weekly":
-            occurrence_time = schedule["at"]
-            occurrence_day = schedule["day-of-week"]
+            occurrence_time = schedule["at"] if isinstance(schedule["at"], str) else schedule["at"]["#text"]
+            occurrence_day = (
+                schedule["day-of-week"] if isinstance(schedule["day-of-week"], str) else schedule["day-of-week"]["#text"]
+            )
             occurrence_wday = time.strptime(occurrence_day, "%A").tm_wday
             now_wday = now_dt.weekday()
 
@@ -943,6 +947,9 @@ class CheckFirewall:
     def check_scheduled_updates(self, test_window: int = 60) -> CheckResult:
         """Check if any Dynamic Update job is scheduled to run within the specified time window.
 
+        When device is configured via Panorama, this includes schedules set up in Templates. It does not however include schedules
+        configured in `Panorama/Device Deployment/Dynamic Updates/Schedules`.
+
         # Parameters
 
         test_window (int, optional): (defaults to 60 minutes). A time window in minutes to look for an update job occurrence.
@@ -959,7 +966,7 @@ class CheckFirewall:
             value of:
 
         * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when there is no update job
-            planned within the test time window.
+            planned within the test window.
         * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise, `CheckResult.reason`
             field contains information about the planned jobs with next occurrence time provided if possible.
         * [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when the `test_window` parameter
@@ -992,24 +999,33 @@ class CheckFirewall:
 
         schedules_in_window = []
         for name, schedule in schedules.items():
-            if "recurring" not in schedule.keys():
-                raise exceptions.MalformedResponseException(f"Schedule {name} has malformed configuration, missing a schedule..")
-            if len(schedule) != 1:
-                raise exceptions.MalformedResponseException(f"Schedule {name} has malformed configuration: {schedule}")
+            # config can come from a Template, it will have some additional keys starting with '@'
+            # that we would like to skip
+            if "@" not in name:
+                if "recurring" not in schedule.keys():
+                    raise exceptions.MalformedResponseException(
+                        f"Schedule {name} has malformed configuration, missing a schedule.."
+                    )
 
-            schedule_details = schedule["recurring"]
+                schedule_details = schedule["recurring"]
 
-            if "sync-to-peer" in schedule_details:
-                schedule_details.pop("sync-to-peer")
+                # let's get rid of all keys that are not related to a schedule
+                for k in list(schedule_details.keys()):
+                    if k in ["sync-to-peer", "threshold"] or k.startswith("@"):
+                        schedule_details.pop(k)
 
-            if "none" not in schedule_details:
-                time_distance, details = self._calculate_schedule_time_diff(
-                    now_dt=mp_now,
-                    schedule_type=next(iter(schedule_details.keys())),
-                    schedule=next(iter(schedule_details.values())),
-                )
-                if time_distance <= test_window:
-                    schedules_in_window.append(f"{name} ({details})")
+                # we now should have a single element dict
+                if len(schedule_details) != 1:
+                    raise exceptions.MalformedResponseException(f"Schedule {name} has malformed configuration: {schedule}")
+
+                if "none" not in schedule_details:
+                    time_distance, details = self._calculate_schedule_time_diff(
+                        now_dt=mp_now,
+                        schedule_type=next(iter(schedule_details.keys())),
+                        schedule=next(iter(schedule_details.values())),
+                    )
+                    if time_distance <= test_window:
+                        schedules_in_window.append(f"{name} ({details})")
 
         if schedules_in_window:
             result.reason = f"Following schedules fall into test window: {', '.join(schedules_in_window)}."

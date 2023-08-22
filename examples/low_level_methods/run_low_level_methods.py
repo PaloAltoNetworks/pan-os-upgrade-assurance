@@ -75,50 +75,50 @@ if __name__ == "__main__":
             hostname=address, api_password=password, api_username=username, vsys=vsys
         )
 
-    # p_config = firewall.is_panorama_configured()
-    # print(f"\n  panorama configured: {p_config}")
+    p_config = firewall.is_panorama_configured()
+    print(f"\n  panorama configured: {p_config}")
 
-    # if p_config:
-    #     print(f"\n  panorama connected: {firewall.is_panorama_connected()}")
+    if p_config:
+        print(f"\n  panorama connected: {firewall.is_panorama_connected()}")
 
-    # print(f"\n  pending changed: {firewall.is_pending_changes()}")
-    # print(f"\n  full commit pending: {firewall.is_full_commit_required()}")
+    print(f"\n  pending changed: {firewall.is_pending_changes()}")
+    print(f"\n  full commit pending: {firewall.is_full_commit_required()}")
 
-    # print(f"\n  ha configuration\n{firewall.get_ha_configuration()}")
+    print(f"\n  ha configuration\n{firewall.get_ha_configuration()}")
 
-    # print(f"\n  nic statuses\n{firewall.get_nics()}")
+    print(f"\n  nic statuses\n{firewall.get_nics()}")
 
-    # print(f"\n  licenses information\n{firewall.get_licenses()}")
+    print(f"\n  licenses information\n{firewall.get_licenses()}")
 
-    # print(f"\n  support license information\n{firewall.get_support_license()}")
+    print(f"\n  support license information\n{firewall.get_support_license()}")
 
-    # print(f"\n  routes information\n{firewall.get_routes()}")
+    print(f"\n  routes information\n{firewall.get_routes()}")
 
-    # print(f"\n  arp entries information\n{firewall.get_arp_table()}")
+    print(f"\n  arp entries information\n{firewall.get_arp_table()}")
 
-    # print(f"\n  session information\n{firewall.get_session_stats()}")
+    print(f"\n  session information\n{firewall.get_session_stats()}")
 
-    # print(f"\n  session information\n{firewall.get_sessions()}")
+    print(f"\n  session information\n{firewall.get_sessions()}")
 
-    # print(f"\n  tunnels information\n{firewall.get_tunnels()}")
+    print(f"\n  tunnels information\n{firewall.get_tunnels()}")
 
-    # print(f"\n  NTP SRVs information\n{firewall.get_ntp_servers()}")
+    print(f"\n  NTP SRVs information\n{firewall.get_ntp_servers()}")
 
-    # print(f"\n  content DB version: {firewall.get_content_db_version()}")
+    print(f"\n  content DB version: {firewall.get_content_db_version()}")
 
-    # print(f"\n  latest availble content DB version: {firewall.get_latest_available_content_version()}")
+    print(f"\n  latest availble content DB version: {firewall.get_latest_available_content_version()}")
 
-    # print(f"\n  disk utilization: {firewall.get_disk_utilization()}")
+    print(f"\n  disk utilization: {firewall.get_disk_utilization()}")
 
-    # print(f"\n  available image versions: {firewall.get_available_image_data()}")
+    print(f"\n  available image versions: {firewall.get_available_image_data()}")
 
-    # print(f"\n  management plane clock: {firewall.get_mp_clock()}")
+    print(f"\n  management plane clock: {firewall.get_mp_clock()}")
 
-    # print(f"\n  data plane clock: {firewall.get_dp_clock()}")
+    print(f"\n  data plane clock: {firewall.get_dp_clock()}")
 
-    # print(f"\n  certificates: {firewall.get_certificates()}")
+    print(f"\n  certificates: {firewall.get_certificates()}")
 
-    # print(f"\n  dynamic schedules: {firewall.get_update_schedules()}")
+    print(f"\n  dynamic schedules: {firewall.get_update_schedules()}")
     pprint(firewall.get_update_schedules())
 
     print(f"\n  jobs: {firewall.get_jobs()}")

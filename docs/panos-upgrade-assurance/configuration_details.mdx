@@ -529,6 +529,11 @@ checks_configuration:
 
 Check if any Dynamic Update job is scheduled to run within the specified time window.
 
+:::note
+This includes schedules pushed from Panorama via a template, but does not include the ones configured
+in `Panorama/Device Deployment/Dynamic Updates/Schedules`.
+:::
+
 **Method:** [`CheckFirewall.check_scheduled_updates()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallcheck_scheduled_updates)
 
 **Configuration parameters**
