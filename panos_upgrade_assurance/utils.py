@@ -29,6 +29,7 @@ class CheckType:
     MP_DP_CLOCK_SYNC = "planes_clock_sync"
     CERTS = "certificates_requirements"
     JOBS = "jobs"
+    UNSUPPORTED_TRANSCEIVERS = "unsupported_transceivers"
 
 
 class SnapType:

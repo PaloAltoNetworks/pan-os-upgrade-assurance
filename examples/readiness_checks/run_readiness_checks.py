@@ -85,6 +85,7 @@ if __name__ == "__main__":
         "candidate_config",
         "active_support",
         "jobs",
+        "unsupported_transceivers",
         # checks below have optional configuration
         {"ha": {"skip_config_sync": True, "ignore_non_functional": True}},
         {"content_version": {"version": "8635-7675"}},

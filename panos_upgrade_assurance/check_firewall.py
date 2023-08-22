@@ -96,6 +96,7 @@ class CheckFirewall:
             CheckType.MP_DP_CLOCK_SYNC: self.check_mp_dp_sync,
             CheckType.CERTS: self.check_ssl_cert_requirements,
             CheckType.JOBS: self.check_non_finished_jobs,
+            CheckType.UNSUPPORTED_TRANSCEIVERS: self.check_unsupported_transceivers
         }
         if not skip_force_locale:
             locale.setlocale(
