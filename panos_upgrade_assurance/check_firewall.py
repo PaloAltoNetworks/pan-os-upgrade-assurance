@@ -1,3 +1,4 @@
+import re
 from typing import Optional, Union, List, Dict
 from math import ceil, floor
 from datetime import datetime, timedelta
@@ -1066,6 +1067,46 @@ class CheckFirewall:
             result.status = CheckStatus.SKIPPED
             result.reason = "No jobs found on device. This is unusual, please investigate."
             return result
+
+    def check_unsupported_transceivers(self) -> CheckResult:
+        """Check for any Optical Transceivers (SFPs or otherwise) that aren't supproted by Palo Alto Networks.
+
+        # Returns
+
+        CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking \
+            value of:
+
+        * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) When all optics are OEM and
+            PAN supported
+        * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise, `CheckResult.reason`
+            field contains information about which Slots and Physical ports currently have unsupported transceivers installed
+        * [`CheckStatus.SKIPPED`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when there are no transceiver
+            slots at all.
+        """
+        result = CheckResult()
+
+        system_state = self._node.get_system_state()
+
+        no_sfp_interfaces = True
+        bad_interfaces = []
+        for key, value in system_state.items():
+            if re.match(r"sys\.s[0-9]+\.p[0-9]+\.phy", key):
+                if "'sfp':" in value and "'vendor-name': OEM" not in value:
+                    bad_interfaces.append(key)
+                elif "'sfp'" in value:
+                    no_sfp_interfaces = False
+
+        if bad_interfaces:
+            result.reason = "The following interfaces have non-Palo Alto Networks supported transceivers installed: " + ", ".join(bad_interfaces)
+            return result
+
+        if no_sfp_interfaces:
+            result.status = CheckStatus.SKIPPED
+            result.reason = "No SFP Interfaces were found, or no SFP Transceivers were present in the system."
+            return result
+
+        result.status = CheckStatus.SUCCESS
+        return result
 
     def get_content_db_version(self) -> Dict[str, str]:
         """Get Content DB version.

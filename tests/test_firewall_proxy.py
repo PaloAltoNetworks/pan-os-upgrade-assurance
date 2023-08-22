@@ -35,8 +35,8 @@ class TestFirewallProxy:
         cmd = "Example cmd"
 
         assert (
-            fw_proxy_mock.op_parser(cmd)
-            == xml_parse(ET.tostring(raw_response.find("result"), encoding="utf8", method="xml"))["result"]
+                fw_proxy_mock.op_parser(cmd)
+                == xml_parse(ET.tostring(raw_response.find("result"), encoding="utf8", method="xml"))["result"]
         )
 
         fw_proxy_mock.op.assert_called_with(cmd, xml=False, cmd_xml=True, vsys=fw_proxy_mock.vsys)
@@ -421,8 +421,8 @@ class TestFirewallProxy:
             fw_proxy_mock.get_support_license()
 
         assert (
-            str(exception_msg.value)
-            == "Failed to check support info due to Unknown error. Please check network connectivity and try again."
+                str(exception_msg.value)
+                == "Failed to check support info due to Unknown error. Please check network connectivity and try again."
         )
 
     def test_get_support_license_panxapierror_exception(self, fw_proxy_mock):
@@ -955,8 +955,8 @@ class TestFirewallProxy:
         raw_response = ET.fromstring(xml_text)
         fw_proxy_mock.op.return_value = raw_response
         with pytest.raises(
-            MalformedResponseException,
-            match=r"Reported disk space block does not have typical structure: .*$",
+                MalformedResponseException,
+                match=r"Reported disk space block does not have typical structure: .*$",
         ):
             fw_proxy_mock.get_disk_utilization()
 
@@ -973,8 +973,8 @@ class TestFirewallProxy:
         raw_response = ET.fromstring(xml_text)
         fw_proxy_mock.op.return_value = raw_response
         with pytest.raises(
-            MalformedResponseException,
-            match=r"Reported disk space block does not have typical structure: .*$",
+                MalformedResponseException,
+                match=r"Reported disk space block does not have typical structure: .*$",
         ):
             fw_proxy_mock.get_disk_utilization()
 
@@ -1072,8 +1072,8 @@ class TestFirewallProxy:
             fw_proxy_mock.get_available_image_data()
 
         assert (
-            str(exception_msg.value)
-            == "Failed to check upgrade info due to Unknown error. Please check network connectivity and try again."
+                str(exception_msg.value)
+                == "Failed to check upgrade info due to Unknown error. Please check network connectivity and try again."
         )
 
     def test_get_available_image_data_panxapierror_exception(self, fw_proxy_mock):
@@ -1444,3 +1444,38 @@ class TestFirewallProxy:
         fw_proxy_mock.xapi.get.return_value = raw_response
 
         assert fw_proxy_mock.get_update_schedules() == {}
+
+    def test_get_system_state(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <![CDATA[local.brdagent: { }
+local.family: vm
+local.info: { 'family': vm, 'model': PA-VM, 'name': mp, 'ppid': 0, 'role': mp, 'slot': 1, }
+local.model: PA-VM
+local.name: mp
+local.octeon: { }
+local.ppid: 0
+local.role: mp
+local.slot: 1
+sys.s6.p1.phy: { 'duration': 3969, 'last-sample': 1970-01-01 08:00:00, 'link-partner': { }, 'media': QSFP-Plus-Fiber, 'sfp': { 'ch1': { 'rx-power': 0.00 mW, }, 'ch2': { 'rx-power': 0.00 mW, }, 'ch3': { 'rx-power': 0.00 mW, }, 'ch4': { 'rx-power': 0.00 mW, }, 'connector': Reserved, 'diagnostic-monitor': Yes, 'encoding': 64B66B, 'ex-spec-compliance-code': 0x0, 'identifier': QSFPP, 'link-len-km': 0 km, 'link-len-om1': 0 m, 'link-len-om2': 10 m, 'link-len-om3': 10 m, 'link-len-om4': 20 m, 'rx-power-alarm-hi': 0.00 mW, 'rx-power-alarm-lo': 0.00 mW, 'rx-power-warn-hi': 0.00 mW, 'rx-power-warn-lo': 0.00 mW, 'transceiver': S dist,SN,M5, 'vendor-name': FINISAR CORP    , 'vendor-part-number': FCBN410QB1C10   , 'vendor-part-rev': B , 'vendor-serial-number': YYYYYYY         , }, 'type': Ethernet, }
+]]>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        system_state_dict = fw_proxy_mock.get_system_state()
+
+        assert system_state_dict == {
+            '': '',
+            'local.brdagent': '{ }',
+            'local.family': 'vm',
+            'local.info': "{ 'family': vm, 'model': PA-VM, 'name': mp, 'ppid': 0, 'role': mp, 'slot': 1, }",
+            'local.model': 'PA-VM', 'local.name': 'mp', 'local.octeon': '{ }',
+            'local.ppid': '0',
+            'local.role': 'mp',
+            'local.slot': '1',
+            'sys.s6.p1.phy': "{ 'duration': 3969, 'last-sample': 1970-01-01 08:00:00, 'link-partner': { }, 'media': QSFP-Plus-Fiber, 'sfp': { 'ch1': { 'rx-power': 0.00 mW, }, 'ch2': { 'rx-power': 0.00 mW, }, 'ch3': { 'rx-power': 0.00 mW, }, 'ch4': { 'rx-power': 0.00 mW, }, 'connector': Reserved, 'diagnostic-monitor': Yes, 'encoding': 64B66B, 'ex-spec-compliance-code': 0x0, 'identifier': QSFPP, 'link-len-km': 0 km, 'link-len-om1': 0 m, 'link-len-om2': 10 m, 'link-len-om3': 10 m, 'link-len-om4': 20 m, 'rx-power-alarm-hi': 0.00 mW, 'rx-power-alarm-lo': 0.00 mW, 'rx-power-warn-hi': 0.00 mW, 'rx-power-warn-lo': 0.00 mW, 'transceiver': S dist,SN,M5, 'vendor-name': FINISAR CORP    , 'vendor-part-number': FCBN410QB1C10   , 'vendor-part-rev': B , 'vendor-serial-number': YYYYYYY         , }, 'type': Ethernet, }",
+        }
