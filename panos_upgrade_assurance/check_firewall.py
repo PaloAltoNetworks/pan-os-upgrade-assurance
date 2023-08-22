@@ -98,6 +98,7 @@ class CheckFirewall:
             CheckType.CERTS: self.check_ssl_cert_requirements,
             CheckType.UPDATES: self.check_scheduled_updates,
             CheckType.JOBS: self.check_non_finished_jobs,
+            CheckType.UNSUPPORTED_TRANSCEIVERS: self.check_unsupported_transceivers
         }
         if not skip_force_locale:
             locale.setlocale(

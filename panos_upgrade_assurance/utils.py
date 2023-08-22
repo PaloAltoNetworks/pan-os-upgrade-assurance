@@ -30,6 +30,7 @@ class CheckType:
     CERTS = "certificates_requirements"
     UPDATES = "dynamic_updates"
     JOBS = "jobs"
+    UNSUPPORTED_TRANSCEIVERS = "unsupported_transceivers"
 
 
 class SnapType:
