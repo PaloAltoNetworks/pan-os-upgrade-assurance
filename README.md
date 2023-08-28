@@ -1,3 +1,11 @@
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/PaloAltoNetworks/pan-os-upgrade-assurance?style=flat-square)
+![GitHub](https://img.shields.io/github/license/PaloAltoNetworks/terraform-modules-vmseries-ci-workflows?style=flat-square)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/PaloAltoNetworks/pan-os-upgrade-assurance/release.yml?style=flat-square)
+![GitHub issues](https://img.shields.io/github/issues/PaloAltoNetworks/pan-os-upgrade-assurance?style=flat-square)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/PaloAltoNetworks/pan-os-upgrade-assurance?style=flat-square)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/panos-upgrade-assurance?style=flat-square)
+
+
 # PAN-OS Upgrade Assurance
 
 ## Overview
