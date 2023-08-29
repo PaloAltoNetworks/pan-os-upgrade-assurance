@@ -119,7 +119,6 @@ if __name__ == "__main__":
     print(f"\n  certificates: {firewall.get_certificates()}")
 
     print(f"\n  dynamic schedules: {firewall.get_update_schedules()}")
-    pprint(firewall.get_update_schedules())
 
     print(f"\n  jobs: {firewall.get_jobs()}")
 
