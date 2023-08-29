@@ -112,4 +112,4 @@ jobs:
             conventional-changelog-conventionalcommits@^5.0.0
             @semantic-release/git@^10.0.1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_PAT }}
