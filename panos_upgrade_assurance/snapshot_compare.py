@@ -1,7 +1,7 @@
 from typing import Optional, Union, List, Dict
-from panos_upgrade_assurance.utils import ConfigParser, SnapType
+from panos_upgrade_assurance.utils import ConfigParser, SnapType, get_all_dict_keys
 from panos_upgrade_assurance import exceptions
-
+from itertools import chain
 
 class SnapshotCompare:
     """Class comparing snapshots of Firewall Nodes.
@@ -227,6 +227,49 @@ class SnapshotCompare:
                 result["passed"] = False
         return result
 
+
+
+    # @staticmethod
+    # def get_all_keys(nested_dict):  # NOTE keep it in snapshotcompare
+    #     keys = []
+    #     for key, value in nested_dict.items():
+    #         keys.append(key)
+    #         if isinstance(value, dict):
+    #             keys.extend(SnapshotCompare.get_all_keys(value))
+    #     return keys
+
+    @staticmethod
+    def is_key_comparison_allowed(key, properties):
+        """
+        key str
+        properties List
+        """
+        if properties is None:
+            return True
+
+        if key in properties:
+            return True
+        elif ("!"+key) in properties:
+            return False
+        elif "all" in properties:
+            return True
+        elif all((element.startswith("!") for element in properties)):  # all '!' or empty list
+            return True
+
+        return False
+
+
+    @staticmethod
+    def is_key_excluded_in_properties(key, properties):
+        if properties is None:
+            return False
+
+        if ("!"+key) in properties:
+            return True
+
+        return False
+
+
     @staticmethod
     def calculate_diff_on_dicts(
         left_side_to_compare: Dict[str, Union[str, dict]],
@@ -392,48 +435,113 @@ class SnapshotCompare:
             changed=dict(passed=True, changed_raw={}),
         )
 
+        chain_unique_set = lambda set1, set2: set(chain(set1,set2))
+
         missing = left_side_to_compare.keys() - right_side_to_compare.keys()
-        if missing:
-            result["missing"]["passed"] = False
-            for key in missing:
+        for key in missing:
+            if SnapshotCompare.is_key_comparison_allowed(key, properties):
                 result["missing"]["missing_keys"].append(key)
+                result["missing"]["passed"] = False
+
+        # if missing:
+        #     result["missing"]["passed"] = False
+        #     for key in missing:
+        #         result["missing"]["missing_keys"].append(key)
 
         added = right_side_to_compare.keys() - left_side_to_compare.keys()
-        if added:
-            result["added"]["passed"] = False
-            for key in added:
+        for key in added:
+            if SnapshotCompare.is_key_comparison_allowed(key, properties):
                 result["added"]["added_keys"].append(key)
+                result["added"]["passed"] = False
+
+        # if added:
+        #     result["added"]["passed"] = False
+        #     for key in added:
+        #         result["added"]["added_keys"].append(key)
 
         common_keys = left_side_to_compare.keys() & right_side_to_compare.keys()
         if common_keys:
-            keys_to_check = (
-                ConfigParser(valid_elements=set(common_keys),
-                             requested_config=properties,
-                             ignore_invalid_config=True).prepare_config()
-                if properties
-                else common_keys
-            )
+            print("common keys:",common_keys)
+            # keys_to_check = (
+            #     ConfigParser(valid_elements=set(common_keys),
+            #                  requested_config=properties,
+            #                  ignore_invalid_config=True).prepare_config()
+            #     if properties
+            #     else common_keys
+            # )
+            keys_to_check = common_keys  # TODO
 
             item_changed = False
             for key in keys_to_check:
+                print(f"Checking {key} in {left_side_to_compare}")
+                # if key == "PAN-DB URL Filtering":
+                #     import pdb; pdb.set_trace()
+
+
                 if right_side_to_compare[key] != left_side_to_compare[key]:
                     if isinstance(left_side_to_compare[key], str):
-                        result["changed"]["changed_raw"][key] = dict(
-                            left_snap=left_side_to_compare[key],
-                            right_snap=right_side_to_compare[key],
-                        )
-                        item_changed = True
-                    elif isinstance(left_side_to_compare[key], dict):
-                        nested_results = SnapshotCompare.calculate_diff_on_dicts(
-                            left_side_to_compare=left_side_to_compare[key],
-                            right_side_to_compare=right_side_to_compare[key],
-                            properties=properties,
-                        )
 
-                        SnapshotCompare.calculate_passed(nested_results)
-                        if not nested_results["passed"]:
-                            result["changed"]["changed_raw"][key] = nested_results
+                        print(f"is key {key} comparison allowed with {properties}")
+
+                        if SnapshotCompare.is_key_comparison_allowed(key, properties):
+                            result["changed"]["changed_raw"][key] = dict(
+                                left_snap=left_side_to_compare[key],
+                                right_snap=right_side_to_compare[key],
+                            )
                             item_changed = True
+
+                    elif isinstance(left_side_to_compare[key], dict):
+
+                        nested_keys_within_common_key = chain_unique_set(get_all_dict_keys(left_side_to_compare[key]),
+                                                                         get_all_dict_keys(right_side_to_compare[key]))
+                        print("nested keys within common key:",nested_keys_within_common_key)
+
+                        # if is key excluded in properties
+                        #   continue
+                        #
+                        # if key in properties
+                        #   ##maybe remove key from properties
+                        #   ##if any nested key in properties; call with properties
+                        #   ##else call without properties
+                        #   recursive call without properties - DO NOT ALLOW MULTI LEVEL FILTERING..
+                        #
+                        # if any nested key in properties
+                        #     ##filter properties in nested level
+                        #     recursive call
+                        #
+
+                        if SnapshotCompare.is_key_excluded_in_properties(key, properties):  # NOTE should check for exclude explicitly
+                            continue  # skip to the next key
+
+
+                        if properties and key in properties:
+                            # call without properties - DO NOT ALLOW MULTI LEVEL FILTERING..
+                            nested_results = SnapshotCompare.calculate_diff_on_dicts(
+                                left_side_to_compare=left_side_to_compare[key],
+                                right_side_to_compare=right_side_to_compare[key],
+                            )
+                        else:
+                            nested_results = SnapshotCompare.calculate_diff_on_dicts(
+                                left_side_to_compare=left_side_to_compare[key],
+                                right_side_to_compare=right_side_to_compare[key],
+                                properties=properties,
+                            )
+
+                        # if any(
+                        #         SnapshotCompare.is_key_comparison_allowed(nested_key, properties)
+                        #         for nested_key in nested_keys_within_common_key
+                        # ):
+                        #     nested_results = SnapshotCompare.calculate_diff_on_dicts(
+                        #         left_side_to_compare=left_side_to_compare[key],
+                        #         right_side_to_compare=right_side_to_compare[key],
+                        #         properties=properties,
+                        #     )
+
+                        if nested_results:  # TODO remove this
+                            SnapshotCompare.calculate_passed(nested_results)
+                            if not nested_results["passed"]:
+                                result["changed"]["changed_raw"][key] = nested_results
+                                item_changed = True
                     else:
                         raise exceptions.WrongDataTypeException(f"Unknown value format for key {key}.")
                 result["changed"]["passed"] = not item_changed

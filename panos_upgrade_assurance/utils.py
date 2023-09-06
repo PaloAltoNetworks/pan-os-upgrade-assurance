@@ -192,13 +192,16 @@ class ConfigParser:
 
         if requested_config:  # if not None or not empty list
             self.requested_config = deepcopy(requested_config)
-            self._requested_config_names = set(
-                [ConfigParser._extract_element_name(config_keyword) for config_keyword in self.requested_config]
-            )
+            self._requested_config_names = set(self._iter_extracted_config_names(self.requested_config))
+            self._requested_all_exclusive = self.is_all_exclusive(self._requested_config_names)
+
+            # self._requested_config_names = set(
+            #     [ConfigParser._extract_element_name(config_keyword) for config_keyword in self.requested_config]
+            # )
 
             non_existing_keys = set()
             for config_name in self._requested_config_names:
-                if not self._is_element_included(element=config_name):
+                if not self._is_element_valid(element=config_name):
                     non_existing_keys.add(config_name)
 
             if not ignore_invalid_config:  # if invalid config is not accepted
@@ -212,7 +215,20 @@ class ConfigParser:
             self._requested_config_names = set(valid_elements)
             self.requested_config = list(valid_elements)  # Meaning 'all' valid tests
 
-    def _is_element_included(self, element: str) -> bool:
+    def _get_pure_element_name(self, element):
+        return element[1:] if element.startswith("!") else element
+
+    @staticmethod
+    def is_all_exclusive(config):
+        """Method to check if all config elements are exclusive.
+        """
+        if all((config_name.startswith("!") for config_name in config)):  # TODO what to do for empty config
+            return True
+
+        return False
+
+
+    def _is_element_valid(self, element: str) -> bool:
         """Method verifying if a config element is a correct (supported) value.
 
         This method can also handle `not-elements` (see [`dialect`](/panos/docs/panos-upgrade-assurance/dialect)).
@@ -226,15 +242,51 @@ class ConfigParser:
         bool: `True` if the value is correct, `False` otherwise.
 
         """
-        if element in self.valid_elements or (element.startswith("!") and element[1:] in self.valid_elements):
+        if self._get_pure_element_name(element) in self.valid_elements:
             return True
         elif element == "all" and "all" in self.requested_config:
             return True
         else:
             return False
 
+
     @staticmethod
-    def _extract_element_name(config: Union[str, dict]) -> str:
+    def is_element_included(element, config):  # TODO use for is_key_comparison_allowed
+        """Method verifying if a given element should be included according to the config list.
+        """
+        if not config:  # if config list is None or empty list it should be included
+            return True
+
+        if f"!{element}" in config:
+            return False
+        elif ( element in config or "all" in config or ConfigParser.is_all_exclusive(config) ):
+            return True
+
+        return False
+
+
+    @staticmethod
+    def is_element_explicit_excluded(element, config):
+        """Method verifying if a given element should excluded.
+
+        This method is required for snapshot comparison when we need to check if we should further compare
+        nested dicts - it doesnot work to check with is_element_included for that case since nested dict key
+        might not be included but nested keys might be subject to comparison
+        """
+        if config and f"!{element}" in config:  # if config isnot none/empty and !element is in config
+            return True
+
+        return False
+
+    def _iter_extracted_config_names(self, config):
+        """
+        """
+        for config_name in config:
+            yield ConfigParser._extract_element_name(config_name)
+
+
+    @staticmethod
+    def _extract_element_name(config: Union[str, dict]) -> str:  # TODO may change param name to config_element
         """Method that extracts the name from a config element.
 
         If a config element is a string, the actual config element is returned. For elements of a dictionary type, the
@@ -272,7 +324,6 @@ class ConfigParser:
 
         invalid_keys (set): A set of keys to remove from `self.requested_config`.
         """
-
         for config_element in self.requested_config[:]:
             if ConfigParser._extract_element_name(config_element) in invalid_keys:
                 self.requested_config.remove(config_element)
@@ -285,7 +336,7 @@ class ConfigParser:
 
         This method directly operates on `self.requested_config`.
         """
-        pure_names = set([(name[1:] if name.startswith("!") else name) for name in self._requested_config_names if name != "all"])
+        pure_names = set([self._get_pure_element_name(name) for name in self._requested_config_names if name != "all"])
         self.requested_config.extend(list(self.valid_elements - pure_names))
         self.requested_config.remove("all")
 
@@ -301,19 +352,40 @@ class ConfigParser:
         list: The parsed configuration.
 
         """
-        if all((config_name.startswith("!") for config_name in self._requested_config_names)):
-            self.requested_config.insert(0, "all")
 
-        if "all" in self.requested_config:
-            self._expand_all()
+        # NOTE alternative approach to use is element included logic
+        # loop over valid elements and call is_element_included with self._requested_config_names as config param
+        # if element should be included;
+        #   get element from original requested_config and put it to final config
+        #     (need a seperate method for this to fetch config element with name if element is a dict)
+        #   if element couldnot be found in requested_config put pure name in final config
+        # finally remove the 'all' keyword from requested_config if exists
 
-        final_configs = []
+        # with this approach we change the prepare config logic completely and dont use expand all
+        # but is element included has `is_all_exclusive` call inside and it can make performance worse
+        # to call it for each element.
 
-        for config_element in self.requested_config:
-            if not ConfigParser._extract_element_name(config_element).startswith("!"):
-                final_configs.append(config_element)
+        # for valid_element in self.valid_elements:
+        #     if self.is_element_included(valid_element, self._requested_config_names):
+        #         # get requested_config element with element name ??
 
-        return final_configs
+        ##### existing approach
+        # if self.is_all_exclusive(self._requested_config_names):
+        #     self.requested_config.insert(0, "all")
+
+        # # if all((config_name.startswith("!") for config_name in self._requested_config_names)):
+        # #     self.requested_config.insert(0, "all")
+
+        # if "all" in self.requested_config:
+        #     self._expand_all()
+
+        # final_configs = []
+
+        # for config_element in self.requested_config:
+        #     if not ConfigParser._extract_element_name(config_element).startswith("!"):
+        #         final_configs.append(config_element)
+
+        # return final_configs
 
 
 def interpret_yes_no(boolstr: str) -> bool:
@@ -337,6 +409,17 @@ def interpret_yes_no(boolstr: str) -> bool:
 
     return True if boolstr == "yes" else False
 
+def get_all_dict_keys(nested_dict: dict) -> List:
+    """Get all keys for a nested dictionary in a recursive way.
+
+    # TODO docstring
+    """
+    keys = []
+    for key, value in nested_dict.items():
+        keys.append(key)
+        if isinstance(value, dict):
+            keys.extend(get_all_dict_keys(value))
+    return keys
 
 def printer(report: dict, indent_level: int = 0) -> None:  # pragma: no cover - exclude from pytest coverage
     """Print reports in human friendly format.
