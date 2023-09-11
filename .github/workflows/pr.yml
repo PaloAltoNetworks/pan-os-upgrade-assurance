@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: pack the documentation
         working-directory: docs
         run: tar --exclude .DS_Store --exclude sidebars.js -cvf documentation.tar *
@@ -84,7 +84,7 @@ jobs:
       pull-requests: write
     steps:
       - name: checkout pan.dev
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: PaloAltoNetworks/pan.dev
           token: ${{ secrets.CLSC_PAT }}
