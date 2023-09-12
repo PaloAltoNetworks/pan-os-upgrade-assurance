@@ -6,6 +6,7 @@ from panos.firewall import Firewall
 from pan.xapi import PanXapiError
 from panos_upgrade_assurance import exceptions
 from math import floor
+from datetime import datetime
 
 
 class FirewallProxy(Firewall):
@@ -36,8 +37,7 @@ class FirewallProxy(Firewall):
 
         This is just a wrapper around the
         [`Firewall.op()`](https://pan-os-python.readthedocs.io/en/latest/module-firewall.html#panos.firewall.Firewall.op) method.
-        It additionally does basic error handling and tries to extract the actual device
-        response.
+        It additionally does basic error handling and tries to extract the actual device response.
 
         # Parameters
 
@@ -65,6 +65,47 @@ class FirewallProxy(Firewall):
         resp_result = raw_response.find("result")
         if resp_result is None:
             raise exceptions.MalformedResponseException(f"No result field returned for: {cmd}")
+
+        if not return_xml:
+            resp_result = XMLParse(ET.tostring(resp_result, encoding="utf8", method="xml"))["result"]
+
+        return resp_result
+
+    def get_parser(self, xml_path: str, return_xml: Optional[bool] = False) -> Union[dict, ET.Element]:
+        """Execute a configuration get command on a node, parse and return response.
+
+        This is a wrapper around the
+        [`pan.xapi.get()` method](https://github.com/kevinsteves/pan-python/blob/master/doc/pan.xapi.rst#getxpathnone)
+        from the [`pan-python` package](https://pypi.org/project/pan-python/).
+        It does a basic error handling and tries to extract the actual response.
+
+        # Parameters
+
+        xml_path (str): An XPATH pointing to the config to be retrieved.
+        return_xml (bool): (defaults to `False`) When set to `True`, the return data is an \
+            [`XML object`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element)
+            instead of a Python dictionary.
+
+        # Raises
+
+        GetXpathConfigFailedException: This exception is raised when XPATH is not provided or does not exist.
+
+        # Returns
+        dict, xml.etree.ElementTree.Element: The actual command output. A type is defined by the `return_xml` parameter.
+
+        """
+        if xml_path is None:
+            raise exceptions.GetXpathConfigFailedException("No XPATH provided.")
+
+        raw_response = self.xapi.get(xml_path)
+        if raw_response.get("status") != "success":
+            raise exceptions.GetXpathConfigFailedException(
+                f'Failed get data under XPATH: {xml_path}, status: {raw_response.get("status")}.'
+            )
+
+        resp_result = raw_response.find("result")
+        if resp_result is None:
+            raise exceptions.GetXpathConfigFailedException(f"No data found under XPATH: {xml_path}, or path does not exist.")
 
         if not return_xml:
             resp_result = XMLParse(ET.tostring(resp_result, encoding="utf8", method="xml"))["result"]
@@ -963,39 +1004,32 @@ class FirewallProxy(Firewall):
 
         return result
 
-    def get_mp_clock(self) -> dict:
+    def get_mp_clock(self) -> datetime:
         """Get the clock information from management plane.
 
         The actual API command is `show clock`.
 
         # Returns
 
-        dict: The clock information represented as a dictionary.
-
-        ```python showLineNumbers title="Sample output"
-        {
-            'time': '00:41:36',
-            'tz': 'PDT',
-            'day': '19',
-            'month': 'Apr',
-            'year': '2023',
-            'day_of_week': 'Wed'
-        }
-        ```
+        datetime: The clock information represented as a `datetime` object.
 
         """
         time_string = self.op_parser(cmd="show clock")
-        time_dict = time_string.split()
-        result = {
-            "time": time_dict[3],
-            "tz": time_dict[4],
-            "day": time_dict[2],
-            "month": time_dict[1],
-            "year": time_dict[5],
-            "day_of_week": time_dict[0],
+        time_parsed = time_string.split()
+        time_dict = {
+            "time": time_parsed[3],
+            "tz": time_parsed[4],
+            "day": time_parsed[2],
+            "month": time_parsed[1],
+            "year": time_parsed[5],
+            "day_of_week": time_parsed[0],
         }
+        dt = datetime.strptime(
+            f"{time_dict['year']}-{time_dict['month']}-{time_dict['day']} {time_dict['time']}",
+            "%Y-%b-%d %H:%M:%S",
+        )
 
-        return result
+        return dt
 
     def get_dp_clock(self) -> dict:
         """Get the clock information from data plane.
@@ -1004,33 +1038,26 @@ class FirewallProxy(Firewall):
 
         # Returns
 
-        dict: The clock information represented as a dictionary.
-
-        ```python showLineNumbers title="Sample output"
-        {
-            'time': '00:41:36',
-            'tz': 'PDT',
-            'day': '19',
-            'month': 'Apr',
-            'year': '2023',
-            'day_of_week': 'Wed'
-        }
-        ```
+        datetime: The clock information represented as a `datetime` object.
 
         """
         response = self.op_parser(cmd="show clock more")
         time_string = dict(response)["member"]
-        time_dict = time_string.split()
-        result = {
-            "time": time_dict[5],
-            "tz": time_dict[6],
-            "day": time_dict[4],
-            "month": time_dict[3],
-            "year": time_dict[7],
-            "day_of_week": time_dict[2],
+        time_parsed = time_string.split()
+        time_dict = {
+            "time": time_parsed[5],
+            "tz": time_parsed[6],
+            "day": time_parsed[4],
+            "month": time_parsed[3],
+            "year": time_parsed[7],
+            "day_of_week": time_parsed[2],
         }
+        dt = datetime.strptime(
+            f"{time_dict['year']}-{time_dict['month']}-{time_dict['day']} {time_dict['time']}",
+            "%Y-%b-%d %H:%M:%S",
+        )
 
-        return result
+        return dt
 
     def get_certificates(self) -> dict:
         """Get information about certificates installed on a device.
@@ -1093,6 +1120,61 @@ class FirewallProxy(Firewall):
                 result[cert_name] = certificate
 
         return result
+
+    def get_update_schedules(self) -> dict:
+        """Get schedules for all dynamic updates.
+
+        This method gets scheduled dynamic updates on a device. This includes the ones pushed from Panorama,
+        but it does not include the ones configured via `Panorama/Device Deployment/Dynamic Updates/Schedules`.
+
+        The actual XMLAPI command run here is `config/get` with XPATH set to
+        `/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/update-schedule`.
+
+        # Returns
+
+        dict: All dynamic updates schedules, key is the entity type to update, like: threats, wildfire, etc.
+
+        ```python showLineNumbers title="Sample output, showing values coming from Panorama"
+        {'@ptpl': 'lab',
+        '@src': 'tpl',
+        'anti-virus': {'@ptpl': 'lab',
+                        '@src': 'tpl',
+                        'recurring': {'@ptpl': 'lab',
+                                    '@src': 'tpl',
+                                    'hourly': {'@ptpl': 'lab',
+                                                '@src': 'tpl',
+                                                'action': {'#text': 'download-and-install',
+                                                            '@ptpl': 'lab',
+                                                            '@src': 'tpl'},
+                                                'at': {'#text': '0',
+                                                        '@ptpl': 'lab',
+                                                        '@src': 'tpl'}}}},
+        'global-protect-clientless-vpn': {'@ptpl': 'lab',
+                                        '@src': 'tpl',
+                                        'recurring': {'@ptpl': 'lab',
+                                                        '@src': 'tpl',
+                                                        'weekly': {'@ptpl': 'lab',
+                                                                    '@src': 'tpl',
+                                                                    'action': {'#text': 'download-only',
+                                                                            '@ptpl': 'lab',
+                                                                            '@src': 'tpl'},
+                                                                    'at': {'#text': '20:00',
+                                                                        '@ptpl': 'lab',
+                                                                        '@src': 'tpl'},
+                                                                    'day-of-week': {'#text': 'wednesday',
+                                                                                    '@ptpl': 'lab',
+                                                                                    '@src': 'tpl'}}}}
+        }
+        ```
+
+        """
+        schedules = self.get_parser(
+            xml_path="/config/devices/entry[@name='localhost.localdomain']/deviceconfig/system/update-schedule"
+        )
+        if schedules is None or "update-schedule" not in schedules:
+            return {}
+
+        return schedules["update-schedule"]
 
     def get_jobs(self) -> dict:
         """Get details on all jobs.

@@ -1,7 +1,8 @@
 from typing import Optional, Union, List, Dict
-from math import ceil
-from datetime import datetime
+from math import ceil, floor
+from datetime import datetime, timedelta
 import locale
+import time
 
 from panos_upgrade_assurance.utils import (
     CheckResult,
@@ -94,6 +95,7 @@ class CheckFirewall:
             CheckType.FREE_DISK_SPACE: self.check_free_disk_space,
             CheckType.MP_DP_CLOCK_SYNC: self.check_mp_dp_sync,
             CheckType.CERTS: self.check_ssl_cert_requirements,
+            CheckType.UPDATES: self.check_scheduled_updates,
             CheckType.JOBS: self.check_non_finished_jobs,
         }
         if not skip_force_locale:
@@ -733,16 +735,7 @@ class CheckFirewall:
         mp_clock = self._node.get_mp_clock()
         dp_clock = self._node.get_dp_clock()
 
-        mp_dt = datetime.strptime(
-            f"{mp_clock['year']}-{mp_clock['month']}-{mp_clock['day']} {mp_clock['time']}",
-            "%Y-%b-%d %H:%M:%S",
-        )
-        dp_dt = datetime.strptime(
-            f"{dp_clock['year']}-{dp_clock['month']}-{dp_clock['day']} {dp_clock['time']}",
-            "%Y-%b-%d %H:%M:%S",
-        )
-
-        time_fluctuation = abs((mp_dt - dp_dt).total_seconds())
+        time_fluctuation = abs((mp_clock - dp_clock).total_seconds())
         if time_fluctuation > diff_threshold:
             result.reason = f"The data plane clock and management clock are different by {time_fluctuation} seconds."
         else:
@@ -869,6 +862,177 @@ class CheckFirewall:
             return result
 
         result.status = CheckStatus.SUCCESS
+        return result
+
+    def _calculate_schedule_time_diff(self, now_dt: datetime, schedule_type: str, schedule: dict) -> (int, str):
+        """A method that calculates the time distance between two `datetime` objects.
+
+        :::note
+        This method is used only by [`CheckFirewall.check_scheduled_updates()`](#checkfirewallcheck_scheduled_updates) method and it expects some information
+        to be already available.
+        :::
+
+        # Parameters
+
+        now_dt (datetime): A `datetime` object representing the current moment in time. Ideally this should be the device's local
+            time, taken from the management plane clock.
+        schedule_type (str): A schedule type returned by PanOS, can be one of: `every-*`, `hourly`, `daily`, `weekly`,
+            `real-time`.
+        schedule (dict): Value of the `recurring` key in the API response, see
+            [`FirewallProxy.get_update_schedules()`](/panos/docs/panos-upgrade-assurance/api/firewall_proxy#firewallproxyget_update_schedules)
+            documentation for details. Both formats (locally configured and pushed from a Panorama template) are supported.
+
+        # Raises
+
+        MalformedResponseException: Thrown then the `schedule_type` is not recognizable.
+
+        # Returns
+
+        tuple(int, str): A tuple containing the calculated time difference (in minutes) and human-readable description.
+
+        """
+        time_distance = 0
+        details = "unsupported schedule type"
+
+        if schedule_type == "daily":
+            occurrence = schedule["at"] if isinstance(schedule["at"], str) else schedule["at"]["#text"]
+            next_occurrence = datetime.strptime(f"{str(now_dt.date())} {occurrence}", "%Y-%m-%d %H:%M")
+
+            if now_dt > next_occurrence:
+                next_occurrence = next_occurrence + timedelta(days=1)
+            diff = next_occurrence - now_dt
+            time_distance = floor(diff.total_seconds() / 60)
+            details = f"at {next_occurrence.time()}"
+
+        elif schedule_type == "hourly":
+            time_distance = 60
+            details = "every hour"
+        elif schedule_type == "weekly":
+            occurrence_time = schedule["at"] if isinstance(schedule["at"], str) else schedule["at"]["#text"]
+            occurrence_day = (
+                schedule["day-of-week"] if isinstance(schedule["day-of-week"], str) else schedule["day-of-week"]["#text"]
+            )
+            occurrence_wday = time.strptime(occurrence_day, "%A").tm_wday
+            now_wday = now_dt.weekday()
+
+            diff_days = (0 if occurrence_wday >= now_wday else 7) + occurrence_wday - now_wday
+            next_occurrence_date = (now_dt + timedelta(days=diff_days)).date()
+            next_occurrence = datetime.strptime(f"{str(next_occurrence_date)} {occurrence_time}", "%Y-%m-%d %H:%M")
+
+            if now_dt > next_occurrence:
+                next_occurrence = next_occurrence + timedelta(days=7)
+            diff = next_occurrence - now_dt
+            time_distance = floor(diff.total_seconds() / 60)
+            details = f"in {str(diff).split('.')[0]}"
+
+        elif schedule_type.split("-")[0] == "every":
+            if schedule_type.split("-")[1] == "min":
+                time_distance = 1
+                details = "every minute"
+            elif schedule_type.split("-")[1] == "hour":
+                time_distance = 60
+                details = "every hour"
+            elif schedule_type.split("-")[1].isnumeric():
+                time_distance = int(schedule_type.split("-")[1])
+                details = f"every {time_distance} minutes"
+            else:
+                raise exceptions.MalformedResponseException(f"Unknown schedule type: {schedule_type}.")
+        elif schedule_type == "real-time":
+            details = "unpredictable (real-time)"
+        else:
+            raise exceptions.MalformedResponseException(f"Unknown schedule type: {schedule_type}.")
+
+        return time_distance, details
+
+    def check_scheduled_updates(self, test_window: int = 60) -> CheckResult:
+        """Check if any Dynamic Update job is scheduled to run within the specified time window.
+
+        When device is configured via Panorama, this includes schedules set up in Templates. It does not however include schedules
+        configured in `Panorama/Device Deployment/Dynamic Updates/Schedules`.
+
+        # Parameters
+
+        test_window (int, optional): (defaults to 60 minutes). A time window in minutes to look for an update job occurrence.
+            Has to be a value between `60` and `10080` (1 week equivalent). The time window is calculated based on the device's
+            local time (taken from the management plane).
+
+        # Raises
+
+        MalformedResponseException: Thrown in case API response does not meet expectations.
+
+        # Returns
+
+        CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking \
+            value of:
+
+        * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when there is no update job
+            planned within the test window.
+        * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise, `CheckResult.reason`
+            field contains information about the planned jobs with next occurrence time provided if possible.
+        * [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when the `test_window` parameter
+            does not meet criteria.
+
+        """
+        if not isinstance(test_window, int):
+            raise exceptions.WrongDataTypeException(
+                f"The test_windows parameter should be of type <class int>, got {type(test_window)} instead."
+            )
+
+        result = CheckResult()
+
+        mp_now = self._node.get_mp_clock()
+
+        schedules = self._node.get_update_schedules()
+        if not schedules:
+            result.status = CheckStatus.SKIPPED
+            result.reason = "No scheduled job present on the device."
+            return result
+
+        if test_window < 60:
+            result.status = CheckStatus.ERROR
+            result.reason = "Schedules test window is below the supported, safe minimum of 60 minutes."
+            return result
+        if test_window > 10080:
+            result.status = CheckStatus.ERROR
+            result.reason = "Schedules test window is set to over 1 week. This test will always fail."
+            return result
+
+        schedules_in_window = []
+        for name, schedule in schedules.items():
+            # config can come from a Template, it will have some additional keys starting with '@'
+            # that we would like to skip
+            if "@" not in name:
+                if "recurring" not in schedule.keys():
+                    raise exceptions.MalformedResponseException(
+                        f"Schedule {name} has malformed configuration, missing a schedule.."
+                    )
+
+                schedule_details = schedule["recurring"]
+
+                # let's get rid of all keys that are not related to a schedule
+                for k in list(schedule_details.keys()):
+                    if k in ["sync-to-peer", "threshold"] or k.startswith("@"):
+                        schedule_details.pop(k)
+
+                # we now should have a single element dict
+                if len(schedule_details) != 1:
+                    raise exceptions.MalformedResponseException(f"Schedule {name} has malformed configuration: {schedule}")
+
+                if "none" not in schedule_details:
+                    time_distance, details = self._calculate_schedule_time_diff(
+                        now_dt=mp_now,
+                        schedule_type=next(iter(schedule_details.keys())),
+                        schedule=next(iter(schedule_details.values())),
+                    )
+                    if time_distance <= test_window:
+                        schedules_in_window.append(f"{name} ({details})")
+
+        if schedules_in_window:
+            result.reason = f"Following schedules fall into test window: {', '.join(schedules_in_window)}."
+            return result
+
+        result.status = CheckStatus.SUCCESS
+
         return result
 
     def check_non_finished_jobs(self) -> CheckResult:

@@ -12,13 +12,17 @@ from panos_upgrade_assurance.exceptions import (
     WrongDiskSizeFormatException,
     DeviceNotLicensedException,
     UpdateServerConnectivityException,
+    GetXpathConfigFailedException,
 )
+from datetime import datetime
 
 
 @pytest.fixture(scope="function")
 def fw_proxy_mock():
     fw_proxy_obj = FirewallProxy()
     fw_proxy_obj.op = MagicMock()
+    fw_proxy_obj.generate_xapi = MagicMock()
+    fw_proxy_obj.xapi.get = MagicMock()
     yield fw_proxy_obj
 
 
@@ -73,6 +77,73 @@ class TestFirewallProxy:
         assert expected in str(exc_info.value)
 
         fw_proxy_mock.op.assert_called_with(cmd, xml=False, cmd_xml=True, vsys=fw_proxy_mock.vsys)
+
+    def test_get_parser_correct_response_defaults(self, fw_proxy_mock):
+        input_xpath = "/some/xpath"
+        xml_output_text = """
+        <response status="success">
+            <result>
+                <element>value</element>
+            </result>
+        </response>
+        """
+        xml_output = ET.fromstring(xml_output_text)
+        fw_proxy_mock.xapi.get.return_value = xml_output
+
+        response = fw_proxy_mock.get_parser(input_xpath)
+        mocked_response = xml_parse(ET.tostring(xml_output.find("result"), encoding="utf8", method="xml"))["result"]
+
+        assert response == mocked_response
+
+    def test_get_parser_correct_response_in_xml(self, fw_proxy_mock):
+        input_xpath = "/some/xpath"
+        xml_output_text = """
+        <response status="success">
+            <result>
+                <element>value</element>
+            </result>
+        </response>
+        """
+        xml_output = ET.fromstring(xml_output_text)
+        fw_proxy_mock.xapi.get.return_value = xml_output
+
+        response = fw_proxy_mock.get_parser(input_xpath, True)
+        mocked_response = xml_output.find("result")
+
+        assert response == mocked_response
+
+    def test_get_parser_no_xpath_exception(self, fw_proxy_mock):
+        with pytest.raises(GetXpathConfigFailedException) as exc_info:
+            fw_proxy_mock.get_parser(None)
+        assert "No XPATH provided." in str(exc_info.value)
+
+    def test_get_parser_incorrect_response(self, fw_proxy_mock):
+        input_xpath = "/some/xpath"
+        xml_output_text = """
+        <response status="noauth">
+            <result/>
+        </response>
+        """
+        xml_output = ET.fromstring(xml_output_text)
+        fw_proxy_mock.xapi.get.return_value = xml_output
+
+        with pytest.raises(GetXpathConfigFailedException) as exc_info:
+            fw_proxy_mock.get_parser(input_xpath)
+
+        expected = f'Failed get data under XPATH: {input_xpath}, status: {xml_output.get("status")}.'
+        assert expected == str(exc_info.value)
+
+    def test_get_parser_no_response(self, fw_proxy_mock):
+        input_xpath = "/some/xpath"
+        xml_output_text = '<response status="success"/>'
+        xml_output = ET.fromstring(xml_output_text)
+        fw_proxy_mock.xapi.get.return_value = xml_output
+
+        with pytest.raises(GetXpathConfigFailedException) as exc_info:
+            fw_proxy_mock.get_parser(input_xpath)
+
+        expected = f"No data found under XPATH: {input_xpath}, or path does not exist."
+        assert expected == str(exc_info.value)
 
     def test_is_pending_changes_true(self, fw_proxy_mock):
         xml_text = "<response status='success'><result>yes</result></response>"
@@ -1021,14 +1092,9 @@ class TestFirewallProxy:
         raw_response = ET.fromstring(xml_text)
         fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_proxy_mock.get_mp_clock() == {
-            "day": "31",
-            "day_of_week": "Wed",
-            "month": "May",
-            "time": "11:50:21",
-            "tz": "PDT",
-            "year": "2023",
-        }
+        response = datetime.strptime("Wed May 31 11:50:21 2023", "%a %b %d %H:%M:%S %Y")
+
+        assert fw_proxy_mock.get_mp_clock() == response
 
     def test_get_dp_clock(self, fw_proxy_mock):
         xml_text = """
@@ -1041,14 +1107,9 @@ class TestFirewallProxy:
         raw_response = ET.fromstring(xml_text)
         fw_proxy_mock.op.return_value = raw_response
 
-        assert fw_proxy_mock.get_dp_clock() == {
-            "day": "31",
-            "day_of_week": "Wed",
-            "month": "May",
-            "time": "11:52:34",
-            "tz": "PDT",
-            "year": "2023",
-        }
+        response = datetime.strptime("Wed May 31 11:52:34 2023", "%a %b %d %H:%M:%S %Y")
+
+        assert fw_proxy_mock.get_dp_clock() == response
 
     def test_get_jobs(self, fw_proxy_mock):
         xml_text = """
@@ -1242,3 +1303,143 @@ class TestFirewallProxy:
         fw_proxy_mock.op.return_value = raw_response
 
         assert fw_proxy_mock.get_certificates() == {}
+
+    def test_get_update_schedules(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success" code="19">
+            <result total-count="1" count="1">
+                <update-schedule ptpl="lab" src="tpl">
+                <anti-virus ptpl="lab" src="tpl">
+                    <recurring ptpl="lab" src="tpl">
+                    <threshold ptpl="lab" src="tpl">15</threshold>
+                    <daily ptpl="lab" src="tpl">
+                        <at ptpl="lab" src="tpl">00:30</at>
+                        <action ptpl="lab" src="tpl">download-and-install</action>
+                    </daily>
+                    <sync-to-peer ptpl="lab" src="tpl">yes</sync-to-peer>
+                    </recurring>
+                </anti-virus>
+                <wildfire ptpl="lab" src="tpl">
+                    <recurring ptpl="lab" src="tpl">
+                    <every-15-mins ptpl="lab" src="tpl">
+                        <at ptpl="lab" src="tpl">4</at>
+                        <action ptpl="lab" src="tpl">download-only</action>
+                        <sync-to-peer ptpl="lab" src="tpl">yes</sync-to-peer>
+                    </every-15-mins>
+                    </recurring>
+                </wildfire>
+                <global-protect-datafile ptpl="lab" src="tpl">
+                    <recurring ptpl="lab" src="tpl">
+                    <none ptpl="lab" src="tpl"/>
+                    </recurring>
+                </global-protect-datafile>
+                <wf-private ptpl="lab" src="tpl">
+                    <recurring ptpl="lab" src="tpl">
+                    <none ptpl="lab" src="tpl"/>
+                    </recurring>
+                </wf-private>
+                <global-protect-clientless-vpn ptpl="lab" src="tpl">
+                    <recurring>
+                    <daily>
+                        <at>01:45</at>
+                        <action>download-and-install</action>
+                    </daily>
+                    </recurring>
+                </global-protect-clientless-vpn>
+                <threats>
+                    <recurring>
+                    <weekly>
+                        <day-of-week>wednesday</day-of-week>
+                        <at>01:02</at>
+                        <action>download-only</action>
+                    </weekly>
+                    </recurring>
+                </threats>
+                </update-schedule>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.xapi.get.return_value = raw_response
+        # fw_proxy_mock.op.return_value = raw_response
+        # fw_proxy_mock.get_parser.return_value = raw_response
+
+        response = {
+            "@ptpl": "lab",
+            "@src": "tpl",
+            "anti-virus": {
+                "@ptpl": "lab",
+                "@src": "tpl",
+                "recurring": {
+                    "@ptpl": "lab",
+                    "@src": "tpl",
+                    "daily": {
+                        "@ptpl": "lab",
+                        "@src": "tpl",
+                        "action": {"#text": "download-and-install", "@ptpl": "lab", "@src": "tpl"},
+                        "at": {"#text": "00:30", "@ptpl": "lab", "@src": "tpl"},
+                    },
+                    "sync-to-peer": {"#text": "yes", "@ptpl": "lab", "@src": "tpl"},
+                    "threshold": {"#text": "15", "@ptpl": "lab", "@src": "tpl"},
+                },
+            },
+            "global-protect-clientless-vpn": {
+                "@ptpl": "lab",
+                "@src": "tpl",
+                "recurring": {"daily": {"action": "download-and-install", "at": "01:45"}},
+            },
+            "global-protect-datafile": {
+                "@ptpl": "lab",
+                "@src": "tpl",
+                "recurring": {"@ptpl": "lab", "@src": "tpl", "none": {"@ptpl": "lab", "@src": "tpl"}},
+            },
+            "threats": {"recurring": {"weekly": {"action": "download-only", "at": "01:02", "day-of-week": "wednesday"}}},
+            "wf-private": {
+                "@ptpl": "lab",
+                "@src": "tpl",
+                "recurring": {"@ptpl": "lab", "@src": "tpl", "none": {"@ptpl": "lab", "@src": "tpl"}},
+            },
+            "wildfire": {
+                "@ptpl": "lab",
+                "@src": "tpl",
+                "recurring": {
+                    "@ptpl": "lab",
+                    "@src": "tpl",
+                    "every-15-mins": {
+                        "@ptpl": "lab",
+                        "@src": "tpl",
+                        "action": {"#text": "download-only", "@ptpl": "lab", "@src": "tpl"},
+                        "at": {"#text": "4", "@ptpl": "lab", "@src": "tpl"},
+                        "sync-to-peer": {"#text": "yes", "@ptpl": "lab", "@src": "tpl"},
+                    },
+                },
+            },
+        }
+
+        assert fw_proxy_mock.get_update_schedules() == response
+
+    def test_get_update_schedules_empty_response(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.xapi.get.return_value = raw_response
+
+        assert fw_proxy_mock.get_update_schedules() == {}
+
+    def test_get_update_schedules_no_update_schedules_key(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <some-element>
+                </some-element>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.xapi.get.return_value = raw_response
+
+        assert fw_proxy_mock.get_update_schedules() == {}

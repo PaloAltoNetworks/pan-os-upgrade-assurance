@@ -4,6 +4,7 @@ from panos_upgrade_assurance.firewall_proxy import FirewallProxy
 from panos.panorama import Panorama
 from argparse import ArgumentParser
 from getpass import getpass
+from pprint import pprint
 
 if __name__ == "__main__":
     argparser = ArgumentParser(
@@ -116,6 +117,8 @@ if __name__ == "__main__":
     print(f"\n  data plane clock: {firewall.get_dp_clock()}")
 
     print(f"\n  certificates: {firewall.get_certificates()}")
+
+    print(f"\n  dynamic schedules: {firewall.get_update_schedules()}")
 
     print(f"\n  jobs: {firewall.get_jobs()}")
 

@@ -102,6 +102,7 @@ if __name__ == "__main__":
                 }
             }
         },
+        {"dynamic_updates": {"test_window": 500}},
         # checks below require additional configuration
         {
             "session_exist": {
