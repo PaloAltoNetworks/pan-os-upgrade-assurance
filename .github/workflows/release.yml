@@ -22,7 +22,7 @@ jobs:
       ver: ${{ steps.rc.outputs.new_release_version }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Check if new version will be produced
         id: rc
@@ -83,7 +83,7 @@ jobs:
       tag: ${{ steps.release.outputs.new_release_git_tag }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Python
         uses: actions/setup-python@v4
