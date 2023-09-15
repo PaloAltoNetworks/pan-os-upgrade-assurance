@@ -906,7 +906,7 @@ class CheckFirewall:
             return result
 
     def check_unsupported_transceivers(self) -> CheckResult:
-        """Check for any Optical Transceivers (SFPs or otherwise) that aren't supproted by Palo Alto Networks.
+        """Check for any Optical Transceivers (SFPs or otherwise) that aren't supported by Palo Alto Networks.
 
         # Returns
 
@@ -934,7 +934,7 @@ class CheckFirewall:
                     no_sfp_interfaces = False
 
         if bad_interfaces:
-            result.reason = "The following interfaces have non-Palo Alto Networks supported transceivers installed: " + ", ".join(bad_interfaces)
+            result.reason = f"The following interfaces have non-Palo Alto Networks supported transceivers installed: {', '.join(bad_interfaces)}"
             return result
 
         if no_sfp_interfaces:
