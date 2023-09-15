@@ -9,7 +9,7 @@ from math import floor
 from datetime import datetime
 
 
-class FirewallProxy(Firewall):
+class FirewallProxy:
     """Class representing a Firewall.
 
     Proxy in this class means that it is between the *high level*
@@ -26,6 +26,18 @@ class FirewallProxy(Firewall):
 
     [fw]: https://pan-os-python.readthedocs.io/en/latest/module-firewall.html#module-panos.firewall
     """
+
+    def __init__(
+        self, 
+        **kwargs
+    ):
+        if len(kwargs) == 1 and isinstance(next(iter(kwargs.values())),Firewall):
+            self.fw = next(iter(kwargs.values()))
+        else:
+            self.fw = Firewall(**kwargs)
+
+    def __getattr__(self, attr):
+        return getattr(self.fw, attr)
 
     def op_parser(
         self,
