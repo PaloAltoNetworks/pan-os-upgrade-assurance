@@ -1321,6 +1321,7 @@ class FirewallProxy:
             local.role: "mp"
             local.slot: "1"
         }
+        ```
         """
         result = {}
         show_system_state_str = self.op_parser(cmd="show system state", return_xml=True)
