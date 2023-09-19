@@ -62,10 +62,10 @@ class FirewallProxy:
             raise exceptions.WrongNumberOfArgumentsException(
                 "You cannot pass the Firewall object and the credentials at the same time."
             )
-        if firewall is None and len(kwargs) == 0:
-            raise exceptions.WrongNumberOfArgumentsException(
-                "No arguments passed, expecting either a Firewall object or credentials to a device."
-            )
+        # if firewall is None and len(kwargs) == 0:
+        #     raise exceptions.WrongNumberOfArgumentsException(
+        #         "No arguments passed, expecting either a Firewall object or credentials to a device."
+        #     )
 
         self._fw = firewall if firewall else Firewall(**kwargs)
 
