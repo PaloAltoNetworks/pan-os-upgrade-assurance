@@ -1075,8 +1075,8 @@ class CheckFirewall:
 
         # Parameters
 
-        supported_sfp_models (list, optional): A list of Transceiver "vendor-part-numbers" to treat as "supported" or
-        OEM" for the purpose of this test. Supports regex.
+        supported_sfp_regex (list, optional): List of supported transceivers, as regex strings, to mark SFP's as
+            supported even if they aren't OEM.
 
         # Returns
 
