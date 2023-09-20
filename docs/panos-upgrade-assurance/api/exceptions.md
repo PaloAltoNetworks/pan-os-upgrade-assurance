@@ -30,8 +30,8 @@ Parent class for all exceptions coming from [Utils](/panos/docs/panos-upgrade-as
 
 ## class `WrongNumberOfArgumentsException`
 
-Thrown when [FirewallProxy](/panos/docs/panos-upgrade-assurance/api/firewall_proxy) constructor is given wrong number\set
-of arguments.
+Thrown when [FirewallProxy](/panos/docs/panos-upgrade-assurance/api/firewall_proxy) constructor is given wrong number or
+set of arguments.
 
 ## class `CommandRunFailedException`
 
