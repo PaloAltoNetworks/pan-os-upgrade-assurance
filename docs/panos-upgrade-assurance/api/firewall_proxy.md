@@ -57,7 +57,7 @@ __Parameters__
 __Raises__
 
 
-- `WrongNumberOfArgumentsException`: Raised when either none or a mixture arguments is passed (for example a [`Firewall`][fw]
+- `WrongNumberOfArgumentsException`: Raised when a mixture of arguments is passed (for example a [`Firewall`][fw]
     object and firewall credentials).
 
 ### `FirewallProxy.__getattr__`

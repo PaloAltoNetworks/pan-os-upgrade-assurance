@@ -32,12 +32,8 @@ class UtilsException(Exception):
 
 
 class WrongNumberOfArgumentsException(FirewallProxyException):
-    """Thrown when [FirewallProxy](/panos/docs/panos-upgrade-assurance/api/firewall_proxy) constructor is given either both:
-
-    * the `Firewall` class object and
-    * raw credentials to the device
-
-    or no arguments at all.
+    """Thrown when [FirewallProxy](/panos/docs/panos-upgrade-assurance/api/firewall_proxy) constructor is given wrong number\set
+    of arguments.
     """
 
     pass
