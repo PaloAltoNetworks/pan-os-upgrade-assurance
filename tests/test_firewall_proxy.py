@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import MagicMock
+from panos.firewall import Firewall
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
 from xmltodict import parse as xml_parse
 import xml.etree.ElementTree as ET
@@ -19,10 +20,10 @@ from datetime import datetime
 
 @pytest.fixture(scope="function")
 def fw_proxy_mock():
-    fw_proxy_obj = FirewallProxy()
-    fw_proxy_obj.op = MagicMock()
-    fw_proxy_obj.generate_xapi = MagicMock()
-    fw_proxy_obj.xapi.get = MagicMock()
+    fw_proxy_obj = FirewallProxy(Firewall())
+    fw_proxy_obj._fw.op = MagicMock()
+    fw_proxy_obj._fw.generate_xapi = MagicMock()
+    fw_proxy_obj._fw.xapi.get = MagicMock()
     yield fw_proxy_obj
 
 
