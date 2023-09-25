@@ -55,7 +55,7 @@ jobs:
 
       - name: determine docker tags and labels
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
           images: ghcr.io/paloaltonetworks/panos_upgrade_assurance
           tags: |
