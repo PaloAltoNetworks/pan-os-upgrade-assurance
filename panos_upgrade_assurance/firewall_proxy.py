@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 from panos_upgrade_assurance.utils import interpret_yes_no
 from xmltodict import parse as XMLParse
-from typing import Optional, Union
+from typing import Optional, Union, Dict
 from panos.firewall import Firewall
 from pan.xapi import PanXapiError
 from panos_upgrade_assurance import exceptions
@@ -1301,7 +1301,7 @@ class FirewallProxy:
 
         return results
 
-    def get_system_state(self) -> dict[str, str]:
+    def get_system_state(self) -> Dict[str, str]:
         """Gets the entire output of the show system state command.
 
         Show system state returns low level information about PAN-OS and the attributes of the system. Note that this function
