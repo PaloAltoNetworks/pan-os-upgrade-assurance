@@ -98,7 +98,7 @@ class CheckFirewall:
             CheckType.CERTS: self.check_ssl_cert_requirements,
             CheckType.UPDATES: self.check_scheduled_updates,
             CheckType.JOBS: self.check_non_finished_jobs,
-            CheckType.UNSUPPORTED_TRANSCEIVERS: self.check_unsupported_transceivers
+            CheckType.UNSUPPORTED_TRANSCEIVERS: self.check_unsupported_transceivers,
         }
         if not skip_force_locale:
             locale.setlocale(
@@ -156,9 +156,9 @@ class CheckFirewall:
             return CheckResult(status=CheckStatus.ERROR, reason="Device not configured with Panorama.")
 
     def check_ha_status(
-            self,
-            skip_config_sync: Optional[bool] = False,
-            ignore_non_functional: Optional[bool] = False,
+        self,
+        skip_config_sync: Optional[bool] = False,
+        ignore_non_functional: Optional[bool] = False,
     ) -> CheckResult:
         """Checks HA pair status from the perspective of the current device.
 
@@ -207,9 +207,9 @@ class CheckFirewall:
                 result.reason = f"Both devices have the same state: {ha_pair['local-info']['state']}."
 
             elif (
-                    not skip_config_sync
-                    and interpret_yes_no(ha_pair["running-sync-enabled"])
-                    and ha_pair["running-sync"] != "synchronized"
+                not skip_config_sync
+                and interpret_yes_no(ha_pair["running-sync-enabled"])
+                and ha_pair["running-sync"] != "synchronized"
             ):
                 result.status = CheckStatus.ERROR
                 result.reason = "Device configuration is not synchronized between the nodes."
@@ -223,9 +223,9 @@ class CheckFirewall:
         return result
 
     def check_is_ha_active(
-            self,
-            skip_config_sync: Optional[bool] = False,
-            ignore_non_functional: Optional[bool] = False,
+        self,
+        skip_config_sync: Optional[bool] = False,
+        ignore_non_functional: Optional[bool] = False,
     ) -> CheckResult:
         """Checks whether this is an active node of an HA pair.
 
@@ -298,8 +298,7 @@ class CheckFirewall:
 
         """
         if not isinstance(skip_licenses, list):
-            raise exceptions.WrongDataTypeException(
-                f"The skip_licenses variable is a {type(skip_licenses)} but should be a list")
+            raise exceptions.WrongDataTypeException(f"The skip_licenses variable is a {type(skip_licenses)} but should be a list")
 
         result = CheckResult()
         try:
@@ -369,10 +368,10 @@ class CheckFirewall:
         return result
 
     def check_critical_session(
-            self,
-            source: Optional[str] = None,
-            destination: Optional[str] = None,
-            dest_port: Optional[Union[str, int]] = None,
+        self,
+        source: Optional[str] = None,
+        destination: Optional[str] = None,
+        dest_port: Optional[Union[str, int]] = None,
     ) -> CheckResult:
         """Check if a critical session is present in the sessions table.
 
@@ -856,7 +855,7 @@ class CheckFirewall:
                 return result
 
             if (cert_key_size < (rsa_min_key_size if cert_algorithm == "RSA" else ecdsa_min_key_size)) or (
-                    cert_hash.value < (rsa_min_hash.value if cert_algorithm == "RSA" else ecdsa_min_hash.value)
+                cert_hash.value < (rsa_min_hash.value if cert_algorithm == "RSA" else ecdsa_min_hash.value)
             ):
                 failed_certs.append(f"{cert_name} (size: {cert_key_size}, hash: {cert_hash_method})")
 
@@ -1167,9 +1166,9 @@ class CheckFirewall:
         return self._node.get_tunnels().get("IPSec", {})
 
     def run_readiness_checks(
-            self,
-            checks_configuration: Optional[List[Union[str, dict]]] = None,
-            report_style: bool = False,
+        self,
+        checks_configuration: Optional[List[Union[str, dict]]] = None,
+        report_style: bool = False,
     ) -> Union[Dict[str, dict], Dict[str, str]]:
         """Run readiness checks.
 
@@ -1212,8 +1211,7 @@ class CheckFirewall:
             check_result = self._check_method_mapping[check_type](
                 **check_config
             )  # (**) would pass dict config values as separate parameters to method.
-            result[check_type] = str(check_result) if report_style else {"state": bool(check_result),
-                                                                         "reason": str(check_result)}
+            result[check_type] = str(check_result) if report_style else {"state": bool(check_result), "reason": str(check_result)}
 
         return result
 
