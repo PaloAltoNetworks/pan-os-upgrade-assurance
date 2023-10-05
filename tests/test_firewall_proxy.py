@@ -35,8 +35,8 @@ class TestFirewallProxy:
         cmd = "Example cmd"
 
         assert (
-                fw_proxy_mock.op_parser(cmd)
-                == xml_parse(ET.tostring(raw_response.find("result"), encoding="utf8", method="xml"))["result"]
+            fw_proxy_mock.op_parser(cmd)
+            == xml_parse(ET.tostring(raw_response.find("result"), encoding="utf8", method="xml"))["result"]
         )
 
         fw_proxy_mock.op.assert_called_with(cmd, xml=False, cmd_xml=True, vsys=fw_proxy_mock.vsys)
@@ -421,8 +421,8 @@ class TestFirewallProxy:
             fw_proxy_mock.get_support_license()
 
         assert (
-                str(exception_msg.value)
-                == "Failed to check support info due to Unknown error. Please check network connectivity and try again."
+            str(exception_msg.value)
+            == "Failed to check support info due to Unknown error. Please check network connectivity and try again."
         )
 
     def test_get_support_license_panxapierror_exception(self, fw_proxy_mock):
@@ -1072,8 +1072,8 @@ class TestFirewallProxy:
             fw_proxy_mock.get_available_image_data()
 
         assert (
-                str(exception_msg.value)
-                == "Failed to check upgrade info due to Unknown error. Please check network connectivity and try again."
+            str(exception_msg.value)
+            == "Failed to check upgrade info due to Unknown error. Please check network connectivity and try again."
         )
 
     def test_get_available_image_data_panxapierror_exception(self, fw_proxy_mock):
