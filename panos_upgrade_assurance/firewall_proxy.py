@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 from panos_upgrade_assurance.utils import interpret_yes_no
 from xmltodict import parse as XMLParse
-from typing import Optional, Union
+from typing import Optional, Union, Dict
 from panos.firewall import Firewall
 from pan.xapi import PanXapiError
 from panos_upgrade_assurance import exceptions
@@ -1300,3 +1300,34 @@ class FirewallProxy:
                 results[jid] = job
 
         return results
+
+    def get_system_state(self) -> Dict[str, str]:
+        """Gets the entire output of the show system state command.
+
+        Show system state returns low level information about PAN-OS and the attributes of the system. Note that this function
+        does not parse the data structures beyond the first level.
+
+        The actual API command is `show system state`.
+
+        # Returns
+
+        dict: Each item from the state, where the key is the item key and the value is the value as a string.
+
+        ```python showLineNumbers title="Sample output"
+        {
+            local.name: "mp"
+            local.octeon: "{ }"
+            local.ppid: "0"
+            local.role: "mp"
+            local.slot: "1"
+        }
+        ```
+        """
+        result = {}
+        show_system_state_str = self.op_parser(cmd="show system state", return_xml=True)
+        for line in show_system_state_str.text.split("\n"):
+            clean_line = line.strip()
+            key, value = clean_line.split(":")[0], ":".join(clean_line.split(":")[1:]).strip()
+            result[key] = value
+
+        return result

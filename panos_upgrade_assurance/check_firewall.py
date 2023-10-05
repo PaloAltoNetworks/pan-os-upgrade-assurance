@@ -1,3 +1,4 @@
+import re
 from typing import Optional, Union, List, Dict
 from math import ceil, floor
 from datetime import datetime, timedelta
@@ -97,6 +98,7 @@ class CheckFirewall:
             CheckType.CERTS: self.check_ssl_cert_requirements,
             CheckType.UPDATES: self.check_scheduled_updates,
             CheckType.JOBS: self.check_non_finished_jobs,
+            CheckType.UNSUPPORTED_TRANSCEIVERS: self.check_unsupported_transceivers,
         }
         if not skip_force_locale:
             locale.setlocale(
@@ -701,7 +703,7 @@ class CheckFirewall:
         if free_space_panrepo > minimum_free_space:
             result.status = CheckStatus.SUCCESS
         else:
-            result.reason = f"There is not enough free space, only {str(round(free_space_panrepo/1024,1)) + 'G' if free_space_panrepo >= 1024 else str(free_space_panrepo) + 'M'}B is available."
+            result.reason = f"There is not enough free space, only {str(round(free_space_panrepo / 1024, 1)) + 'G' if free_space_panrepo >= 1024 else str(free_space_panrepo) + 'M'}B is available."
         return result
 
     def check_mp_dp_sync(self, diff_threshold: int = 0) -> CheckResult:
@@ -1066,6 +1068,57 @@ class CheckFirewall:
             result.status = CheckStatus.SKIPPED
             result.reason = "No jobs found on device. This is unusual, please investigate."
             return result
+
+    def check_unsupported_transceivers(self, supported_sfp_regex: Optional[List[str]] = None) -> CheckResult:
+        """Check for any Optical Transceivers (SFPs or otherwise) that aren't supported by Palo Alto Networks.
+
+        # Parameters
+
+        supported_sfp_regex (list, optional): List of supported transceivers, as regex strings, to mark SFP's as
+            supported even if they aren't OEM.
+
+        # Returns
+
+        CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking \
+            value of:
+
+        * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) When all optics are OEM and
+            PAN supported
+        * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise, `CheckResult.reason`
+            field contains information about which Slots and Physical ports currently have unsupported transceivers installed
+        * [`CheckStatus.SKIPPED`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when there are no transceiver
+            slots at all.
+        """
+        result = CheckResult()
+
+        system_state = self._node.get_system_state()
+
+        compiled_regex = []
+        if supported_sfp_regex:
+            compiled_regex = [re.compile(regex_string) for regex_string in supported_sfp_regex]
+
+        no_sfp_interfaces = True
+        bad_interfaces = []
+        for key, value in system_state.items():
+            if re.match(r"sys\.s[0-9]+\.p[0-9]+\.phy", key):
+                if "'sfp':" in value and "'vendor-name': OEM" not in value:
+                    if not any(regex.search(value) for regex in compiled_regex):
+                        bad_interfaces.append(key)
+
+                if "'sfp'" in value:
+                    no_sfp_interfaces = False
+
+        if bad_interfaces:
+            result.reason = f"The following interfaces have non-Palo Alto Networks supported transceivers installed: {', '.join(bad_interfaces)}"
+            return result
+
+        if no_sfp_interfaces:
+            result.status = CheckStatus.SKIPPED
+            result.reason = "No SFP Interfaces were found, or no SFP Transceivers were present in the system."
+            return result
+
+        result.status = CheckStatus.SUCCESS
+        return result
 
     def get_content_db_version(self) -> Dict[str, str]:
         """Get Content DB version.

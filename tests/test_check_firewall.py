@@ -431,6 +431,99 @@ class TestCheckFirewall:
             reason="NTP synchronization in unknown state: unknown."
         )
 
+    def test_check_unsupported_transceivers_not_oem(self, check_firewall_mock):
+        check_firewall_mock._node.get_system_state.return_value = {
+            "": "",
+            "local.brdagent": "{ }",
+            "local.family": "vm",
+            "local.info": "{ 'family': vm, 'model': PA-VM, 'name': mp, 'ppid': 0, 'role': mp, 'slot': 1, }",
+            "local.model": "PA-VM",
+            "local.name": "mp",
+            "local.octeon": "{ }",
+            "local.ppid": "0",
+            "local.role": "mp",
+            "local.slot": "1",
+            "sys.s5.p1.phy": "{ 'duration': 3969, 'last-sample': 1970-01-01 08:00:00, 'link-partner': { }, 'media': QSFP-Plus-Fiber, 'sfp': { 'ch1': { 'rx-power': 0.00 mW, }, 'ch2': { 'rx-power': 0.00 mW, }, 'ch3': { 'rx-power': 0.00 mW, }, 'ch4': { 'rx-power': 0.00 mW, }, 'connector': Reserved, 'diagnostic-monitor': Yes, 'encoding': 64B66B, 'ex-spec-compliance-code': 0x0, 'identifier': QSFPP, 'link-len-km': 0 km, 'link-len-om1': 0 m, 'link-len-om2': 10 m, 'link-len-om3': 10 m, 'link-len-om4': 20 m, 'rx-power-alarm-hi': 0.00 mW, 'rx-power-alarm-lo': 0.00 mW, 'rx-power-warn-hi': 0.00 mW, 'rx-power-warn-lo': 0.00 mW, 'transceiver': S dist,SN,M5, 'vendor-name': FINISAR CORP    , 'vendor-part-number': FCBN410QB1C10   , 'vendor-part-rev': B , 'vendor-serial-number': YYYYYYY         , }, 'type': Ethernet, }",
+            "sys.s6.p2.phy": "{ 'duration': 3969, 'last-sample': 1970-01-01 08:00:00, 'link-partner': { }, 'media': QSFP-Plus-Fiber, 'sfp': { 'ch1': { 'rx-power': 0.00 mW, }, 'ch2': { 'rx-power': 0.00 mW, }, 'ch3': { 'rx-power': 0.00 mW, }, 'ch4': { 'rx-power': 0.00 mW, }, 'connector': Reserved, 'diagnostic-monitor': Yes, 'encoding': 64B66B, 'ex-spec-compliance-code': 0x0, 'identifier': QSFPP, 'link-len-km': 0 km, 'link-len-om1': 0 m, 'link-len-om2': 10 m, 'link-len-om3': 10 m, 'link-len-om4': 20 m, 'rx-power-alarm-hi': 0.00 mW, 'rx-power-alarm-lo': 0.00 mW, 'rx-power-warn-hi': 0.00 mW, 'rx-power-warn-lo': 0.00 mW, 'transceiver': S dist,SN,M5, 'vendor-name': FINISAR CORP    , 'vendor-part-number': FCBN410QB1C10   , 'vendor-part-rev': B , 'vendor-serial-number': YYYYYYY         , }, 'type': Ethernet, }",
+        }
+        assert check_firewall_mock.check_unsupported_transceivers() == CheckResult(
+            reason="The following interfaces have non-Palo Alto Networks supported transceivers installed: sys.s5.p1.phy, sys.s6.p2.phy",
+        )
+
+    def test_check_unsupported_transceivers_custom_supported_regex_match(self, check_firewall_mock):
+        check_firewall_mock._node.get_system_state.return_value = {
+            "": "",
+            "local.brdagent": "{ }",
+            "local.family": "vm",
+            "local.info": "{ 'family': vm, 'model': PA-VM, 'name': mp, 'ppid': 0, 'role': mp, 'slot': 1, }",
+            "local.model": "PA-VM",
+            "local.name": "mp",
+            "local.octeon": "{ }",
+            "local.ppid": "0",
+            "local.role": "mp",
+            "local.slot": "1",
+            "sys.s5.p1.phy": "{ 'duration': 3969, 'last-sample': 1970-01-01 08:00:00, 'link-partner': { }, 'media': QSFP-Plus-Fiber, 'sfp': { 'ch1': { 'rx-power': 0.00 mW, }, 'ch2': { 'rx-power': 0.00 mW, }, 'ch3': { 'rx-power': 0.00 mW, }, 'ch4': { 'rx-power': 0.00 mW, }, 'connector': Reserved, 'diagnostic-monitor': Yes, 'encoding': 64B66B, 'ex-spec-compliance-code': 0x0, 'identifier': QSFPP, 'link-len-km': 0 km, 'link-len-om1': 0 m, 'link-len-om2': 10 m, 'link-len-om3': 10 m, 'link-len-om4': 20 m, 'rx-power-alarm-hi': 0.00 mW, 'rx-power-alarm-lo': 0.00 mW, 'rx-power-warn-hi': 0.00 mW, 'rx-power-warn-lo': 0.00 mW, 'transceiver': S dist,SN,M5, 'vendor-name': FINISAR CORP    , 'vendor-part-number': FCBN410QB1C10   , 'vendor-part-rev': B , 'vendor-serial-number': YYYYYYY         , }, 'type': Ethernet, }",
+            "sys.s6.p2.phy": "{ 'duration': 3969, 'last-sample': 1970-01-01 08:00:00, 'link-partner': { }, 'media': QSFP-Plus-Fiber, 'sfp': { 'ch1': { 'rx-power': 0.00 mW, }, 'ch2': { 'rx-power': 0.00 mW, }, 'ch3': { 'rx-power': 0.00 mW, }, 'ch4': { 'rx-power': 0.00 mW, }, 'connector': Reserved, 'diagnostic-monitor': Yes, 'encoding': 64B66B, 'ex-spec-compliance-code': 0x0, 'identifier': QSFPP, 'link-len-km': 0 km, 'link-len-om1': 0 m, 'link-len-om2': 10 m, 'link-len-om3': 10 m, 'link-len-om4': 20 m, 'rx-power-alarm-hi': 0.00 mW, 'rx-power-alarm-lo': 0.00 mW, 'rx-power-warn-hi': 0.00 mW, 'rx-power-warn-lo': 0.00 mW, 'transceiver': S dist,SN,M5, 'vendor-name': FINISAR CORP    , 'vendor-part-number': FCBN410QB1C10   , 'vendor-part-rev': B , 'vendor-serial-number': YYYYYYY         , }, 'type': Ethernet, }",
+        }
+        supported_regex = ["FCBN4"]
+        assert check_firewall_mock.check_unsupported_transceivers(supported_sfp_regex=supported_regex) == CheckResult(
+            status=CheckStatus.SUCCESS
+        )
+
+    def test_check_unsupported_transceivers_custom_supported_regex_miss(self, check_firewall_mock):
+        check_firewall_mock._node.get_system_state.return_value = {
+            "": "",
+            "local.brdagent": "{ }",
+            "local.family": "vm",
+            "local.info": "{ 'family': vm, 'model': PA-VM, 'name': mp, 'ppid': 0, 'role': mp, 'slot': 1, }",
+            "local.model": "PA-VM",
+            "local.name": "mp",
+            "local.octeon": "{ }",
+            "local.ppid": "0",
+            "local.role": "mp",
+            "local.slot": "1",
+            "sys.s5.p1.phy": "{ 'duration': 3969, 'last-sample': 1970-01-01 08:00:00, 'link-partner': { }, 'media': QSFP-Plus-Fiber, 'sfp': { 'ch1': { 'rx-power': 0.00 mW, }, 'ch2': { 'rx-power': 0.00 mW, }, 'ch3': { 'rx-power': 0.00 mW, }, 'ch4': { 'rx-power': 0.00 mW, }, 'connector': Reserved, 'diagnostic-monitor': Yes, 'encoding': 64B66B, 'ex-spec-compliance-code': 0x0, 'identifier': QSFPP, 'link-len-km': 0 km, 'link-len-om1': 0 m, 'link-len-om2': 10 m, 'link-len-om3': 10 m, 'link-len-om4': 20 m, 'rx-power-alarm-hi': 0.00 mW, 'rx-power-alarm-lo': 0.00 mW, 'rx-power-warn-hi': 0.00 mW, 'rx-power-warn-lo': 0.00 mW, 'transceiver': S dist,SN,M5, 'vendor-name': FINISAR CORP    , 'vendor-part-number': FCBN410QB1C10   , 'vendor-part-rev': B , 'vendor-serial-number': YYYYYYY         , }, 'type': Ethernet, }",
+            "sys.s6.p2.phy": "{ 'duration': 3969, 'last-sample': 1970-01-01 08:00:00, 'link-partner': { }, 'media': QSFP-Plus-Fiber, 'sfp': { 'ch1': { 'rx-power': 0.00 mW, }, 'ch2': { 'rx-power': 0.00 mW, }, 'ch3': { 'rx-power': 0.00 mW, }, 'ch4': { 'rx-power': 0.00 mW, }, 'connector': Reserved, 'diagnostic-monitor': Yes, 'encoding': 64B66B, 'ex-spec-compliance-code': 0x0, 'identifier': QSFPP, 'link-len-km': 0 km, 'link-len-om1': 0 m, 'link-len-om2': 10 m, 'link-len-om3': 10 m, 'link-len-om4': 20 m, 'rx-power-alarm-hi': 0.00 mW, 'rx-power-alarm-lo': 0.00 mW, 'rx-power-warn-hi': 0.00 mW, 'rx-power-warn-lo': 0.00 mW, 'transceiver': S dist,SN,M5, 'vendor-name': FINISAR CORP    , 'vendor-part-number': FCBN410QB1C10   , 'vendor-part-rev': B , 'vendor-serial-number': YYYYYYY         , }, 'type': Ethernet, }",
+        }
+        supported_regex = ["BADREGEX"]
+        assert check_firewall_mock.check_unsupported_transceivers(supported_sfp_regex=supported_regex) == CheckResult(
+            reason="The following interfaces have non-Palo Alto Networks supported transceivers installed: sys.s5.p1.phy, sys.s6.p2.phy",
+        )
+
+    def test_check_unsupported_transceivers_all_supported(self, check_firewall_mock):
+        check_firewall_mock._node.get_system_state.return_value = {
+            "": "",
+            "local.brdagent": "{ }",
+            "local.family": "vm",
+            "local.info": "{ 'family': vm, 'model': PA-VM, 'name': mp, 'ppid': 0, 'role': mp, 'slot': 1, }",
+            "local.model": "PA-VM",
+            "local.name": "mp",
+            "local.octeon": "{ }",
+            "local.ppid": "0",
+            "local.role": "mp",
+            "local.slot": "1",
+            "sys.s5.p1.phy": "{ 'link-partner': { }, 'media': SFP-Plus-Fiber, 'sfp': { 'connector': LC, 'encoding': Reserved, 'identifier': SFP, 'transceiver': 10000B-SR, 'vendor-name': OEM , 'vendor-part-number': PAN-SFP-PLUS-SR , 'vendor-part-rev': B4 , }, 'type': Ethernet, }",
+        }
+        assert check_firewall_mock.check_unsupported_transceivers() == CheckResult(status=CheckStatus.SUCCESS)
+
+    def test_check_unsupported_transceivers_no_sfp(self, check_firewall_mock):
+        check_firewall_mock._node.get_system_state.return_value = {
+            "": "",
+            "local.brdagent": "{ }",
+            "local.family": "vm",
+            "local.info": "{ 'family': vm, 'model': PA-VM, 'name': mp, 'ppid': 0, 'role': mp, 'slot': 1, }",
+            "local.model": "PA-VM",
+            "local.name": "mp",
+            "local.octeon": "{ }",
+            "local.ppid": "0",
+            "local.role": "mp",
+            "local.slot": "1",
+            "sys.s4.p20.phy": "{ 'link-partner': { }, 'media': CAT5, 'type': Ethernet, }",
+        }
+        assert check_firewall_mock.check_unsupported_transceivers() == CheckResult(
+            status=CheckStatus.SKIPPED, reason="No SFP Interfaces were found, or no SFP Transceivers were present in the system."
+        )
+
     def test_check_arp_entry_none(self, check_firewall_mock):
         assert check_firewall_mock.check_arp_entry(ip=None) == CheckResult(
             CheckStatus.SKIPPED, reason="Missing ARP table entry description."
