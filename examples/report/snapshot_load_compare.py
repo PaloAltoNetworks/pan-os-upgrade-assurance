@@ -20,6 +20,37 @@ if __name__ == "__main__":
         {"arp_table": {"properties": ["!ttl"], "count_change_threshold": 10}},
         {"nics": {"count_change_threshold": 10}},
         {"license": {"properties": ["!serial"]}},
+
+        # {"license": {
+        #     "properties": ["!serial", "!issued", "!authcode", "!expires", "!custom", "non-existing"] # exclude higher level
+        # }},
+        # {"license": {
+        #     "properties": ["!serial", "!issued", "!authcode", "!expires", "non-existing", "!_Log_Storage_TB"] # works in multi-levels
+        # }},
+        # {"license": {
+        #     "properties": ["all"]
+        # }},
+        # {"license": {
+        #     "properties": ["!serial", "!issued", "!authcode", "!expires", "non-existing"] # invalid config is ignored and all is appended if all other are valid exclusions..
+        # }},
+        # {"license": {
+        #     "properties": ["serial", "non-existing"] # compare only requested
+        # }},
+        # {"license": {
+        #     "properties": ["!issued", "all"] # compare all except
+        # }},
+        # {"license": {
+        #     "properties": ["!issued", "serial"] # skip one and compare specific ones
+        # }},
+        # {"license": {
+        #     "properties": ["Logging Service"]  # even works for parent level
+        # }},
+        # {"license": {
+        #     "properties": ["Logging Service", "!custom"]  # combination with parent
+        # }},
+        # "!license",
+        # "license",
+
         {"routes": {"properties": ["!flags"], "count_change_threshold": 10}},
         "!content_version",
         {

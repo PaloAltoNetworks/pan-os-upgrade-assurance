@@ -39,7 +39,7 @@ class TestConfigParser:
         """Check if exception is raised when ConfigParser is called with unknown param in requested config."""
         with pytest.raises(
             UnknownParameterException,
-            match=r"Unknown configuration parameter passed: .*$",
+            match=r"Unknown configuration parameters passed: .*$",
         ):
             ConfigParser(valid_config_elements, requested_config)
 
