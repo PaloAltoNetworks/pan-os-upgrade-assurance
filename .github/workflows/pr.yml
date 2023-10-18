@@ -14,6 +14,9 @@ on:
 permissions:
   contents: read
 
+concurrency: 
+  group: '${{ github.event.number }}'
+
 jobs:
 
   pyversion:

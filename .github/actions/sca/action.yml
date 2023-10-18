@@ -1,5 +1,5 @@
-name: Discover minimum Python version
-description: Discover the lowest supported Python version based on pyptoject.toml file
+name: Run SCA tests
+description: 'Runs all SCA tests: lint, format and security.'
 
 inputs:
   python_version:
@@ -19,15 +19,19 @@ runs:
       uses: Gr1N/setup-poetry@v8
 
     - name: create Poetry venv
+      shell: bash
       run: |
         poetry env use ${{ inputs.python_version }}
         poetry install
 
     - name: run flake
+      shell: bash
       run: poetry run make lint
 
     - name: run black
+      shell: bash
       run: poetry run make format_check
 
     - name: run bandit
+      shell: bash
       run: poetry run make security
