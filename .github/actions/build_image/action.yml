@@ -1,0 +1,69 @@
+name: Build Docker image
+description: 'Builds a Docker image for XSOAR usage.'
+
+inputs: 
+  python_version:
+    description: A version of Python to install
+    type: string
+    required: true
+  publish:
+    description: A flag that triggers publishing to GHCR
+    type: boolean
+    default: false
+  token:
+    description: Token to authenticate to GH, required to update the PR
+    type: string
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: install Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python_version }}
+        cache: pip
+
+    - name: install Poetry
+      uses: Gr1N/setup-poetry@v8
+
+    - name: get the tag name for new image
+      id: tag
+      shell: bash
+      run: |
+        echo "version_tag=$(poetry version -s)" >> $GITHUB_OUTPUT
+
+    - name: build and prepare package for containerization
+      shell: bash
+      run: |
+        poetry env use ${{ inputs.python_version }}
+        poetry lock
+        poetry build
+        poetry export --without-hashes --format=requirements.txt > requirements.txt
+
+    - name: determine docker tags and labels
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ghcr.io/paloaltonetworks/panos_upgrade_assurance
+        tags: |
+          type=raw,value=latest
+          type=semver,pattern=v{{version}},value=${{ steps.tag.outputs.version_tag }}
+          type=semver,pattern=v{{major}}.{{minor}},value=${{ steps.tag.outputs.version_tag }}
+          type=semver,pattern=v{{major}},value=${{ steps.tag.outputs.version_tag }}
+
+    - name: login to GHCR
+      if: inputs.publish
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ inputs.token }}
+
+    - name: build ${{ inputs.publish && 'and publish' || '' }}
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: ${{ inputs.publish }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}

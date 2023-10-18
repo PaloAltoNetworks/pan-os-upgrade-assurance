@@ -1,0 +1,15 @@
+name: Artifact Documentation
+description: 'Create an artifact from the current documentation.'
+
+runs:
+  using: composite
+  steps:
+    - name: pack the documentation
+      working-directory: docs
+      shell: bash
+      run: tar --exclude .DS_Store --exclude sidebars.js -cvf documentation.tar *
+    - name: upload the documentation artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: documentation
+        path: docs/documentation.tar

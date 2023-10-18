@@ -34,7 +34,7 @@ runs:
       run: poetry run make test_coverage
 
     # requires pull-requests: write permissions when triggered from PRs
-    - name: g et coverage
+    - name: get coverage
       if: ${{ github.event_name == 'pull_request' }}
       uses: orgoro/coverage@v3.1
       with:
