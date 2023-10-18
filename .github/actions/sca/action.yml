@@ -1,0 +1,33 @@
+name: Discover minimum Python version
+description: Discover the lowest supported Python version based on pyptoject.toml file
+
+inputs:
+  python_version:
+    description: A version of Python to install
+    type: string
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: install Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python_version }}
+
+    - name: install Poetry
+      uses: Gr1N/setup-poetry@v8
+
+    - name: create Poetry venv
+      run: |
+        poetry env use ${{ inputs.python_version }}
+        poetry install
+
+    - name: run flake
+      run: poetry run make lint
+
+    - name: run black
+      run: poetry run make format_check
+
+    - name: run bandit
+      run: poetry run make security

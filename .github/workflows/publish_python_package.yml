@@ -9,29 +9,29 @@ permissions:
   contents: read
 
 jobs:
-  pyversion:
-    name: Discover minimum Python version
-    uses: ./.github/workflows/_discover_python_ver.yml
 
   package:
     name: Publish Python package
     runs-on: ubuntu-latest
-    needs: pyversion
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: discover Python version
+        id: pyversion
+        uses: ./.github/actions/discover_python_version
+
       - name: Install Python
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ needs.pyversion.outputs.pyversion }}
+          python-version: ${{ steps.pyversion.outputs.pyversion }}
 
       - name: Install Poetry
         uses: Gr1N/setup-poetry@v8
 
       - name: Create Poetry venv 
         run: |
-          poetry env use ${{ needs.pyversion.outputs.pyversion }}
+          poetry env use ${{ steps.pyversion.outputs.pyversion }}
       
       - name: Publish to PyPI
         env:

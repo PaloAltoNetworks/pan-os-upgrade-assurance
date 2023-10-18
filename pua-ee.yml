@@ -1,0 +1,16 @@
+---
+version: 3
+
+dependencies:
+  galaxy: |
+    ---
+    collections:
+      - paloaltonetworks.panos
+      - community.general
+  python: |
+    panos-upgrade-assurance
+    jmespath
+
+images:
+  base_image:
+    name: quay.io/ansible/awx-ee:latest
