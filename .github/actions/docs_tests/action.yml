@@ -1,5 +1,5 @@
-name: Run SCA tests
-description: 'Runs all SCA tests: lint, format and security.'
+name: Run Docs tests
+description: 'Check if documentation is up to date.'
 
 inputs:
   python_version:
@@ -25,14 +25,16 @@ runs:
         poetry env use ${{ inputs.python_version }}
         poetry install
 
-    - name: run flake
+    - name: generate API docs
       shell: bash
-      run: poetry run make lint
+      run: poetry run make documentation
 
-    - name: run black
+    - name: check if documentation needs updating
       shell: bash
-      run: poetry run make format_check
-
-    - name: run bandit
-      shell: bash
-      run: poetry run make security
+      run: |
+        if [ "$(git status --porcelain)" ]; then 
+          git status
+          exit 1
+        else
+          exit 0
+        fi

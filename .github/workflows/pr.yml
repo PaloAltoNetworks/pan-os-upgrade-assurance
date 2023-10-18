@@ -32,7 +32,7 @@ jobs:
         uses: ./.github/actions/discover_python_version
 
   code_format:
-    name: Formatting and security
+    name: SCA tests
     needs: pyversion
     runs-on: ubuntu-latest
     steps:
@@ -44,21 +44,32 @@ jobs:
           python_version: ${{ needs.pyversion.outputs.pyversion }}
 
   unit_tests:
-    name: Unit Tests
+    name: Unit tests
     needs: pyversion
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
-    uses: ./.github/workflows/sub_unittest.yml
-    with:
-      python_version: ${{ needs.pyversion.outputs.pyversion }}
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+      - name: run SCA tests
+        uses: ./.github/actions/unit_tests
+        with:
+          python_version: ${{ needs.pyversion.outputs.pyversion }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   documentation_check:
-    name: API documentation
+    name: Docs tests
     needs: pyversion
-    uses: ./.github/workflows/sub_docs.yml
-    with:
-      python_version: ${{ needs.pyversion.outputs.pyversion }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+      - name: run SCA tests
+        uses: ./.github/actions/docs_tests
+        with:
+          python_version: ${{ needs.pyversion.outputs.pyversion }}
 
   docker_image_test_build:
     name: Build Docker image

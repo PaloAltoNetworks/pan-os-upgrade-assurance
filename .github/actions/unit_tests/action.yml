@@ -1,0 +1,45 @@
+name: Run Unit tests
+description: 'Runs Unit tests.'
+
+inputs:
+  token:
+    description: Token to authenticate to GH, required to update the PR
+    type: string
+    required: true
+  python_version:
+    description: A version of Python to install
+    type: string
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: install Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python_version }}
+        cache: pip
+
+    - name: install Poetry
+      uses: Gr1N/setup-poetry@v8
+
+    - name: create Poetry venv
+      shell: bash
+      run: |
+        poetry env use ${{ inputs.python_version }}
+        poetry install
+
+    - name: run unit tests and coverage
+      shell: bash
+      run: poetry run make test_coverage
+
+    # requires pull-requests: write permissions when triggered from PRs
+    - name: g et coverage
+      if: ${{ github.event_name == 'pull_request' }}
+      uses: orgoro/coverage@v3.1
+      with:
+        coverageFile: coverage.xml
+        token: ${{ inputs.token }}
+        thresholdAll: 0.95
+        thresholdNew: 0.90
+        thresholdModified: 0.95
