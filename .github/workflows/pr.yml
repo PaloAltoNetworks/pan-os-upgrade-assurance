@@ -19,82 +19,82 @@ concurrency:
 
 jobs:
 
-  # pyversion:
-  #   name: Discover minimum Python version
-  #   runs-on: ubuntu-latest
-  #   outputs:
-  #     pyversion: ${{ steps.pyversion.outputs.pyversion }}
-  #   steps:
-  #     - name: checkout code
-  #       uses: actions/checkout@v4
-  #     - name: discover Python version
-  #       id: pyversion
-  #       uses: ./.github/actions/discover_python_version
+  pyversion:
+    name: Discover minimum Python version
+    runs-on: ubuntu-latest
+    outputs:
+      pyversion: ${{ steps.pyversion.outputs.pyversion }}
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+      - name: discover Python version
+        id: pyversion
+        uses: ./.github/actions/discover_python_version
 
-  # code_format:
-  #   name: SCA tests
-  #   needs: pyversion
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: checkout code
-  #       uses: actions/checkout@v4
-  #     - name: run SCA tests
-  #       uses: ./.github/actions/sca
-  #       with:
-  #         python_version: ${{ needs.pyversion.outputs.pyversion }}
+  code_format:
+    name: SCA tests
+    needs: pyversion
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+      - name: run SCA tests
+        uses: ./.github/actions/sca
+        with:
+          python_version: ${{ needs.pyversion.outputs.pyversion }}
 
-  # unit_tests:
-  #   name: Unit tests
-  #   needs: pyversion
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     contents: read
-  #     pull-requests: write
-  #   steps:
-  #     - name: checkout code
-  #       uses: actions/checkout@v4
-  #     - name: run Unit tests
-  #       uses: ./.github/actions/unit_tests
-  #       with:
-  #         python_version: ${{ needs.pyversion.outputs.pyversion }}
-  #         token: ${{ secrets.GITHUB_TOKEN }}
+  unit_tests:
+    name: Unit tests
+    needs: pyversion
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+      - name: run Unit tests
+        uses: ./.github/actions/unit_tests
+        with:
+          python_version: ${{ needs.pyversion.outputs.pyversion }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-  # documentation_check:
-  #   name: Docs tests
-  #   needs: pyversion
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: checkout code
-  #       uses: actions/checkout@v4
-  #     - name: run documentation tests
-  #       uses: ./.github/actions/docs_tests
-  #       with:
-  #         python_version: ${{ needs.pyversion.outputs.pyversion }}
+  documentation_check:
+    name: Docs tests
+    needs: pyversion
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+      - name: run documentation tests
+        uses: ./.github/actions/docs_tests
+        with:
+          python_version: ${{ needs.pyversion.outputs.pyversion }}
 
-  # docker_image_test_build:
-  #   name: Build Docker image
-  #   needs: pyversion
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     contents: read
-  #     packages: write
-  #   steps:
-  #     - name: checkout code
-  #       uses: actions/checkout@v4
-  #     - name: build docker image
-  #       uses: ./.github/actions/build_image
-  #       with:
-  #         token: ${{ secrets.GITHUB_TOKEN }}
-  #         python_version: ${{ needs.pyversion.outputs.pyversion }}
-  #         publish: false
+  docker_image_test_build:
+    name: Build Docker image
+    needs: pyversion
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+      - name: build docker image
+        uses: ./.github/actions/build_image
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          python_version: ${{ needs.pyversion.outputs.pyversion }}
+          publish: false
 
   store_documentation:
     name: Fetch the updated documentation
-    # needs:
-    #   - code_format
-    #   - unit_tests
-    #   - documentation_check
-    #   - docker_image_test_build
+    needs:
+      - code_format
+      - unit_tests
+      - documentation_check
+      - docker_image_test_build
     runs-on: ubuntu-latest
     steps:
       - name: checkout code
