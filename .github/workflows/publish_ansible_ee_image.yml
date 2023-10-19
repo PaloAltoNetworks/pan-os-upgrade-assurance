@@ -41,7 +41,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/paloaltonetworks/test_pua_ee
+          images: ghcr.io/paloaltonetworks/panos_upgrade_assurance_ee
           tags: |
             type=raw,value=latest
             type=semver,pattern=v{{version}},value=${{ steps.tag.outputs.version_tag }}
@@ -76,3 +76,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

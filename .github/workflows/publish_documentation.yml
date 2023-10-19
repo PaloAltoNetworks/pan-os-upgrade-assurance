@@ -57,7 +57,7 @@ jobs:
         uses: ./.github/actions/artifact_docs
 
   pandev_pr:
-    name: Create a preview PR for pan.dev
+    name: Create a release PR for pan.dev
     needs: store_documentation
     runs-on: ubuntu-latest
     permissions:
@@ -68,7 +68,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: pua
-      - name: create preview PR
+      - name: create release PR
         uses: ./pua/.github/actions/pandev_pr
         with:
           token: ${{ secrets.CLSC_PAT }}
