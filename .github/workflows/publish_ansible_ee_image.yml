@@ -28,6 +28,7 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.9 # <-- hardcoded as package requirements are lower than ansible-builder's
+          cache: pip
 
       - name: install Poetry
         uses: Gr1N/setup-poetry@v8

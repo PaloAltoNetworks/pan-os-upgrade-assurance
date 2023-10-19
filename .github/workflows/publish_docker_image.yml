@@ -21,14 +21,21 @@ jobs:
         id: pyversion
         uses: ./.github/actions/discover_python_version
 
-  docker_image_build:
-    name: Build and Publish Docker image
+  docker_image_test_build:
+    name: Build Docker image
     needs: pyversion
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-    uses: ./.github/workflows/_docker.yml
-    with:
-      publish: true
-      python_version: ${{ needs.pyversion.outputs.pyversion }}
-      tag_name: ${{ github.event.release.tag_name }}
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - name: build docker image
+        uses: ./.github/actions/build_image
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          python_version: ${{ needs.pyversion.outputs.pyversion }}
+          publish: true

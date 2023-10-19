@@ -52,25 +52,44 @@ jobs:
 
 
   code_format:
-    name: Validate code formatting
+    name: SCA tests
     needs: pyversion
-    uses: ./.github/workflows/sub_format.yml
-    with:
-      python_version: ${{ needs.pyversion.outputs.pyversion }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+      - name: run SCA tests
+        uses: ./.github/actions/sca
+        with:
+          python_version: ${{ needs.pyversion.outputs.pyversion }}
 
   unit_tests:
-    name: Validate all Unit Tests pass
+    name: Unit tests
     needs: pyversion
-    uses: ./.github/workflows/sub_unittest.yml
-    with:
-      python_version: ${{ needs.pyversion.outputs.pyversion }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+      - name: run Unit tests
+        uses: ./.github/actions/unit_tests
+        with:
+          python_version: ${{ needs.pyversion.outputs.pyversion }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   documentation_check:
-    name: Validate that the API documentation is up to date
+    name: Docs tests
     needs: pyversion
-    uses: ./.github/workflows/sub_docs.yml
-    with:
-      python_version: ${{ needs.pyversion.outputs.pyversion }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+      - name: run documentation tests
+        uses: ./.github/actions/docs_tests
+        with:
+          python_version: ${{ needs.pyversion.outputs.pyversion }}
 
   release:
     name: Create a new release
@@ -97,13 +116,10 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ needs.pyversion.outputs.pyversion }}
+          cache: pip
 
       - name: Install Poetry
         uses: Gr1N/setup-poetry@v8
-
-      - name: Create Poetry venv 
-        run: |
-          poetry env use ${{ needs.pyversion.outputs.pyversion }}
 
       - name: Bump package version
         env:

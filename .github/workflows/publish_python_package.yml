@@ -25,6 +25,7 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ steps.pyversion.outputs.pyversion }}
+          cache: pip
 
       - name: Install Poetry
         uses: Gr1N/setup-poetry@v8
