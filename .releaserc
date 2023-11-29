@@ -3,26 +3,7 @@
     "main"
   ],
   "plugins": [
-    [
-      "@semantic-release/commit-analyzer",
-      {
-        "releaseRules": [
-          {
-            "breaking": true,
-            "release": "minor"
-          },
-          {
-            "type": "feat",
-            "release": "patch"
-          },
-          {
-            "type": "feat",
-            "scope" : "MAJOR",
-            "release": "major"
-          }
-        ]
-      }
-    ],
+    "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
     [
       "@semantic-release/git",
