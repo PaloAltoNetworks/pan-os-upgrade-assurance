@@ -31,8 +31,22 @@ class UtilsException(Exception):
     pass
 
 
+class WrongNumberOfArgumentsException(FirewallProxyException):
+    """Thrown when [FirewallProxy](/panos/docs/panos-upgrade-assurance/api/firewall_proxy) constructor is given wrong number or
+    set of arguments.
+    """
+
+    pass
+
+
 class CommandRunFailedException(FirewallProxyException):
     """Used when a command run on a device does not return the `success` status."""
+
+    pass
+
+
+class GetXpathConfigFailedException(FirewallProxyException):
+    """Used when XAPI does not return a `success` state when running a `get` operation."""
 
     pass
 

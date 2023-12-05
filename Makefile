@@ -1,21 +1,28 @@
+.phony: lint
 lint:
 	flake8 panos_upgrade_assurance tests
 
+.phony: security
 security:
 	bandit -c pyproject.toml -r .
 
+.phony: format_check
 format_check:
 	black --diff --check panos_upgrade_assurance tests
 
+.phony: format
 format:
 	black panos_upgrade_assurance tests
 
+.phony: test_coverage
 test_coverage:
 	pytest --cov panos_upgrade_assurance --cov-report=term-missing --cov-report=xml:coverage.xml
 
+.phony: documentation
 documentation:
 	pydoc-markdown
 
+.phony: check_line_length
 check_line_length:
 	@for FILE in $$(find . -type f -name '*.py'); do \
 		echo $$FILE; \
@@ -29,4 +36,8 @@ check_line_length:
 		done < "$$FILE"; \
 	done
 
+.phony: all
 all: lint format security test_coverage documentation
+
+.phony: sca
+sca: format lint security

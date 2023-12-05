@@ -380,7 +380,7 @@ class TestSnapshotCompare:
                 },
             ),
             (
-                ["routes"],
+                [{"routes": None}],
                 {
                     "routes": {
                         "added": {"added_keys": [], "passed": True},

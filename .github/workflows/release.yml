@@ -22,11 +22,11 @@ jobs:
       ver: ${{ steps.rc.outputs.new_release_version }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Check if new version will be produced
         id: rc
-        uses: cycjimmy/semantic-release-action@v3
+        uses: cycjimmy/semantic-release-action@v4
         with:
           dry_run: true
           semantic_version: 19.0
@@ -83,7 +83,7 @@ jobs:
       tag: ${{ steps.release.outputs.new_release_git_tag }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Python
         uses: actions/setup-python@v4
@@ -105,11 +105,11 @@ jobs:
 
       - name: Create release and publish to GitHub
         id: release
-        uses: cycjimmy/semantic-release-action@v3
+        uses: cycjimmy/semantic-release-action@v4
         with:
           semantic_version: 19.0
           extra_plugins: |
             conventional-changelog-conventionalcommits@^5.0.0
             @semantic-release/git@^10.0.1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_PAT }}

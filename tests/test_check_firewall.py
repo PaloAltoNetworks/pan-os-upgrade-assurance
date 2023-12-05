@@ -11,7 +11,9 @@ from panos_upgrade_assurance.exceptions import (
     ContentDBVersionsFormatException,
     WrongDiskSizeFormatException,
     UnknownParameterException,
+    MalformedResponseException,
 )
+from datetime import datetime
 
 
 @pytest.fixture
@@ -618,44 +620,34 @@ class TestCheckFirewall:
         assert str(exception_msg.value) == "[diff_threshold] should be of type [int] but is of type [<class 'str'>]."
 
     def test_check_mp_dp_sync_time_diff(self, check_firewall_mock):
-        check_firewall_mock._node.get_mp_clock.return_value = {
-            "day": "31",
-            "day_of_week": "Wed",
-            "month": "May",
-            "time": "11:50:21",
-            "tz": "PDT",
-            "year": "2023",
-        }
-        check_firewall_mock._node.get_dp_clock.return_value = {
-            "day": "31",
-            "day_of_week": "Wed",
-            "month": "May",
-            "time": "11:52:34",
-            "tz": "PDT",
-            "year": "2023",
-        }
+        check_firewall_mock._node.get_mp_clock.return_value = datetime.strptime(
+            "Wed May 31 11:50:21 2023", "%a %b %d %H:%M:%S %Y"
+        )
+        check_firewall_mock._node.get_dp_clock.return_value = datetime.strptime(
+            "Wed May 31 11:52:34 2023", "%a %b %d %H:%M:%S %Y"
+        )
 
         assert check_firewall_mock.check_mp_dp_sync(1) == CheckResult(
             status=CheckStatus.FAIL, reason="The data plane clock and management clock are different by 133.0 seconds."
         )
 
+    def test_check_mp_dp_sync_time_diff_with_threshold(self, check_firewall_mock):
+        check_firewall_mock._node.get_mp_clock.return_value = datetime.strptime(
+            "Wed May 31 11:50:21 2023", "%a %b %d %H:%M:%S %Y"
+        )
+        check_firewall_mock._node.get_dp_clock.return_value = datetime.strptime(
+            "Wed May 31 11:50:34 2023", "%a %b %d %H:%M:%S %Y"
+        )
+
+        assert check_firewall_mock.check_mp_dp_sync(30) == CheckResult(status=CheckStatus.SUCCESS)
+
     def test_check_mp_dp_sync_time_synced(self, check_firewall_mock):
-        check_firewall_mock._node.get_mp_clock.return_value = {
-            "day": "31",
-            "day_of_week": "Wed",
-            "month": "May",
-            "time": "11:50:21",
-            "tz": "PDT",
-            "year": "2023",
-        }
-        check_firewall_mock._node.get_dp_clock.return_value = {
-            "day": "31",
-            "day_of_week": "Wed",
-            "month": "May",
-            "time": "11:50:21",
-            "tz": "PDT",
-            "year": "2023",
-        }
+        check_firewall_mock._node.get_mp_clock.return_value = datetime.strptime(
+            "Wed May 31 11:50:21 2023", "%a %b %d %H:%M:%S %Y"
+        )
+        check_firewall_mock._node.get_dp_clock.return_value = datetime.strptime(
+            "Wed May 31 11:50:21 2023", "%a %b %d %H:%M:%S %Y"
+        )
 
         assert check_firewall_mock.check_mp_dp_sync(1) == CheckResult(status=CheckStatus.SUCCESS)
 
@@ -909,6 +901,211 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
 
         assert check_firewall_mock.check_ssl_cert_requirements(rsa=rsa, ecdsa=ecdsa) == CheckResult(status=CheckStatus.SUCCESS)
 
+    @pytest.mark.parametrize(
+        "param_now_dts, param_schedule_type, param_schedule, param_time_d, param_details",
+        [
+            (
+                "2023-08-07 00:00:00",  # this is Monday
+                "daily",
+                {"action": "download-and-install", "at": "07:45"},
+                465,
+                "at 07:45:00",
+            ),
+            ("2023-08-07 00:00:00", "hourly", {"action": "download-and-install", "at": "0"}, 60, "every hour"),  # this is Monday
+            (
+                "2023-08-07 00:00:00",  # this is Monday
+                "every-5-mins",
+                {"action": "download-and-install", "at": "1"},
+                5,
+                "every 5 minutes",
+            ),
+            ("2023-08-07 00:00:00", "real-time", None, 0, "unpredictable (real-time)"),  # this is Monday
+        ],
+    )
+    def test__calculate_schedule_time_diff(
+        self, param_now_dts, param_schedule_type, param_schedule, param_time_d, param_details, check_firewall_mock
+    ):
+        mock_now_dt = datetime.strptime(param_now_dts, "%Y-%m-%d %H:%M:%S")
+
+        time_delta, delta_reason = check_firewall_mock._calculate_schedule_time_diff(
+            mock_now_dt, param_schedule_type, param_schedule
+        )
+
+        assert time_delta == param_time_d
+        assert delta_reason == param_details
+
+    @pytest.mark.parametrize("param_schedule_type", ["every-something", "something"])
+    def test__calculate_schedule_time_diff_exception(self, param_schedule_type, check_firewall_mock):
+        with pytest.raises(MalformedResponseException) as exception_msg:
+            check_firewall_mock._calculate_schedule_time_diff(datetime.now(), param_schedule_type, None)
+
+        assert str(exception_msg.value) == f"Unknown schedule type: {param_schedule_type}."
+
+    @pytest.mark.parametrize(
+        "param_now_dts, param_test_window, param_schedules_block, check_result",
+        [
+            (
+                "2023-08-07 00:00:00",  # this is Monday
+                120,
+                {
+                    "anti-virus": {
+                        "@ptpl": "lab",  # a template provided config
+                        "@src": "tpl",
+                        "recurring": {
+                            "@ptpl": "lab",
+                            "@src": "tpl",
+                            "daily": {
+                                "@ptpl": "lab",
+                                "@src": "tpl",
+                                "action": {"#text": "download-and-install", "@ptpl": "lab", "@src": "tpl"},
+                                "at": {"#text": "03:30", "@ptpl": "lab", "@src": "tpl"},
+                            },
+                            "sync-to-peer": {"#text": "yes", "@ptpl": "lab", "@src": "tpl"},
+                            "threshold": {"#text": "15", "@ptpl": "lab", "@src": "tpl"},
+                        },
+                    }
+                },
+                CheckResult(CheckStatus.SUCCESS, ""),
+            ),
+            (
+                "2023-08-07 00:00:00",  # this is Monday
+                120,
+                {"anti-virus": {"recurring": {"real-time": None}}},
+                CheckResult(
+                    CheckStatus.FAIL, "Following schedules fall into test window: anti-virus (unpredictable (real-time))."
+                ),
+            ),
+            (
+                "2023-08-07 07:00:00",  # this is Monday
+                60,
+                {"anti-virus": {"recurring": {"daily": {"action": "download-and-install", "at": "07:45"}}}},
+                CheckResult(CheckStatus.FAIL, "Following schedules fall into test window: anti-virus (at 07:45:00)."),
+            ),
+            (
+                "2023-08-07 00:00:00",  # this is Monday
+                180,
+                {
+                    "global-protect-datafile": {
+                        "recurring": {"weekly": {"action": "download-and-install", "at": "02:45", "day-of-week": "monday"}}
+                    },
+                    "threats": {"recurring": {"daily": {"action": "download-and-install", "at": "15:30"}}},
+                },
+                CheckResult(CheckStatus.FAIL, "Following schedules fall into test window: global-protect-datafile (in 2:45:00)."),
+            ),
+            (
+                "2023-08-07 07:00:00",  # this is Monday
+                20,
+                {},
+                CheckResult(CheckStatus.SKIPPED, "No scheduled job present on the device."),
+            ),
+            (
+                "2023-08-07 07:00:00",  # this is Monday
+                20,
+                {"anti-virus": {"recurring": {"real-time": None}}},
+                CheckResult(CheckStatus.ERROR, "Schedules test window is below the supported, safe minimum of 60 minutes."),
+            ),
+            (
+                "2023-08-07 07:00:00",  # this is Monday
+                10081,
+                {"anti-virus": {"recurring": {"real-time": None}}},
+                CheckResult(CheckStatus.ERROR, "Schedules test window is set to over 1 week. This test will always fail."),
+            ),
+        ],
+    )
+    def test_check_scheduled_updates(
+        self, param_now_dts, param_test_window, param_schedules_block, check_result, check_firewall_mock
+    ):
+        now_dt = datetime.strptime(param_now_dts, "%Y-%m-%d %H:%M:%S")
+        check_firewall_mock._node.get_mp_clock = lambda: now_dt
+
+        check_firewall_mock._node.get_update_schedules = lambda: param_schedules_block
+
+        assert check_firewall_mock.check_scheduled_updates(param_test_window) == check_result
+
+    def test_check_jobs_success(self, check_firewall_mock):
+        jobs = {
+            "4": {
+                "tenq": "2023/08/07 04:00:40",
+                "tdeq": "04:00:40",
+                "user": "Auto update agent",
+                "type": "WildFire",
+                "status": "FIN",
+                "queued": "NO",
+                "stoppable": "no",
+                "result": "OK",
+                "tfin": "2023/08/07 04:00:45",
+                "description": None,
+                "positionInQ": "0",
+                "progress": "2023/08/07 04:00:45",
+                "details": {"line": ["Configuration committed successfully", "Successfully committed last configuration"]},
+                "warnings": None,
+            },
+            "1": {
+                "tenq": "2023/08/07 03:59:57",
+                "tdeq": "03:59:57",
+                "user": None,
+                "type": "AutoCom",
+                "status": "FIN",
+                "queued": "NO",
+                "stoppable": "no",
+                "result": "OK",
+                "tfin": "2023/08/07 04:00:28",
+                "description": None,
+                "positionInQ": "0",
+                "progress": "100",
+                "details": {"line": ["Configuration committed successfully", "Successfully committed last configuration"]},
+                "warnings": None,
+            },
+        }
+
+        check_firewall_mock._node.get_jobs = lambda: jobs
+
+        assert check_firewall_mock.check_non_finished_jobs() == CheckResult(status=CheckStatus.SUCCESS)
+
+    def test_check_jobs_failure(self, check_firewall_mock):
+        jobs = {
+            "4": {
+                "tenq": "2023/08/07 04:00:40",
+                "tdeq": "04:00:40",
+                "user": "Auto update agent",
+                "type": "WildFire",
+                "status": "ACC",
+                "queued": "NO",
+                "stoppable": "no",
+                "result": "OK",
+                "tfin": "2023/08/07 04:00:45",
+                "description": None,
+                "positionInQ": "0",
+                "progress": "2023/08/07 04:00:45",
+                "details": {"line": ["Configuration committed successfully", "Successfully committed last configuration"]},
+                "warnings": None,
+            },
+            "1": {
+                "tenq": "2023/08/07 03:59:57",
+                "tdeq": "03:59:57",
+                "user": None,
+                "type": "AutoCom",
+                "status": "FIN",
+                "queued": "NO",
+                "stoppable": "no",
+                "result": "OK",
+                "tfin": "2023/08/07 04:00:28",
+                "description": None,
+                "positionInQ": "0",
+                "progress": "100",
+                "details": {"line": ["Configuration committed successfully", "Successfully committed last configuration"]},
+                "warnings": None,
+            },
+        }
+        check_firewall_mock._node.get_jobs = lambda: jobs
+        result = CheckResult(status=CheckStatus.FAIL, reason="At least one job (ID=4) is not in finished state (state=ACC).")
+        assert check_firewall_mock.check_non_finished_jobs() == result
+
+    def test_check_jobs_no_jobs(self, check_firewall_mock):
+        check_firewall_mock._node.get_jobs = lambda: {}
+        result = CheckResult(status=CheckStatus.SKIPPED, reason="No jobs found on device. This is unusual, please investigate.")
+        assert check_firewall_mock.check_non_finished_jobs() == result
+
     def test_run_readiness_checks(self, check_firewall_mock):
         check_firewall_mock._check_method_mapping = {
             "check1": MagicMock(return_value=True),
@@ -928,6 +1125,23 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
 
         check_firewall_mock._check_method_mapping["check1"].assert_called_once_with()
         check_firewall_mock._check_method_mapping["check2"].assert_called_once_with(param1=123)
+
+    def test_run_readiness_checks_empty_dict(self, check_firewall_mock):
+        check_firewall_mock._check_method_mapping = {
+            "check1": MagicMock(return_value=True),
+        }
+
+        checks_configuration = [{"check1": None}]
+        report_style = False
+
+        result = check_firewall_mock.run_readiness_checks(checks_configuration, report_style)
+
+        expected_result = {
+            "check1": {"state": True, "reason": "True"},
+        }
+        assert result == expected_result
+
+        check_firewall_mock._check_method_mapping["check1"].assert_called_once_with()
 
     def test_run_readiness_checks_wrong_data_type_exception(self, check_firewall_mock):
         # Set up the input parameters for the method
