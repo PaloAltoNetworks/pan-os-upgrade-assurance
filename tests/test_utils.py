@@ -8,6 +8,7 @@ from panos_upgrade_assurance.exceptions import WrongDataTypeException, UnknownPa
 valid_check_types = [v for k, v in vars(CheckType).items() if not k.startswith("__")]
 valid_snap_types = [v for k, v in vars(SnapType).items() if not k.startswith("__")]
 
+# TODO update/add tests for the new is_element_included method which is different from is_element_valid
 
 class TestConfigParser:
     @pytest.mark.parametrize(
@@ -39,7 +40,7 @@ class TestConfigParser:
         """Check if exception is raised when ConfigParser is called with unknown param in requested config."""
         with pytest.raises(
             UnknownParameterException,
-            match=r"Unknown configuration parameters passed: .*$",
+            match=r"Unknown configuration parameter passed: .*$",
         ):
             ConfigParser(valid_config_elements, requested_config)
 
@@ -84,11 +85,11 @@ class TestConfigParser:
     def test_init_requested_config_names(self, requested_config, expected_requested_config_names, monkeypatch):
         """Check if ConfigParser sets _requested_config_names properly according to requested_config."""
 
-        def _is_element_included_mock(*args, **kwargs):
+        def _is_element_valid_mock(*args, **kwargs):
             return True
 
-        # Overwrite _is_element_included
-        monkeypatch.setattr(ConfigParser, "_is_element_included", _is_element_included_mock)
+        # Overwrite _is_element_valid
+        monkeypatch.setattr(ConfigParser, "_is_element_valid", _is_element_valid_mock)
 
         parser = ConfigParser([], requested_config)  # testing requested config - valid_elements is not important here
         assert parser._requested_config_names == set(expected_requested_config_names)  # _requested_config_names is a set
@@ -100,13 +101,13 @@ class TestConfigParser:
             (valid_check_types, "!ntp_sync"),
         ],
     )
-    def test__is_element_included_true(self, valid_config_elements, config_element, monkeypatch):
+    def test__is_element_valid_true(self, valid_config_elements, config_element, monkeypatch):
         """Check if method returns True for given config element in valid elements."""
         monkeypatch.setattr(ConfigParser, "__init__", lambda _: None)
         parser = ConfigParser()
         parser.valid_elements = valid_config_elements
 
-        assert parser._is_element_included(config_element)  # assert True
+        assert parser._is_element_valid(config_element)  # assert True
 
     @pytest.mark.parametrize(
         "valid_config_elements, config_element",
@@ -115,13 +116,13 @@ class TestConfigParser:
             (valid_check_types, "!not_valid_check"),
         ],
     )
-    def test__is_element_included_false(self, valid_config_elements, config_element, monkeypatch):
+    def test__is_element_valid_false(self, valid_config_elements, config_element, monkeypatch):
         """Check if method returns False if given config element is not in valid elements."""
         monkeypatch.setattr(ConfigParser, "__init__", lambda _: None)
         parser = ConfigParser()
         parser.valid_elements = valid_config_elements
 
-        assert not parser._is_element_included(config_element)  # assert False
+        assert not parser._is_element_valid(config_element)  # assert False
 
     @pytest.mark.parametrize(
         "valid_config_elements, config_element",
@@ -130,14 +131,14 @@ class TestConfigParser:
             (valid_snap_types, "all"),
         ],
     )
-    def test__is_element_included_all(self, valid_config_elements, config_element, monkeypatch):
+    def test__is_element_valid_all(self, valid_config_elements, config_element, monkeypatch):
         """Check if method returns True for all keyword with different valid elements."""
         monkeypatch.setattr(ConfigParser, "__init__", lambda _: None)
         parser = ConfigParser()
         parser.valid_elements = valid_config_elements
         parser.requested_config = ["all"]
 
-        assert parser._is_element_included(config_element)  # assert True
+        assert parser._is_element_valid(config_element)  # assert True
 
     @pytest.mark.parametrize(
         "config_element, expected",
@@ -208,12 +209,12 @@ class TestConfigParser:
         def _expand_all_mock(*args, **kwargs):
             pass
 
-        def _is_element_included_mock(*args, **kwargs):
+        def _is_element_valid_mock(*args, **kwargs):
             return True
 
-        # Overwrite _is_element_included and _expand_all
+        # Overwrite _is_element_valid and _expand_all
         monkeypatch.setattr(ConfigParser, "_expand_all", _expand_all_mock)
-        monkeypatch.setattr(ConfigParser, "_is_element_included", _is_element_included_mock)
+        monkeypatch.setattr(ConfigParser, "_is_element_valid", _is_element_valid_mock)
 
         parser = ConfigParser([], requested_config)  # testing requested config - valid_elements is not important here
         parser.prepare_config()
@@ -235,11 +236,11 @@ class TestConfigParser:
     def test_prepare_config_call_expand_all(self, requested_config, monkeypatch):
         """Check if _expand_all is called when there is "all" keyword in requested config or all elements are exclusions."""
 
-        def _is_element_included_mock(*args, **kwargs):
+        def _is_element_valid_mock(*args, **kwargs):
             return True
 
-        # Overwrite _is_element_included
-        monkeypatch.setattr(ConfigParser, "_is_element_included", _is_element_included_mock)
+        # Overwrite _is_element_valid
+        monkeypatch.setattr(ConfigParser, "_is_element_valid", _is_element_valid_mock)
 
         parser = ConfigParser([], requested_config)  # testing requested config - valid_elements is not important here
         parser._expand_all = MagicMock()
@@ -270,11 +271,11 @@ class TestConfigParser:
         or all elements are not exclusions.
         """
 
-        def _is_element_included_mock(*args, **kwargs):
+        def _is_element_valid_mock(*args, **kwargs):
             return True
 
-        # Overwrite _is_element_included
-        monkeypatch.setattr(ConfigParser, "_is_element_included", _is_element_included_mock)
+        # Overwrite _is_element_valid
+        monkeypatch.setattr(ConfigParser, "_is_element_valid", _is_element_valid_mock)
 
         parser = ConfigParser([], requested_config)  # testing requested config - valid_elements is not important here
         parser._expand_all = MagicMock()

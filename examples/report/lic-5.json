@@ -1,0 +1,46 @@
+{
+  "license": {
+    "Logging Service": {
+      "authcode": null,
+      "custom": {
+          "_Log_Storage_TB": "7",
+          "logtype": "disk",
+          "alogging": "enabled"
+      },
+      "description": "Device Logging Service",
+      "expired": "no",
+      "expires": "August 04, 2024",
+      "feature": "Logging Service",
+      "issued": "June 27, 2022",
+      "serial": "013201027229"
+    },
+    "Y feature": {
+      "authcode": null,
+      "description": "Device Logging Service",
+      "expired": "no",
+      "expires": "August 04, 2024",
+      "feature": "Logging Service",
+      "issued": "June 29, 2022",
+      "serial": "013201027248"
+    },
+    "PAN-DB URL Filtering": {
+        "Logging Service": "somehting",
+      "authcode": null,
+      "description": "Palo Alto Networks URL Filtering License",
+      "expired": "no",
+      "expires": "June 30, 2028",
+      "feature": "PAN-DB URL Filtering",
+      "issued": "April 27, 2023",
+      "serial": "013201027229"
+    },
+    "C feature": {
+      "authcode": null,
+      "description": "Palo Alto Networks URL Filtering License",
+      "expired": "no",
+      "expires": "June 30, 2028",
+      "feature": "PAN-DB URL Filtering",
+      "issued": "April 27, 2023",
+      "serial": "013201027229"
+    }
+  }
+}

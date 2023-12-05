@@ -25,49 +25,19 @@ if __name__ == "__main__":
         # {"nics": {"count_change_threshold": 10}},
         # {"license": {"properties": ["!serial"]}},
 
-        # {"license": {
-        #     "properties": ["!serial", "!issued", "!authcode", "!expires", "!custom", "non-existing"] # exclude higher level
-        # }},
-        # {"license": {
-        #     "properties": ["!serial", "!issued", "!authcode", "!expires", "non-existing", "!_Log_Storage_TB"] # works in multi-levels
-        # }},
-        # {"license": {
-        #     "properties": ["all"]
-        # }},
-        # {"license": {
-        #     "properties": ["!serial", "!issued", "!authcode", "!expires", "non-existing"] # invalid config is ignored and all is appended if all other are valid exclusions..
-        # }},
-        # {"license": {
-        #     "properties": ["serial", "non-existing"] # compare only requested
-        # }},
-        # {"license": {
-        #     "properties": ["custom"]  # if key exists in some sub-dicts, it will compare all the keys for the other dicts since this will be treated as non-existing key and ignored! NOTE: now it only ignores top level for added/missing
-        # }},
-        # {"license": {
-        #     "properties": ["!issued", "all"] # compare all except
-        # }},
-        # {"license": {
-        #     "properties": ["!issued", "serial"] # skip one and compare specific ones
-        # }},
+        # NOTE lic-* files and below tests are added for testing during review - will be removed afterwards
 
-        # {"license": {
-        #     "properties": ["Logging Service", "!custom"]  # combination with parent
-        # }},
         # "!license",
         # "license",
-        # {"license": {
-        #     "properties": ["!Logging Service","!X feature"]
-        # }},
-
         ######## Top level keys - not intented but works
         # {"license": {
         #     "properties": ["Logging Service"]  # even works for parent level
         # }},
         # {"license": {
-        #     "properties": ["!Logging Service"]  # even works for parent level
+        #     "properties": ["!Logging Service"]  # also support if property exists in different levels in different dicts
         # }},
         # {"license": {
-        #     "properties": ["issued", "PAN-DB URL Filtering"]  # even works for parent level - but without multi level
+        #     "properties": ["issued", "PAN-DB URL Filtering"]  # multi-level "AND" operation (combination with parent) for properties is not supported on purpose - "PAN-DB URL Filtering" diff will be made for all its attributes since its the parent
         # }},
         # {"license": {
         #     "properties": ["X feature"]
@@ -81,13 +51,16 @@ if __name__ == "__main__":
 
         ######## 1st and 2nd level keys
         # {"license": {
-        #     "properties": ["!_Log_Storage_TB"]  # works..
+        #     "properties": ["!_Log_Storage_TB"]  # works
         # }},
         # {"license": {
         #     "properties": ["_Log_Storage_TB"]  # works
         # }},
         # {"license": {
         #     "properties": ["_Log_Storage_TB","issued"]  # works
+        # }},
+        # {"license": {
+        #     "properties": ["issued", "!logtype"]  # works
         # }},
         # {"license": {
         #     "properties": ["serial", "!logtype"]  # works
@@ -108,7 +81,13 @@ if __name__ == "__main__":
         #     "properties": ["something"]  # since no such key is there it passes - works
         # }},
         # {"license": {
+        #     "properties": ["serial", "non-existing"] # works - compare only requested
+        # }},
+        # {"license": {
         #     "properties": ["all"]  # works
+        # }},
+        # {"license": {
+        #     "properties": ["!issued", "all"] # works - compare all except
         # }},
         # {"license": {
         #     "properties": ["!logtype"]  # works
@@ -116,6 +95,7 @@ if __name__ == "__main__":
         {"license": {
             "properties": ["!Logging Service", "issued"]  # works
         }},
+
 
         # {"routes": {"properties": ["!flags"], "count_change_threshold": 10}},
         # "!content_version",
