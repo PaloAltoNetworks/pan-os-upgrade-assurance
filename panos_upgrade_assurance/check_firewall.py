@@ -4,6 +4,9 @@ from datetime import datetime, timedelta
 import locale
 import time
 
+import panos.errors
+from packaging.version import parse as parse_version
+
 from panos_upgrade_assurance.utils import (
     CheckResult,
     ConfigParser,
@@ -97,6 +100,7 @@ class CheckFirewall:
             CheckType.CERTS: self.check_ssl_cert_requirements,
             CheckType.UPDATES: self.check_scheduled_updates,
             CheckType.JOBS: self.check_non_finished_jobs,
+            CheckType.DEVICE_ROOT_CERTIFICATE_ISSUE: self.check_device_root_certificate_issue,
         }
         if not skip_force_locale:
             locale.setlocale(
@@ -1193,4 +1197,124 @@ class CheckFirewall:
 
             result[snap_type] = self._snapshot_method_mapping[snap_type]()
 
+        return result
+
+    def check_device_root_certificate_issue(self, fail_when_affected_version_only: bool = True) -> CheckResult:
+        """Checks whether the target device is affected by the Root Certificate Expiration issue;
+
+        https://live.paloaltonetworks.com/t5/customer-advisories/emergency-update-required-pan-os-root-and-default-certificate/ta-p/564672
+
+        This check will FAIL if so, allowing you to build upgrade logic based on when and how it's failed.
+
+        This check will fail in the following scenarios;
+            1. The device is running software that is affected by the issue AND is running out of date content
+                AND is NOT running the user-id service or data redistribution
+            2. The device is running software that is affected by the issue AND IS running user-id service OR data
+                redistribution
+
+        # Parameters
+
+        fail_when_affected_version_only (bool, optional): (defaults to `True`) When set to False, this test will only
+            fail if the software version is affected by the root certificate issue, AND the device is used for data
+            redistribution OR it's using an out-of-date content DB version.
+        """
+        result = CheckResult()
+
+        software_version = self._node.get_device_software_version()
+
+        # note; '-h' is substituted out of these versions to keep with semantic versioning
+        fixed_version_map = {
+            "81": [
+                ("==", "8.1.21.2"),
+                (">=", "8.1.25.1")
+            ],
+            "90": [
+                (">=", "9.0.16.5")
+            ],
+            "91": [
+                ("==", "9.1.11.4"),
+                ("==", "9.1.12.6"),
+                ("==", "9.1.13.4"),
+                ("==", "9.1.14.7"),
+                ("==", "9.1.16.3"),
+                (">=", "9.1.17"),
+            ],
+            "100": [
+                ("==", "10.0.8.10"),
+                ("==", "10.0.11.3"),
+                (">=", "10.0.12.3"),
+            ],
+            "101": [
+                ("==", "10.1.3.2"),
+                ("==", "10.1.5.3"),
+                ("==", "10.1.6.7"),
+                ("==", "10.1.8.6"),
+                ("==", "10.1.9.3"),
+                (">=", "10.1.10"),
+            ],
+            "102": [
+                ("==", "10.2.3.9"),
+                (">=", "10.2.4"),
+            ],
+            "110": [
+                ("==", "11.0.0.1"),
+                ("==", "11.0.1.2"),
+                (">=", "11.0.2"),
+            ],
+            "111": [
+                (">=", "11.1.0"),
+            ]
+        }
+        fixed_content_version = 8776.8390
+
+        fixed_versions = fixed_version_map.get(f"{software_version.major}{software_version.minor}")
+        if fixed_versions:
+            for operator, fixed_version in fixed_versions:
+                fixed_version = parse_version(fixed_version)
+                if operator == "==":
+                    if software_version == fixed_version:
+                        result.status = CheckStatus.SUCCESS
+                elif operator == ">=":
+                    if software_version >= fixed_version:
+                        result.status = CheckStatus.SUCCESS
+
+        # If the device is already running fixed software, we can return immediately
+        if result.status == CheckStatus.SUCCESS:
+            return result
+
+        # Return if this check is just looking at the software and not implementing any other checks
+        if fail_when_affected_version_only:
+            result.status = CheckStatus.FAIL
+            result.reason = ("Device is running a software version that is impacted by the device root certificate"
+                             "expiry.")
+            return result
+
+        content_version = float(self._node.get_content_db_version().replace("-", "."))
+
+        try:
+            redistribution_status = self._node.get_redistribution_status()
+            # Fail when any redistribution mode is running
+            if any([redistribution_status.get('clients'), redistribution_status.get('agents')]):
+                result.status = CheckStatus.FAIL
+                result.reason = ("Device is running a version affected by device root certificate expiry, and is"
+                                 "actively being used to redistribute data to other devices.")
+                return result
+        except (exceptions.CommandRunFailedException, panos.errors.PanDeviceXapiError):
+            # Fail when user-id service is running instead of redistribution
+            user_id_status = self._node.get_user_id_service_status()
+            if user_id_status.get('status') == "up":
+                result.status = CheckStatus.FAIL
+                result.reason = ("Device is running a version affected by device root certificate expiry, and is"
+                                 "actively being used to redistribute user-id data to other devices.")
+                return result
+
+        # Pass if the user is using up-to-date content
+        if content_version >= fixed_content_version:
+            result.status = CheckStatus.SUCCESS
+            return result
+
+        # Finally, fail if the device is running old content.
+        result.status = CheckStatus.FAIL
+        result.reason = ("Device is running out of date content and out of date software. Device root certificate will "
+                         "expire December 31st, 2023.")
         return result

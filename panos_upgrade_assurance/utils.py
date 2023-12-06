@@ -30,6 +30,7 @@ class CheckType:
     CERTS = "certificates_requirements"
     UPDATES = "dynamic_updates"
     JOBS = "jobs"
+    DEVICE_ROOT_CERTIFICATE_ISSUE = "device_root_certificate_issue"
 
 
 class SnapType:

@@ -8,6 +8,7 @@ from pan.xapi import PanXapiError
 from panos_upgrade_assurance import exceptions
 from math import floor
 from datetime import datetime
+from packaging import version
 
 
 class FirewallProxy:
@@ -1321,7 +1322,7 @@ class FirewallProxy:
         # This returns a value when the firewall is redistributing data to other devices
         result = self.op_parser("show user user-id-service status")
         for line in result.split("\n"):
-            match = re.search("User id service:\s+(up|down)", line)
+            match = re.search(r"User id service:\s+(up|down)", line)
             if match:
                 return {"status": match.group(1)}
 
@@ -1387,3 +1388,18 @@ class FirewallProxy:
             return_dict["agents"] = entries
 
         return return_dict
+
+    def get_device_software_version(self):
+        """Gets the current running device software version, as a packaging.version.Version object.
+
+        This allows you to do comparators between other Version objects easily. Note that this strips out information
+            like 'xfr' but maintains the hotfix (i.e 9.1.12-h3 becaomes 9.1.12.3 for the purpose of versioning).
+
+        # Returns the software version as a packaging 'Version' object.
+
+        Version: Version(9.1.12)
+        """
+        self._fw.refresh_system_info()
+        self._fw.get_device_version()
+        fw_version = self._fw.version.replace("-h", ".")
+        return version.parse(fw_version)
