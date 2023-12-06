@@ -656,6 +656,36 @@ __Returns__
 
 `dict`: The results of the executed snapshots.
 
+### `CheckFirewall.run_health_checks`
+
+```python
+def run_health_checks(
+        checks_configuration: Optional[List[Union[str, dict]]] = None,
+        report_style: bool = False) -> Union[Dict[str, dict], Dict[str, str]]
+```
+
+Run device health checks.
+
+This method provides a convenient way of running health check methods. For details on configuration see the
+[health checks](/panos/docs/panos-upgrade-assurance/configuration-details#health-checks) documentation.
+
+__Parameters__
+
+
+- __checks_configuration__ (`list(str,dict), optional`): (defaults to `None`) List of readiness checks to run.
+- __report_style__ (`bool`): (defaults to `False`) Changes the output to more descriptive. Can be used when generating a report
+    from the checks.
+
+__Raises__
+
+
+- `WrongDataTypeException`: An exception is raised when the configuration is in a data type different then `str` or `dict`.
+
+__Returns__
+
+
+`dict`: Results of all configured checks.
+
 ### `CheckFirewall.check_device_root_certificate_issue`
 
 ```python

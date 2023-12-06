@@ -15,6 +15,7 @@ from panos_upgrade_assurance.utils import (
     SnapType,
     CheckStatus,
     SupportedHashes,
+    HealthType
 )
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
 from panos_upgrade_assurance import exceptions
@@ -100,8 +101,12 @@ class CheckFirewall:
             CheckType.CERTS: self.check_ssl_cert_requirements,
             CheckType.UPDATES: self.check_scheduled_updates,
             CheckType.JOBS: self.check_non_finished_jobs,
-            CheckType.DEVICE_ROOT_CERTIFICATE_ISSUE: self.check_device_root_certificate_issue,
         }
+
+        self._health_check_method_mapping = {
+            HealthType.DEVICE_ROOT_CERTIFICATE_ISSUE: self.check_device_root_certificate_issue
+        }
+
         if not skip_force_locale:
             locale.setlocale(
                 locale.LC_ALL, "en_US.UTF-8"
@@ -1196,6 +1201,56 @@ class CheckFirewall:
                 raise exceptions.WrongDataTypeException(f"Wrong configuration format for snapshot: {snap_type}.")
 
             result[snap_type] = self._snapshot_method_mapping[snap_type]()
+
+        return result
+
+    def run_health_checks(
+        self,
+        checks_configuration: Optional[List[Union[str, dict]]] = None,
+        report_style: bool = False,
+    ) -> Union[Dict[str, dict], Dict[str, str]]:
+        """Run device health checks.
+
+        This method provides a convenient way of running health check methods. For details on configuration see the
+        [health checks](/panos/docs/panos-upgrade-assurance/configuration-details#health-checks) documentation.
+
+        # Parameters
+
+        checks_configuration (list(str,dict), optional): (defaults to `None`) List of readiness checks to run.
+        report_style (bool): (defaults to `False`) Changes the output to more descriptive. Can be used when generating a report
+            from the checks.
+
+        # Raises
+
+        WrongDataTypeException: An exception is raised when the configuration is in a data type different then `str` or `dict`.
+
+        # Returns
+
+        dict: Results of all configured checks.
+
+        """
+        result = {}
+        checks_list = ConfigParser(
+            valid_elements=set(self._health_check_method_mapping.keys()),
+            requested_config=checks_configuration,
+        ).prepare_config()
+
+        for check in checks_list:
+            if isinstance(check, dict):
+                check_type, check_config = next(iter(check.items()))
+                if check_config is None:
+                    check_config = {}
+            elif isinstance(check, str):
+                check_type, check_config = check, {}
+            else:
+                raise exceptions.WrongDataTypeException(
+                    f"Wrong configuration format for check: {check}."
+                )  # NOTE checks are already validated in ConfigParser._extrac_element_name - this is never executed.
+
+            check_result = self._health_check_method_mapping[check_type](
+                **check_config
+            )  # (**) would pass dict config values as separate parameters to method.
+            result[check_type] = str(check_result) if report_style else {"state": bool(check_result), "reason": str(check_result)}
 
         return result
 
