@@ -1264,7 +1264,7 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         [
             ({"status": "up"}, CheckStatus.FAIL),  # Device running user-id service
             ({"status": "down"}, CheckStatus.SUCCESS),  # Device NOT running user-id service
-            ({"status": "unknown"}, CheckStatus.SUCCESS)  # Status str not found in command output
+            ({"status": "unknown"}, CheckStatus.SUCCESS),  # Status str not found in command output
         ],
     )
     def test_check_device_root_certificate_issue_fixed_content_running_user_id(
