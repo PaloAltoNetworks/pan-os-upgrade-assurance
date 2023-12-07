@@ -60,6 +60,7 @@ class HealthType:
     This class is used to avoid hardcoding these strings. It maps the actual configuration string to a variable that can be
     referenced in the code.
     """
+
     DEVICE_ROOT_CERTIFICATE_ISSUE = "device_root_certificate_issue"
 
 

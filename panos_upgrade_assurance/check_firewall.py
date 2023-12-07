@@ -15,7 +15,7 @@ from panos_upgrade_assurance.utils import (
     SnapType,
     CheckStatus,
     SupportedHashes,
-    HealthType
+    HealthType,
 )
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
 from panos_upgrade_assurance import exceptions
@@ -103,9 +103,7 @@ class CheckFirewall:
             CheckType.JOBS: self.check_non_finished_jobs,
         }
 
-        self._health_check_method_mapping = {
-            HealthType.DEVICE_ROOT_CERTIFICATE_ISSUE: self.check_device_root_certificate_issue
-        }
+        self._health_check_method_mapping = {HealthType.DEVICE_ROOT_CERTIFICATE_ISSUE: self.check_device_root_certificate_issue}
 
         if not skip_force_locale:
             locale.setlocale(
@@ -1279,13 +1277,8 @@ class CheckFirewall:
 
         # note; '-h' is substituted out of these versions to keep with semantic versioning
         fixed_version_map = {
-            "81": [
-                ("==", "8.1.21.2"),
-                (">=", "8.1.25.1")
-            ],
-            "90": [
-                (">=", "9.0.16.5")
-            ],
+            "81": [("==", "8.1.21.2"), (">=", "8.1.25.1")],
+            "90": [(">=", "9.0.16.5")],
             "91": [
                 ("==", "9.1.11.4"),
                 ("==", "9.1.12.6"),
@@ -1318,7 +1311,7 @@ class CheckFirewall:
             ],
             "111": [
                 (">=", "11.1.0"),
-            ]
+            ],
         }
         fixed_content_version = 8776.8390
 
@@ -1340,8 +1333,7 @@ class CheckFirewall:
         # Return if this check is just looking at the software and not implementing any other checks
         if fail_when_affected_version_only:
             result.status = CheckStatus.FAIL
-            result.reason = ("Device is running a software version that is impacted by the device root certificate"
-                             "expiry.")
+            result.reason = "Device is running a software version that is impacted by the device root certificate" "expiry."
             return result
 
         content_version = float(self._node.get_content_db_version().replace("-", "."))
@@ -1349,18 +1341,22 @@ class CheckFirewall:
         try:
             redistribution_status = self._node.get_redistribution_status()
             # Fail when any redistribution mode is running
-            if any([redistribution_status.get('clients'), redistribution_status.get('agents')]):
+            if any([redistribution_status.get("clients"), redistribution_status.get("agents")]):
                 result.status = CheckStatus.FAIL
-                result.reason = ("Device is running a version affected by device root certificate expiry, and is"
-                                 "actively being used to redistribute data to other devices.")
+                result.reason = (
+                    "Device is running a version affected by device root certificate expiry, and is"
+                    "actively being used to redistribute data to other devices."
+                )
                 return result
         except (exceptions.CommandRunFailedException, panos.errors.PanDeviceXapiError):
             # Fail when user-id service is running instead of redistribution
             user_id_status = self._node.get_user_id_service_status()
-            if user_id_status.get('status') == "up":
+            if user_id_status.get("status") == "up":
                 result.status = CheckStatus.FAIL
-                result.reason = ("Device is running a version affected by device root certificate expiry, and is"
-                                 "actively being used to redistribute user-id data to other devices.")
+                result.reason = (
+                    "Device is running a version affected by device root certificate expiry, and is"
+                    "actively being used to redistribute user-id data to other devices."
+                )
                 return result
 
         # Pass if the user is using up-to-date content
@@ -1370,6 +1366,8 @@ class CheckFirewall:
 
         # Finally, fail if the device is running old content.
         result.status = CheckStatus.FAIL
-        result.reason = ("Device is running out of date content and out of date software. Device root certificate will "
-                         "expire December 31st, 2023.")
+        result.reason = (
+            "Device is running out of date content and out of date software. Device root certificate will "
+            "expire December 31st, 2023."
+        )
         return result

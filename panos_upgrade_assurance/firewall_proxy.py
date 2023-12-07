@@ -1369,20 +1369,17 @@ class FirewallProxy:
         """
 
         # This returns a result if the firewall is acting as a redistribution agent
-        return_dict = {
-            "clients": [],
-            "agents": []
-        }
+        return_dict = {"clients": [], "agents": []}
         result = self.op_parser("show redistribution service client all")
-        if result.get('entry'):
-            entries = result.get('entry')
+        if result.get("entry"):
+            entries = result.get("entry")
             if type(entries) is dict:
                 entries = [entries]
             return_dict["clients"] = entries
 
         result = self.op_parser("show redistribution service agent all")
-        if result.get('entry'):
-            entries = result.get('entry')
+        if result.get("entry"):
+            entries = result.get("entry")
             if type(entries) is dict:
                 entries = [entries]
             return_dict["agents"] = entries

@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import pytest
 from unittest.mock import MagicMock
 from panos.firewall import Firewall
@@ -35,8 +36,8 @@ class TestFirewallProxy:
         cmd = "Example cmd"
 
         assert (
-                fw_proxy_mock.op_parser(cmd)
-                == xml_parse(ET.tostring(raw_response.find("result"), encoding="utf8", method="xml"))["result"]
+            fw_proxy_mock.op_parser(cmd)
+            == xml_parse(ET.tostring(raw_response.find("result"), encoding="utf8", method="xml"))["result"]
         )
 
         fw_proxy_mock.op.assert_called_with(cmd, xml=False, cmd_xml=True, vsys=fw_proxy_mock.vsys)
@@ -380,8 +381,7 @@ class TestFirewallProxy:
         with pytest.raises(DeviceNotLicensedException) as exception_msg:
             fw_proxy_mock.get_licenses()
 
-        assert str(
-            exception_msg.value) == "Device possibly not licenced - no license information available in the API response."
+        assert str(exception_msg.value) == "Device possibly not licenced - no license information available in the API response."
 
     def test_get_support_license(self, fw_proxy_mock):
         xml_text = """
@@ -422,8 +422,8 @@ class TestFirewallProxy:
             fw_proxy_mock.get_support_license()
 
         assert (
-                str(exception_msg.value)
-                == "Failed to check support info due to Unknown error. Please check network connectivity and try again."
+            str(exception_msg.value)
+            == "Failed to check support info due to Unknown error. Please check network connectivity and try again."
         )
 
     def test_get_support_license_panxapierror_exception(self, fw_proxy_mock):
@@ -875,10 +875,8 @@ class TestFirewallProxy:
         fw_proxy_mock.op.return_value = raw_response
 
         assert fw_proxy_mock.get_ntp_servers() == {
-            "ntp-server-1": {"authentication-type": "none", "name": "0.pool.ntp.org", "reachable": "no",
-                             "status": "available"},
-            "ntp-server-2": {"authentication-type": "none", "name": "1.pool.ntp.org", "reachable": "no",
-                             "status": "available"},
+            "ntp-server-1": {"authentication-type": "none", "name": "0.pool.ntp.org", "reachable": "no", "status": "available"},
+            "ntp-server-2": {"authentication-type": "none", "name": "1.pool.ntp.org", "reachable": "no", "status": "available"},
             "synched": "1.pool.ntp.org",
         }
 
@@ -958,8 +956,8 @@ class TestFirewallProxy:
         raw_response = ET.fromstring(xml_text)
         fw_proxy_mock.op.return_value = raw_response
         with pytest.raises(
-                MalformedResponseException,
-                match=r"Reported disk space block does not have typical structure: .*$",
+            MalformedResponseException,
+            match=r"Reported disk space block does not have typical structure: .*$",
         ):
             fw_proxy_mock.get_disk_utilization()
 
@@ -976,8 +974,8 @@ class TestFirewallProxy:
         raw_response = ET.fromstring(xml_text)
         fw_proxy_mock.op.return_value = raw_response
         with pytest.raises(
-                MalformedResponseException,
-                match=r"Reported disk space block does not have typical structure: .*$",
+            MalformedResponseException,
+            match=r"Reported disk space block does not have typical structure: .*$",
         ):
             fw_proxy_mock.get_disk_utilization()
 
@@ -1075,8 +1073,8 @@ class TestFirewallProxy:
             fw_proxy_mock.get_available_image_data()
 
         assert (
-                str(exception_msg.value)
-                == "Failed to check upgrade info due to Unknown error. Please check network connectivity and try again."
+            str(exception_msg.value)
+            == "Failed to check upgrade info due to Unknown error. Please check network connectivity and try again."
         )
 
     def test_get_available_image_data_panxapierror_exception(self, fw_proxy_mock):
@@ -1180,8 +1178,7 @@ class TestFirewallProxy:
                 "description": None,
                 "positionInQ": "0",
                 "progress": "2023/08/07 04:00:45",
-                "details": {
-                    "line": ["Configuration committed successfully", "Successfully committed last configuration"]},
+                "details": {"line": ["Configuration committed successfully", "Successfully committed last configuration"]},
                 "warnings": None,
             },
             "1": {
@@ -1197,8 +1194,7 @@ class TestFirewallProxy:
                 "description": None,
                 "positionInQ": "0",
                 "progress": "100",
-                "details": {
-                    "line": ["Configuration committed successfully", "Successfully committed last configuration"]},
+                "details": {"line": ["Configuration committed successfully", "Successfully committed last configuration"]},
                 "warnings": None,
             },
         }
@@ -1399,8 +1395,7 @@ class TestFirewallProxy:
                 "@src": "tpl",
                 "recurring": {"@ptpl": "lab", "@src": "tpl", "none": {"@ptpl": "lab", "@src": "tpl"}},
             },
-            "threats": {
-                "recurring": {"weekly": {"action": "download-only", "at": "01:02", "day-of-week": "wednesday"}}},
+            "threats": {"recurring": {"weekly": {"action": "download-only", "at": "01:02", "day-of-week": "wednesday"}}},
             "wf-private": {
                 "@ptpl": "lab",
                 "@src": "tpl",
@@ -1499,37 +1494,49 @@ class TestFirewallProxy:
 
         fw_proxy_mock.op.side_effect = [
             show_redist_service_client_all_xml_raw_response,
-            show_redist_service_agent_all_xml_raw_response
+            show_redist_service_agent_all_xml_raw_response,
         ]
 
         assert fw_proxy_mock.get_redistribution_status() == {
-            'clients': [
-                {
-                    'host': '1.1.1.1', 'port': '34518', 'vsys': 'vsys1', 'version': '6', 'status': 'idle',
-                    'redistribution': 'I'
-                },
-                {
-                    'host': '1.1.1.2', 'port': '34518', 'vsys': 'vsys1', 'version': '6', 'status': 'idle',
-                    'redistribution': 'I'
-                }
+            "agents": OrderedDict(
+                [
+                    ("@name", "FW3367"),
+                    ("vsys", "vsys1"),
+                    ("vsys_hub", "no"),
+                    ("host", "1.1.1.1"),
+                    ("peer-address", "1.1.1.1"),
+                    ("port", "5007"),
+                    ("state", "conn:idle"),
+                    ("status-msg", "-"),
+                    ("version", "0x6"),
+                    ("last-heard-time", "1701651677"),
+                    ("job-id", "0"),
+                    ("num_sent_msgs", "0"),
+                    ("num_recv_msgs", "0"),
+                ]
+            ),
+            "clients": [
+                OrderedDict(
+                    [
+                        ("host", "1.1.1.1"),
+                        ("port", "34518"),
+                        ("vsys", "vsys1"),
+                        ("version", "6"),
+                        ("status", "idle"),
+                        ("redistribution", "I"),
+                    ]
+                ),
+                OrderedDict(
+                    [
+                        ("host", "1.1.1.2"),
+                        ("port", "34518"),
+                        ("vsys", "vsys1"),
+                        ("version", "6"),
+                        ("status", "idle"),
+                        ("redistribution", "I"),
+                    ]
+                ),
             ],
-            'agents': [
-                {
-                    '@name': 'FW3367',
-                    'host': '1.1.1.1',
-                    'job-id': '0',
-                    'last-heard-time': '1701651677',
-                    'num_recv_msgs': '0',
-                    'num_sent_msgs': '0',
-                    'peer-address': '1.1.1.1',
-                    'port': '5007',
-                    'state': 'conn:idle',
-                    'status-msg': '-',
-                    'version': '0x6',
-                    'vsys': 'vsys1',
-                    'vsys_hub': 'no'
-                }
-            ]
         }
 
     def test_get_redistribution_status_up_empty_results(self, fw_proxy_mock):
@@ -1552,13 +1559,10 @@ class TestFirewallProxy:
 
         fw_proxy_mock.op.side_effect = [
             show_redist_service_client_all_xml_raw_response,
-            show_redist_service_agent_all_xml_raw_response
+            show_redist_service_agent_all_xml_raw_response,
         ]
 
-        assert fw_proxy_mock.get_redistribution_status() == {
-            'clients': [],
-            'agents': []
-        }
+        assert fw_proxy_mock.get_redistribution_status() == {"clients": [], "agents": []}
 
     def test_get_redistribution_status_wrong_panos_version(self, fw_proxy_mock):
         """This tests what happens if this method is run against an older firewall that doesn't support the
@@ -1587,7 +1591,7 @@ class TestFirewallProxy:
             Reason:                        user_id service is not enabled
         ]]>
             </result>
-        </response>"""
+        </response>"""  # noqa: W291
         raw_response = ET.fromstring(xml_text)
         fw_proxy_mock.op.return_value = raw_response
 
@@ -1604,7 +1608,7 @@ class TestFirewallProxy:
             number of clients:             1
         ]]>
             </result>
-        </response>"""
+        </response>"""  # noqa: W291
         raw_response = ET.fromstring(xml_text)
         fw_proxy_mock.op.return_value = raw_response
 
@@ -1666,6 +1670,7 @@ class TestFirewallProxy:
         fw_proxy_mock._fw.xapi.op.return_value = raw_response
 
         from packaging import version
+
         assert fw_proxy_mock.get_device_software_version() == version.parse("9.1.12.3")
         assert fw_proxy_mock.get_device_software_version() < version.parse("9.1.13")
         assert fw_proxy_mock.get_device_software_version() < version.parse("9.1.12.4")
