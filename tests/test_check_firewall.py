@@ -1287,3 +1287,23 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
             check_firewall_mock.check_device_root_certificate_issue(fail_when_affected_version_only=False).status
             == expected_status
         )
+
+    def test_run_health_checks(self, check_firewall_mock):
+        check_firewall_mock._health_check_method_mapping = {
+            "check1": MagicMock(return_value=True),
+            "check2": MagicMock(return_value=False),
+        }
+
+        checks_configuration = ["check1", {"check2": {"param1": 123}}]
+        report_style = False
+
+        result = check_firewall_mock.run_health_checks(checks_configuration, report_style)
+
+        expected_result = {
+            "check1": {"state": True, "reason": "True"},
+            "check2": {"state": False, "reason": "False"},
+        }
+        assert result == expected_result
+
+        check_firewall_mock._health_check_method_mapping["check1"].assert_called_once_with()
+        check_firewall_mock._health_check_method_mapping["check2"].assert_called_once_with(param1=123)
