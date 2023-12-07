@@ -1267,7 +1267,7 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
             ({"status": "unknown"}, CheckStatus.SUCCESS)  # Status str not found in command output
         ],
     )
-    def test_check_device_root_certificate_issue_fixed_content_running_redistribution(
+    def test_check_device_root_certificate_issue_fixed_content_running_user_id(
         self, check_firewall_mock, user_id_status, expected_status
     ):
         """This test validates the check fails in the scenarios where the user is running out of date software,

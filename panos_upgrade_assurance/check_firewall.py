@@ -1339,9 +1339,11 @@ class CheckFirewall:
         content_version = float(self._node.get_content_db_version().replace("-", "."))
 
         try:
+
             redistribution_status = self._node.get_redistribution_status()
             # Fail when any redistribution mode is running
             if any([redistribution_status.get("clients"), redistribution_status.get("agents")]):
+
                 result.status = CheckStatus.FAIL
                 result.reason = (
                     "Device is running a version affected by device root certificate expiry, and is"
