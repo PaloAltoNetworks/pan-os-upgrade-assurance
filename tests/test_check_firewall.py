@@ -1,3 +1,4 @@
+import panos.errors
 import pytest
 from unittest.mock import MagicMock
 from panos_upgrade_assurance.check_firewall import CheckFirewall
@@ -1252,6 +1253,35 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         )
 
         check_firewall_mock._node.get_content_db_version = MagicMock(return_value=running_content_version)
+
+        assert (
+            check_firewall_mock.check_device_root_certificate_issue(fail_when_affected_version_only=False).status
+            == expected_status
+        )
+
+    @pytest.mark.parametrize(
+        "user_id_status, expected_status",
+        [
+            ({"status": "up"}, CheckStatus.FAIL),  # Device running user-id service
+            ({"status": "down"}, CheckStatus.SUCCESS),  # Device NOT running user-id service
+            ({"status": "unknown"}, CheckStatus.SUCCESS)  # Status str not found in command output
+        ],
+    )
+    def test_check_device_root_certificate_issue_fixed_content_running_redistribution(
+        self, check_firewall_mock, user_id_status, expected_status
+    ):
+        """This test validates the check fails in the scenarios where the user is running out of date software,
+        but up-to-date Content"""
+
+        from packaging import version
+
+        check_firewall_mock._node.get_device_software_version = MagicMock(
+            return_value=version.parse("10.1.0")  # Affected Version
+        )
+        check_firewall_mock._node.get_redistribution_status = MagicMock(side_effect=panos.errors.PanDeviceXapiError)
+        check_firewall_mock._node.get_user_id_service_status = MagicMock(return_value=user_id_status)
+
+        check_firewall_mock._node.get_content_db_version = MagicMock(return_value="8776-8391")  # Fixed Content Version
 
         assert (
             check_firewall_mock.check_device_root_certificate_issue(fail_when_affected_version_only=False).status

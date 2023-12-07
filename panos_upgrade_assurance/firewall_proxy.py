@@ -1326,6 +1326,8 @@ class FirewallProxy:
             if match:
                 return {"status": match.group(1)}
 
+        return {"status": "unknown"}
+
     def get_redistribution_status(self) -> dict:
         """Get the status of the Data Redistribution service.
 
