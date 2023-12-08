@@ -1333,7 +1333,7 @@ class CheckFirewall:
         # Return if this check is just looking at the software and not implementing any other checks
         if fail_when_affected_version_only:
             result.status = CheckStatus.FAIL
-            result.reason = "Device is running a software version that is impacted by the device root certificate" "expiry."
+            result.reason = "Device is running a software version that is impacted by the device root certificate expiry."
             return result
 
         content_version = float(self._node.get_content_db_version().replace("-", "."))
