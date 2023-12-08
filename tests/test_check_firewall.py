@@ -1,3 +1,4 @@
+import panos.errors
 import pytest
 from unittest.mock import MagicMock
 from panos_upgrade_assurance.check_firewall import CheckFirewall
@@ -1185,3 +1186,124 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         # NOTE configs are already validated in ConfigParser._extrac_element_name - above exception is never executed.
         # which is listed as missing in pytest coverage
         # assert str(exception_msg.value) == f"Wrong configuration format for snapshot: snap_type."
+
+    @pytest.mark.parametrize(
+        "running_software, expected_status",
+        [
+            ("8.1.21.2", CheckStatus.SUCCESS),  # Device running fixed software, exact match
+            ("8.1.26", CheckStatus.SUCCESS),  # Device running fixed software, greater than match
+            ("11.0.3", CheckStatus.SUCCESS),  # Device running fixed software, greater than match
+            ("8.1.0", CheckStatus.FAIL),  # Device running broken version
+        ],
+    )
+    def test_check_device_root_certificate_issue_by_software(self, check_firewall_mock, running_software, expected_status):
+        """This test validates the behavior when the test is only checking the software version is affected by
+        the issue."""
+
+        from packaging import version
+
+        check_firewall_mock._node.get_device_software_version = MagicMock(return_value=version.parse(running_software))
+        assert check_firewall_mock.check_device_root_certificate_issue().status == expected_status
+
+    @pytest.mark.parametrize(
+        "redistribution_status, expected_status",
+        [
+            ({"clients": ([("host", "1.1.1.1")]), "agents": []}, CheckStatus.FAIL),  # Device running redistribution
+            ({"clients": [], "agents": []}, CheckStatus.SUCCESS),  # Device not running redistribution
+        ],
+    )
+    def test_check_device_root_certificate_issue_fixed_content_running_redistribution(
+        self, check_firewall_mock, redistribution_status, expected_status
+    ):
+        """This test validates the check fails in the scenarios where the user is running out of date software,
+        but up-to-date Content"""
+
+        from packaging import version
+
+        check_firewall_mock._node.get_device_software_version = MagicMock(
+            return_value=version.parse("10.1.0")  # Affected Version
+        )
+        check_firewall_mock._node.get_redistribution_status = MagicMock(return_value=redistribution_status)
+
+        check_firewall_mock._node.get_content_db_version = MagicMock(return_value="8776-8391")  # Fixed Content Version
+
+        assert (
+            check_firewall_mock.check_device_root_certificate_issue(fail_when_affected_version_only=False).status
+            == expected_status
+        )
+
+    @pytest.mark.parametrize(
+        "running_content_version, expected_status",
+        [
+            ("8776-8391", CheckStatus.SUCCESS),  # Device running fixed content version
+            ("8000-8391", CheckStatus.FAIL),  # Device running older content version
+            ("9000-0111", CheckStatus.SUCCESS),  # Device running newer version
+        ],
+    )
+    def test_check_device_root_certificate_issue_content_version(
+        self, check_firewall_mock, running_content_version, expected_status
+    ):
+        from packaging import version
+
+        check_firewall_mock._node.get_device_software_version = MagicMock(
+            return_value=version.parse("10.1.0")  # Affected Version
+        )
+        check_firewall_mock._node.get_redistribution_status = MagicMock(
+            return_value={"clients": [], "agents": []}  # Device not running redistribution
+        )
+
+        check_firewall_mock._node.get_content_db_version = MagicMock(return_value=running_content_version)
+
+        assert (
+            check_firewall_mock.check_device_root_certificate_issue(fail_when_affected_version_only=False).status
+            == expected_status
+        )
+
+    @pytest.mark.parametrize(
+        "user_id_status, expected_status",
+        [
+            ({"status": "up"}, CheckStatus.FAIL),  # Device running user-id service
+            ({"status": "down"}, CheckStatus.SUCCESS),  # Device NOT running user-id service
+            ({"status": "unknown"}, CheckStatus.SUCCESS),  # Status str not found in command output
+        ],
+    )
+    def test_check_device_root_certificate_issue_fixed_content_running_user_id(
+        self, check_firewall_mock, user_id_status, expected_status
+    ):
+        """This test validates the check fails in the scenarios where the user is running out of date software,
+        but up-to-date Content"""
+
+        from packaging import version
+
+        check_firewall_mock._node.get_device_software_version = MagicMock(
+            return_value=version.parse("10.1.0")  # Affected Version
+        )
+        check_firewall_mock._node.get_redistribution_status = MagicMock(side_effect=panos.errors.PanDeviceXapiError)
+        check_firewall_mock._node.get_user_id_service_status = MagicMock(return_value=user_id_status)
+
+        check_firewall_mock._node.get_content_db_version = MagicMock(return_value="8776-8391")  # Fixed Content Version
+
+        assert (
+            check_firewall_mock.check_device_root_certificate_issue(fail_when_affected_version_only=False).status
+            == expected_status
+        )
+
+    def test_run_health_checks(self, check_firewall_mock):
+        check_firewall_mock._health_check_method_mapping = {
+            "check1": MagicMock(return_value=True),
+            "check2": MagicMock(return_value=False),
+        }
+
+        checks_configuration = ["check1", {"check2": {"param1": 123}}]
+        report_style = False
+
+        result = check_firewall_mock.run_health_checks(checks_configuration, report_style)
+
+        expected_result = {
+            "check1": {"state": True, "reason": "True"},
+            "check2": {"state": False, "reason": "False"},
+        }
+        assert result == expected_result
+
+        check_firewall_mock._health_check_method_mapping["check1"].assert_called_once_with()
+        check_firewall_mock._health_check_method_mapping["check2"].assert_called_once_with(param1=123)

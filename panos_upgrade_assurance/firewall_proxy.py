@@ -1,3 +1,4 @@
+import re
 import xml.etree.ElementTree as ET
 from panos_upgrade_assurance.utils import interpret_yes_no
 from xmltodict import parse as XMLParse
@@ -7,6 +8,7 @@ from pan.xapi import PanXapiError
 from panos_upgrade_assurance import exceptions
 from math import floor
 from datetime import datetime
+from packaging import version
 
 
 class FirewallProxy:
@@ -1300,3 +1302,103 @@ class FirewallProxy:
                 results[jid] = job
 
         return results
+
+    def get_user_id_service_status(self) -> dict:
+        """Get the status of the User ID agent service.
+
+        The user-id service is used to redistribute user-id information to other firewalls.
+
+        # Returns the clients and agents known to this device.
+
+        dict: The state of the user-id agent. Only returns up or down.
+
+        ```python showLineNumbers title="Sample output"
+        {
+            "status": "up"
+        }
+        ```
+        """
+
+        # This returns a value when the firewall is redistributing data to other devices
+        result = self.op_parser("show user user-id-service status")
+        for line in result.split("\n"):
+            match = re.search(r"User id service:\s+(up|down)", line)
+            if match:
+                return {"status": match.group(1)}
+
+        return {"status": "unknown"}
+
+    def get_redistribution_status(self) -> dict:
+        """Get the status of the Data Redistribution service.
+
+        Redistribution is used to share data, such as user-id information, between PAN-OS firewalls or Agents.
+
+        # Returns the clients and agents known to this device.
+
+        dict: The state of the redistribution service, and the associated clients, if available.
+
+        ```python showLineNumbers title="Sample output"
+        {
+            'clients': [
+                {
+                    'host': '1.1.1.1', 'port': '34518', 'vsys': 'vsys1', 'version': '6', 'status': 'idle',
+                    'redistribution': 'I'
+                },
+                {
+                    'host': '1.1.1.2', 'port': '34518', 'vsys': 'vsys1', 'version': '6', 'status': 'idle',
+                    'redistribution': 'I'
+                }
+            ],
+            'agents': [
+                {
+                    '@name': 'FW3367',
+                    'host': '1.1.1.1',
+                    'job-id': '0',
+                    'last-heard-time': '1701651677',
+                    'num_recv_msgs': '0',
+                    'num_sent_msgs': '0',
+                    'peer-address': '1.1.1.1',
+                    'port': '5007',
+                    'state': 'conn:idle',
+                    'status-msg': '-',
+                    'version': '0x6',
+                    'vsys': 'vsys1',
+                    'vsys_hub': 'no'
+                }
+            ]
+        }
+        ```
+        """
+
+        # This returns a result if the firewall is acting as a redistribution agent
+        return_dict = {"clients": [], "agents": []}
+        result = self.op_parser("show redistribution service client all")
+        if result.get("entry"):
+            entries = result.get("entry")
+            if type(entries) is dict:
+                entries = [entries]
+            return_dict["clients"] = entries
+
+        result = self.op_parser("show redistribution service agent all")
+        if result.get("entry"):
+            entries = result.get("entry")
+            if type(entries) is dict:
+                entries = [entries]
+            return_dict["agents"] = entries
+
+        return return_dict
+
+    def get_device_software_version(self):
+        """Gets the current running device software version, as a packaging.version.Version object.
+
+        This allows you to do comparators between other Version objects easily. Note that this strips out information
+            like 'xfr' but maintains the hotfix (i.e 9.1.12-h3 becaomes 9.1.12.3 for the purpose of versioning).
+
+        # Returns the software version as a packaging 'Version' object.
+
+        Version: Version(9.1.12)
+        """
+        self._fw.refresh_system_info()
+        self._fw.get_device_version()
+        fw_version = self._fw.version.replace("-h", ".")
+        return version.parse(fw_version)
