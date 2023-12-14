@@ -1458,7 +1458,5 @@ class FirewallProxy:
                                 "MTU": entry.get("mtu")
                             }
                             results[key] = result_entry
-                        else:
-                            print("Invalid entry format:", entry)
 
         return results
