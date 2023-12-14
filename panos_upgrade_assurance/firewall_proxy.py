@@ -1402,3 +1402,63 @@ class FirewallProxy:
         self._fw.get_device_version()
         fw_version = self._fw.version.replace("-h", ".")
         return version.parse(fw_version)
+
+    def get_fib(self) -> dict:
+        """
+        Get the information from the forwarding information table (FIB).
+
+        The actual API command run is `show routing fib`.
+
+        # Returns
+
+        dict: Status of the route entries in the FIB
+        ```python showLineNumbers title="Sample output"
+        {
+            '0.0.0.0/0_ethernet1/1': {
+                'Destination': '0.0.0.0/0',
+                'Interface': 'ethernet1/1',
+                'Next Hop Type': '0',
+                'Flags': 'ug',
+                'Next Hop': '10.10.11.1',
+                'MTU': '1500'
+            },
+            '1.1.1.1/32_loopback.10': {
+                'Destination': '1.1.1.1/32',
+                'Interface': 'loopback.10',
+                'Next Hop Type': '3',
+                'Flags': 'uh',
+                'Next Hop': '0.0.0.0',
+                'MTU': '1500'
+            }
+        }
+        ```
+
+        """
+        response = self.op_parser(cmd="show routing fib")
+        
+        fibs = response["fibs"]["entry"]
+        
+        results = {}
+        
+        for fib_entry in fibs:
+            if isinstance(fib_entry, dict):
+                entries_data = fib_entry.get("entries", {})
+                entries = entries_data.get("entry", []) if entries_data is not None else []
+
+                if entries:
+                    for entry in entries:
+                        if isinstance(entry, dict):
+                            key = f'{entry["dst"]}_{entry["interface"]}'
+                            result_entry = {
+                                "Destination": entry.get("dst"),
+                                "Interface": entry.get("interface"),
+                                "Next Hop Type": entry.get("nh_type"),
+                                "Flags": entry.get("flags"),
+                                "Next Hop": entry.get("nexthop"),
+                                "MTU": entry.get("mtu")
+                            }
+                            results[key] = result_entry
+                        else:
+                            print("Invalid entry format:", entry)
+
+        return results
