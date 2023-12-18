@@ -1455,7 +1455,7 @@ class FirewallProxy:
                             "Next Hop Type": entry.get("nh_type"),
                             "Flags": entry.get("flags"),
                             "Next Hop": entry.get("nexthop"),
-                            "MTU": entry.get("mtu")
+                            "MTU": entry.get("mtu"),
                         }
                         results[key] = result_entry
 

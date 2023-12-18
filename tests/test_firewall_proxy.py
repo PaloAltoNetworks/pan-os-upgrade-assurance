@@ -1729,22 +1729,22 @@ class TestFirewallProxy:
         fw_proxy_mock.op.return_value = raw_response
 
         assert fw_proxy_mock.get_fib() == {
-            '0.0.0.0/0_ethernet1/1': {
-                'Destination': '0.0.0.0/0',
-                'Interface': 'ethernet1/1',
-                'Next Hop Type': '0',
-                'Flags': 'ug',
-                'Next Hop': '10.10.11.1',
-                'MTU': '1500'
+            "0.0.0.0/0_ethernet1/1": {
+                "Destination": "0.0.0.0/0",
+                "Interface": "ethernet1/1",
+                "Next Hop Type": "0",
+                "Flags": "ug",
+                "Next Hop": "10.10.11.1",
+                "MTU": "1500",
             },
-            '1.1.1.1/32_loopback.10': {
-                'Destination': '1.1.1.1/32',
-                'Interface': 'loopback.10',
-                'Next Hop Type': '3',
-                'Flags': 'uh',
-                'Next Hop': '0.0.0.0',
-                'MTU': '1500'
-            }
+            "1.1.1.1/32_loopback.10": {
+                "Destination": "1.1.1.1/32",
+                "Interface": "loopback.10",
+                "Next Hop Type": "3",
+                "Flags": "uh",
+                "Next Hop": "0.0.0.0",
+                "MTU": "1500",
+            },
         }
 
     def test_get_fib_routes_none(self, fw_proxy_mock):
