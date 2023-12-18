@@ -1435,7 +1435,8 @@ class FirewallProxy:
 
         """
         response = self.op_parser(cmd="show routing fib")
-        
+        if response["fibs"] is None:
+            return {}
         fibs = response["fibs"]["entry"]
         
         results = {}
@@ -1445,18 +1446,17 @@ class FirewallProxy:
                 entries_data = fib_entry.get("entries", {})
                 entries = entries_data.get("entry", []) if entries_data is not None else []
 
-                if entries:
-                    for entry in entries:
-                        if isinstance(entry, dict):
-                            key = f'{entry["dst"]}_{entry["interface"]}'
-                            result_entry = {
-                                "Destination": entry.get("dst"),
-                                "Interface": entry.get("interface"),
-                                "Next Hop Type": entry.get("nh_type"),
-                                "Flags": entry.get("flags"),
-                                "Next Hop": entry.get("nexthop"),
-                                "MTU": entry.get("mtu")
-                            }
-                            results[key] = result_entry
+                for entry in entries if isinstance(entries, list) else [entries]:
+                    if isinstance(entry, dict):
+                        key = f'{entry["dst"]}_{entry["interface"]}'
+                        result_entry = {
+                            "Destination": entry.get("dst"),
+                            "Interface": entry.get("interface"),
+                            "Next Hop Type": entry.get("nh_type"),
+                            "Flags": entry.get("flags"),
+                            "Next Hop": entry.get("nexthop"),
+                            "MTU": entry.get("mtu")
+                        }
+                        results[key] = result_entry
 
         return results
