@@ -1746,6 +1746,7 @@ class TestFirewallProxy:
                 'MTU': '1500'
             }
         }
+
     def test_get_fib_routes_none(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
@@ -1760,4 +1761,3 @@ class TestFirewallProxy:
         fw_proxy_mock.op.return_value = raw_response
 
         assert fw_proxy_mock.get_fib() == {}
-

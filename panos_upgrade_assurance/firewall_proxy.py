@@ -1438,9 +1438,9 @@ class FirewallProxy:
         if response["fibs"] is None:
             return {}
         fibs = response["fibs"]["entry"]
-        
+
         results = {}
-        
+
         for fib_entry in fibs:
             if isinstance(fib_entry, dict):
                 entries_data = fib_entry.get("entries", {})
