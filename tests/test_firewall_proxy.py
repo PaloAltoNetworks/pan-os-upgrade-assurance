@@ -1706,7 +1706,7 @@ class TestFirewallProxy:
                                 <interface>loopback.10</interface>
                                 <nh_type>3</nh_type>
                                 <flags>uh</flags>
-                                <nexthop>0.0.0.0</nexthop>
+                                <nexthop>1.2.3.4</nexthop>
                                 <mtu>1500</mtu>
                             </entry>
                         </entries>
@@ -1742,7 +1742,7 @@ class TestFirewallProxy:
                 "Interface": "loopback.10",
                 "Next Hop Type": "3",
                 "Flags": "uh",
-                "Next Hop": "0.0.0.0",
+                "Next Hop": "1.2.3.4",
                 "MTU": "1500",
             },
         }
