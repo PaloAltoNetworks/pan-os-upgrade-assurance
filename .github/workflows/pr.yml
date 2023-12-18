@@ -70,7 +70,7 @@ jobs:
         working-directory: docs
         run: tar --exclude .DS_Store --exclude sidebars.js -cvf documentation.tar *
       - name: upload the documentation artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: documentation
           path: docs/documentation.tar
