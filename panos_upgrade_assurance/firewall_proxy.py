@@ -1412,6 +1412,7 @@ class FirewallProxy:
         # Returns
 
         dict: Status of the route entries in the FIB
+
         ```python showLineNumbers title="Sample output"
         {
             '0.0.0.0/0_ethernet1/1': {
