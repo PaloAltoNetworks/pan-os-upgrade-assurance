@@ -413,7 +413,15 @@ class SnapshotCompare:
         item_changed = False
         for key in common_keys:
             if right_side_to_compare[key] != left_side_to_compare[key]:
-                if isinstance(left_side_to_compare[key], str):
+                if left_side_to_compare[key] is None or right_side_to_compare[key] is None:
+                    if ConfigParser.is_element_included(key, properties):
+                        result["changed"]["changed_raw"][key] = dict(
+                            left_snap=left_side_to_compare[key],
+                            right_snap=right_side_to_compare[key],
+                        )
+                        item_changed = True
+
+                elif isinstance(left_side_to_compare[key], str):
                     if ConfigParser.is_element_included(key, properties):
                         result["changed"]["changed_raw"][key] = dict(
                             left_snap=left_side_to_compare[key],

@@ -95,7 +95,9 @@ if __name__ == "__main__":
         {"license": {
             "properties": ["!Logging Service", "issued"]  # works
         }},
-
+        # {"license": {
+        #     "properties": ["authcode"]  # works when one of them is null
+        # }},
 
         # {"routes": {"properties": ["!flags"], "count_change_threshold": 10}},
         # "!content_version",

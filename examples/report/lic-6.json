@@ -30,15 +30,16 @@
       "expires": "June 30, 2028",
       "feature": "PAN-DB URL Filtering",
       "issued": "April 29, 2023",
-      "serial": "013201027248"
+      "serial": "013201027248",
+      "extra": "def"
     },
     "C feature": {
-      "authcode": null,
+      "authcode": "12345678",
       "description": "Palo Alto Networks URL Filtering License",
       "expired": "no",
       "expires": "June 30, 2028",
       "feature": "PAN-DB URL Filtering",
-      "issued": "April 27, 2023",
+      "issued": "April 28, 2023",
       "serial": "013201027229"
     }
   }
