@@ -1460,14 +1460,14 @@ Please see the sections below for details of each health check:
 
 ### `device_root_certificate_issue`
 
-Checks if a device is impacted, or is to be impacted, by the [expiration of the device root certificate.](https://knowledgebase.paloaltonetworks.com/KCSArticleDetail?id=kA14u0000008Vp5CAE)
+Checks if a device is impacted, or is to be impacted, by the [expiration of the device root certificate](https://knowledgebase.paloaltonetworks.com/KCSArticleDetail?id=kA14u0000008Vp5CAE).
 
 This test by default checks only if the software version is an affected version and fails if it is.
 
 If the `fail_when_affected_version_only` parameter is set to False, however, it will check to see if the issue is corrected
 by the device running and updated content version.
 
-**Method:** [`CheckFirewall.check_arp_entry()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallcheck_arp_entry)
+**Method:** [`CheckFirewall.check_device_root_certificate_issue()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallcheck_device_root_certificate_issue)
 
 **Configuration parameters**
 
