@@ -1260,7 +1260,7 @@ class CheckFirewall:
         This check will FAIL if so, allowing you to build upgrade logic based on when and how it's failed.
 
         This check will fail in the following scenarios:
-        
+
         1. The device is running software that is affected by the issue AND is running out of date content
             AND is NOT running the user-id service or data redistribution
         2. The device is running software that is affected by the issue AND IS running user-id service OR data

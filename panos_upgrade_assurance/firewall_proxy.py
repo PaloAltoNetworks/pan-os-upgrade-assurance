@@ -1395,7 +1395,7 @@ class FirewallProxy:
             like `xfr` but maintains the hotfix (i.e `9.1.12-h3` becomes `9.1.12.3` for the purpose of versioning).
 
         # Returns
-        
+
         Version: the software version as a packaging 'Version' object.
         """
         self._fw.refresh_system_info()
