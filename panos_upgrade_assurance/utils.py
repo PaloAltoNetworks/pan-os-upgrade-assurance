@@ -49,6 +49,7 @@ class SnapType:
     CONTENT_VERSION = "content_version"
     SESSION_STATS = "session_stats"
     IPSEC_TUNNELS = "ip_sec_tunnels"
+    FIB_ROUTES = "fib_routes"
 
 
 class HealthType:

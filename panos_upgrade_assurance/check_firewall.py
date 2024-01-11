@@ -83,6 +83,7 @@ class CheckFirewall:
             SnapType.CONTENT_VERSION: self.get_content_db_version,
             SnapType.SESSION_STATS: self._node.get_session_stats,
             SnapType.IPSEC_TUNNELS: self.get_ip_sec_tunnels,
+            SnapType.FIB_ROUTES: self._node.get_fib,
         }
 
         self._check_method_mapping = {
