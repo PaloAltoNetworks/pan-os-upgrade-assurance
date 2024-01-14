@@ -6,6 +6,7 @@ import time
 
 import panos.errors
 from packaging.version import parse as parse_version
+from packaging.version import Version
 
 from panos_upgrade_assurance.utils import (
     CheckResult,
@@ -1253,6 +1254,38 @@ class CheckFirewall:
 
         return result
 
+    @staticmethod
+    def check_version_against_version_match_dict(version: Version, match_dict: dict):
+        """Compare the given software version against the match dict.
+
+        # Parameters
+        version (str): The software version to compare. Example: "10.1.11"
+        match_dict (dict): A dictionary of tuples mapping major/minor versions to match criteria
+            example
+
+            ```python
+            {
+                "81": [("==", "8.1.21.2"), (">=", "8.1.25.1")],
+                "90": [(">=", "9.0.16.5")],
+            }
+            ```
+
+        Returns
+
+        bool: `True` If the given software version matches the provided match criteria
+        """
+        match_versions = match_dict.get(f"{version.major}{version.minor}")
+        if match_versions:
+            for operator, match_version in match_versions:
+                match_version = parse_version(match_version)
+                if operator == "==":
+                    if version == match_version:
+                        return True
+                elif operator == ">=":
+                    if version >= match_version:
+                        return True
+
+
     def check_device_root_certificate_issue(self, fail_when_affected_version_only: bool = True) -> CheckResult:
         """Checks whether the target device is affected by the Root Certificate Expiration issue;
 
@@ -1316,16 +1349,8 @@ class CheckFirewall:
         }
         fixed_content_version = 8776.8390
 
-        fixed_versions = fixed_version_map.get(f"{software_version.major}{software_version.minor}")
-        if fixed_versions:
-            for operator, fixed_version in fixed_versions:
-                fixed_version = parse_version(fixed_version)
-                if operator == "==":
-                    if software_version == fixed_version:
-                        result.status = CheckStatus.SUCCESS
-                elif operator == ">=":
-                    if software_version >= fixed_version:
-                        result.status = CheckStatus.SUCCESS
+        if self.check_version_against_version_match_dict(software_version, fixed_version_map):
+            result.status = CheckStatus.SUCCESS
 
         # If the device is already running fixed software, we can return immediately
         if result.status == CheckStatus.SUCCESS:
@@ -1372,3 +1397,55 @@ class CheckFirewall:
             "expire December 31st, 2023."
         )
         return result
+
+    def check_cdss_and_panorama_certificate_issue(self):
+        """Checks whether the device is affected by the following advisory;
+
+        https://live.paloaltonetworks.com/t5/customer-advisories/additional-pan-os-certificate-expirations-and-new-comprehensive/ta-p/572158
+
+        Check will fail in either of following scenarios:
+
+         * Device is running an affected software version
+         * Device has not been onboarded for CDSS
+
+        This check disregards whether the firewalls are running a fixed content version, looking only for fixed
+        software instead.
+        """
+        fixed_version_map = {
+            "81": [
+                ("==", "8.1.21.3"), ("==", "8.1.25.3"), (">=", "8.1.26")
+            ],
+            "90": [
+                ("==", "9.0.16.7"), ("==", "9.0.17.5")
+            ],
+            "91": [
+                ("==", "9.1.11.5"), ("==", "9.1.12.7"), ("==", "9.1.13.5"), ("==", "9.1.14.8"), ("==", "9.1.16.5"),
+                (">=", "9.1.17")
+            ],
+            "100": [
+                ("==", "10.0.8.11"), ("==", "10.0.11.4"), ("==", "10.0.12.5")
+            ],
+            "101": [
+                ("==", "10.1.3.3"), ("==", "10.1.4.6"), ("==", "10.1.5.4"), ("==", "10.1.6.8"), ("==", "10.1.7.1"),
+                ("==", "10.1.8.7"), ("==", "10.1.9.8"), ("==", "10.1.10.5"), ("==", "10.1.11.4"), (">=", "10.1.12")
+            ],
+            "102": [
+                ("==", "10.2.0.2"), ("==", "10.2.1.1"), ("==", "10.2.2.4"), ("==", "10.2.3.11"), ("==", "10.2.4.10"),
+                ("==", "10.2.5.4"), ("==", "10.2.6.1"), ("==", "10.2.7.3"), (">=", "10.2.8")
+            ],
+            "110": [
+                ("==", "11.0.0.2"), ("==", "11.0.1.3"), ("==", "11.0.2.3"), (">=", "11.0.3.3"), (">=", "11.0.4")
+            ],
+            "111": [
+                ("==", "11.1.0.2"), (">=", "11.1.1")
+            ]
+        }
+
+        result = CheckResult()
+
+        software_version = self._node.get_device_software_version()
+
+        if self.check_version_against_version_match_dict(software_version, fixed_version_map):
+            # Fixed software means we can return immediately, no need to further check
+            result.status = CheckStatus.SUCCESS
+            return result
