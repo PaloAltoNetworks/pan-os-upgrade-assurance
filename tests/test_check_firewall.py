@@ -1307,3 +1307,64 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
 
         check_firewall_mock._health_check_method_mapping["check1"].assert_called_once_with()
         check_firewall_mock._health_check_method_mapping["check2"].assert_called_once_with(param1=123)
+
+    @pytest.mark.parametrize(
+        "running_software, expected_status",
+        [
+            ("10.1.2", CheckStatus.FAIL),  # Device running broken version
+            ("10.1.13", CheckStatus.SUCCESS),  # Device running fixed version
+        ],
+    )
+    def test_check_cdss_and_panorama_certificate_issue(self, check_firewall_mock, running_software, expected_status):
+        """This test validates the behavior when the test is only checking the software version is affected by
+        the issue."""
+
+        from packaging import version
+
+        check_firewall_mock._node.get_device_software_version = MagicMock(return_value=version.parse(running_software))
+        assert check_firewall_mock.check_cdss_and_panorama_certificate_issue().status == expected_status
+
+    @pytest.mark.parametrize(
+        "running_content_version, last_reboot, expected_status",
+        [
+            (
+                    "8000-8391",
+                    datetime(2022, 1, 1, 0, 0, 0),
+                    CheckStatus.FAIL
+            ),  # Device running older content version and no reboot
+            (
+                    "8795-8489",
+                    datetime(2022, 1, 1, 0, 0, 0),
+                    CheckStatus.FAIL
+            ),  # Device running fixed version without reboot
+            (
+                    "8795-8489",
+                    datetime(2024, 1, 10, 0, 0, 0),
+                    CheckStatus.SUCCESS
+            ),  # Device running fixed version and rebooted
+        ],
+    )
+    def test_check_cdss_and_panorama_certificate_issue_by_content_version(
+        self, check_firewall_mock, running_content_version, expected_status, last_reboot
+    ):
+        """Tests that we check the content version and use a best effort approach for seeing if the device has been
+        rebooted in the time since it was released/installed"""
+        from packaging import version
+
+        check_firewall_mock._node.get_device_software_version = MagicMock(
+            return_value=version.parse("10.1.0")  # Affected Version
+        )
+
+        check_firewall_mock._node.get_content_db_version = MagicMock(
+            return_value=running_content_version
+        )
+
+        # Device hasn't been rebooted
+        check_firewall_mock._node.get_system_time_rebooted = MagicMock(
+            return_value=last_reboot
+        )
+
+        assert (
+            check_firewall_mock.check_cdss_and_panorama_certificate_issue().status
+            == expected_status
+        )

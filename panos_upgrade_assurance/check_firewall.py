@@ -1406,10 +1406,10 @@ class CheckFirewall:
         Check will fail in either of following scenarios:
 
          * Device is running an affected software version
-         * Device has not been onboarded for CDSS
+         * Device is running an affected content version
+         * Device is running the fixed content version or higher but has not been rebooted - note this is best effort,
+            and is based on when the content version was released and the device was rebooted
 
-        This check disregards whether the firewalls are running a fixed content version, looking only for fixed
-        software instead.
         """
         fixed_version_map = {
             "81": [
@@ -1441,6 +1441,10 @@ class CheckFirewall:
             ]
         }
 
+        # Release date and fixed version are both static
+        fixed_content_version = 8795.8489
+        fixed_content_version_release_date = datetime(2024, 1, 8, 19, 26, 43)
+
         result = CheckResult()
 
         software_version = self._node.get_device_software_version()
@@ -1449,3 +1453,18 @@ class CheckFirewall:
             # Fixed software means we can return immediately, no need to further check
             result.status = CheckStatus.SUCCESS
             return result
+
+        content_version = float(self._node.get_content_db_version().replace("-", "."))
+
+        if content_version >= fixed_content_version:
+            # Check the device has been rebooted since the release of the fixed content version
+            # This is not a perfect test - if the customer reboots without installing the content update, then
+            # later installs it, it will pass even though one further restart is required.
+            reboot_time = self._node.get_system_time_rebooted()
+            if reboot_time < fixed_content_version_release_date:
+                result.reason = ("Device is running fixed Content but still requires a restart for the fix to take "
+                                 "effect.")
+            else:
+                result.status = CheckStatus.SUCCESS
+
+        return result
