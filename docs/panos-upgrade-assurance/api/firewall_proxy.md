@@ -1255,3 +1255,22 @@ __Returns__
 }
 ```
 
+### `FirewallProxy.get_system_time_rebooted`
+
+```python
+def get_system_time_rebooted() -> datetime
+```
+
+Returns the date and time the system last rebooted using the system uptime.
+
+The actual API command is `show system info`.
+
+__Returns__
+
+
+`datetime`: Time system was last rebooted based on current time - system uptime string
+
+```python showLineNumbers title="Sample output"
+datetime(2024, 01, 01, 00, 00, 00)
+```
+

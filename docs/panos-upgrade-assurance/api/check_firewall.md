@@ -686,6 +686,32 @@ __Returns__
 
 `dict`: Results of all configured checks.
 
+### `CheckFirewall.check_version_against_version_match_dict`
+
+```python
+@staticmethod
+def check_version_against_version_match_dict(version: Version,
+                                             match_dict: dict)
+```
+
+Compare the given software version against the match dict.
+
+# Parameters
+version (str): The software version to compare. Example: "10.1.11"
+match_dict (dict): A dictionary of tuples mapping major/minor versions to match criteria
+example
+
+
+Returns
+
+bool: `True` If the given software version matches the provided match criteria
+    ```python
+    {
+        "81": [("==", "8.1.21.2"), (">=", "8.1.25.1")],
+        "90": [(">=", "9.0.16.5")],
+    }
+    ```
+
 ### `CheckFirewall.check_device_root_certificate_issue`
 
 ```python
@@ -711,4 +737,21 @@ __Parameters__
 - __fail_when_affected_version_only__ (`bool, optional`): (defaults to `True`) When set to False, this test will only
     fail if the software version is affected by the root certificate issue, AND the device is used for data
     redistribution OR it's using an out-of-date content DB version.
+
+### `CheckFirewall.check_cdss_and_panorama_certificate_issue`
+
+```python
+def check_cdss_and_panorama_certificate_issue()
+```
+
+Checks whether the device is affected by the following advisory;
+
+https://live.paloaltonetworks.com/t5/customer-advisories/additional-pan-os-certificate-expirations-and-new-comprehensive/ta-p/572158
+
+Check will fail in either of following scenarios:
+
+ * Device is running an affected software version
+ * Device is running an affected content version
+ * Device is running the fixed content version or higher but has not been rebooted - note this is best effort,
+    and is based on when the content version was released and the device was rebooted
 
