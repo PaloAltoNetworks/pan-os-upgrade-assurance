@@ -105,7 +105,10 @@ class CheckFirewall:
             CheckType.JOBS: self.check_non_finished_jobs,
         }
 
-        self._health_check_method_mapping = {HealthType.DEVICE_ROOT_CERTIFICATE_ISSUE: self.check_device_root_certificate_issue}
+        self._health_check_method_mapping = {
+            HealthType.DEVICE_ROOT_CERTIFICATE_ISSUE: self.check_device_root_certificate_issue,
+            HealthType.DEVICE_CDSS_AND_PANORAMA_CERTIFICATE_ISSUE: self.check_cdss_and_panorama_certificate_issue,
+        }
 
         if not skip_force_locale:
             locale.setlocale(
@@ -1471,7 +1474,14 @@ class CheckFirewall:
             reboot_time = self._node.get_system_time_rebooted()
             if reboot_time < fixed_content_version_release_date:
                 result.reason = "Device is running fixed Content but still requires a restart for the fix to take " "effect."
+                return result
             else:
                 result.status = CheckStatus.SUCCESS
+                return result
+
+        result.reason = (
+            "Device is running a software version, and a content version, that is affected by the 2024 certificate"
+            " expiration, the first of which will occur on the 7th of April, 2024."
+        )
 
         return result
