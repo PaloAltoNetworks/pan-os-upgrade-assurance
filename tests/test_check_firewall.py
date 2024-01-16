@@ -1327,21 +1327,9 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
     @pytest.mark.parametrize(
         "running_content_version, last_reboot, expected_status",
         [
-            (
-                    "8000-8391",
-                    datetime(2022, 1, 1, 0, 0, 0),
-                    CheckStatus.FAIL
-            ),  # Device running older content version and no reboot
-            (
-                    "8795-8489",
-                    datetime(2022, 1, 1, 0, 0, 0),
-                    CheckStatus.FAIL
-            ),  # Device running fixed version without reboot
-            (
-                    "8795-8489",
-                    datetime(2024, 1, 10, 0, 0, 0),
-                    CheckStatus.SUCCESS
-            ),  # Device running fixed version and rebooted
+            ("8000-8391", datetime(2022, 1, 1, 0, 0, 0), CheckStatus.FAIL),  # Device running older content version and no reboot
+            ("8795-8489", datetime(2022, 1, 1, 0, 0, 0), CheckStatus.FAIL),  # Device running fixed version without reboot
+            ("8795-8489", datetime(2024, 1, 10, 0, 0, 0), CheckStatus.SUCCESS),  # Device running fixed version and rebooted
         ],
     )
     def test_check_cdss_and_panorama_certificate_issue_by_content_version(
@@ -1355,16 +1343,9 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
             return_value=version.parse("10.1.0")  # Affected Version
         )
 
-        check_firewall_mock._node.get_content_db_version = MagicMock(
-            return_value=running_content_version
-        )
+        check_firewall_mock._node.get_content_db_version = MagicMock(return_value=running_content_version)
 
         # Device hasn't been rebooted
-        check_firewall_mock._node.get_system_time_rebooted = MagicMock(
-            return_value=last_reboot
-        )
+        check_firewall_mock._node.get_system_time_rebooted = MagicMock(return_value=last_reboot)
 
-        assert (
-            check_firewall_mock.check_cdss_and_panorama_certificate_issue().status
-            == expected_status
-        )
+        assert check_firewall_mock.check_cdss_and_panorama_certificate_issue().status == expected_status
