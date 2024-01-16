@@ -16,7 +16,7 @@ from panos_upgrade_assurance.exceptions import (
     UpdateServerConnectivityException,
     GetXpathConfigFailedException,
 )
-from datetime import datetime, timedelta
+from datetime import datetime
 
 
 @pytest.fixture(scope="function")

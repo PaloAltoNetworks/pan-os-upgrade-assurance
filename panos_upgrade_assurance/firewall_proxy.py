@@ -1480,7 +1480,7 @@ class FirewallProxy:
         uptime_string = response.findtext("./system/uptime")
         current_time = datetime.now()
 
-        time_re_match = re.search("(\d+) days, (\d+):(\d+):(\d+)", uptime_string)
+        time_re_match = re.search(r"(\d+) days, (\d+):(\d+):(\d+)", uptime_string)
 
         rebooted_time = current_time - timedelta(
             days=int(time_re_match.group(1)),
