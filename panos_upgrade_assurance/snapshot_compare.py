@@ -520,7 +520,7 @@ class SnapshotCompare:
         {
             "added": {
                 "added_keys": [
-                    "default_10.26.129.0/25_ethernet1/2_10.48.6.1",
+                    "default_10.26.129.0/25_ethernet1/2_10.26.129.1",
                     "default_168.63.129.16/32_ethernet1/3_10.26.129.129"
                 ],
                 "passed": "False"
@@ -534,7 +534,7 @@ class SnapshotCompare:
             "changed": {
                 # highlight-start
                 "changed_raw": {
-                    "default_10.26.130.0/25_ethernet1/2_10.48.6.1": {
+                    "default_10.26.130.0/25_ethernet1/2_10.26.129.1": {
                         "added": {
                             "added_keys": [],
                             "passed": "True"
