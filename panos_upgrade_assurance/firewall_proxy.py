@@ -561,14 +561,15 @@ class FirewallProxy:
 
         * virtual router name,
         * destination CIDR,
-        * network interface name if one is available, empty string otherwise.
+        * network interface name if one is available, empty string otherwise,
+        * next-hop address or name.
 
         The key does not provide any meaningful information, it's there only to introduce uniqueness for each entry. All
         properties that make a key are also available in the value of a dictionary element.
 
         ```python showLineNumbers title="Sample output"
         {
-            private_0.0.0.0/0_private/i3': {
+            private_0.0.0.0/0_private/i3_vr-public': {
                 'age': None,
                 'destination': '0.0.0.0/0',
                 'flags': 'A S',
@@ -578,7 +579,7 @@ class FirewallProxy:
                 'route-table': 'unicast',
                 'virtual-router': 'private'
             },
-            'public_10.0.0.0/8_public/i3': {
+            'public_10.0.0.0/8_public/i3_vr-private': {
                 'age': None,
                 'destination': '10.0.0.0/8',
                 'flags': 'A S',

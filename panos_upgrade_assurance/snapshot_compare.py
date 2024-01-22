@@ -246,7 +246,7 @@ class SnapshotCompare:
         ```python showLineNumbers
         {
             "routes": {
-                "default_0.0.0.0/0_ethernet1/3": {
+                "default_0.0.0.0/0_ethernet1/3_10.26.129.129": {
                     "virtual-router": "default",
                     "destination": "0.0.0.0/0",
                     "nexthop": "10.26.129.129",
@@ -467,7 +467,7 @@ class SnapshotCompare:
             },
             'missing': {
                 'missing_keys': [
-                    'default_0.0.0.0/0_ethernet1/3'
+                    'default_0.0.0.0/0_ethernet1/3_10.26.129.129'
                 ],
                 'passed': False
             },
@@ -520,21 +520,21 @@ class SnapshotCompare:
         {
             "added": {
                 "added_keys": [
-                    "default_10.26.129.0/25_ethernet1/2",
-                    "default_168.63.129.16/32_ethernet1/3"
+                    "default_10.26.129.0/25_ethernet1/2_10.48.6.1",
+                    "default_168.63.129.16/32_ethernet1/3_10.26.129.129"
                 ],
                 "passed": "False"
             },
             "missing": {
                 "missing_keys": [
-                    "default_0.0.0.0/0_ethernet1/3"
+                    "default_0.0.0.0/0_ethernet1/3_10.26.129.129"
                 ],
                 "passed": "False"
             },
             "changed": {
                 # highlight-start
                 "changed_raw": {
-                    "default_10.26.130.0/25_ethernet1/2": {
+                    "default_10.26.130.0/25_ethernet1/2_10.48.6.1": {
                         "added": {
                             "added_keys": [],
                             "passed": "True"
