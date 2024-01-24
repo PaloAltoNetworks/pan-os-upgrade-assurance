@@ -458,7 +458,7 @@ class TestFirewallProxy:
         fw_proxy_mock.op.return_value = raw_response
 
         assert fw_proxy_mock.get_routes() == {
-            "default_0.0.0.0/0_ethernet1/1": {
+            "default_0.0.0.0/0_ethernet1/1_10.10.11.1": {
                 "age": None,
                 "destination": "0.0.0.0/0",
                 "flags": "A S E",

@@ -605,8 +605,12 @@ class FirewallProxy:
             routes = response["entry"]
             for route in routes if isinstance(routes, list) else [routes]:
                 result[
-                    f"{route['virtual-router']}_{route['destination']}_{route['interface'] if route['interface'] else ''}_\
-                    {route['nexthop'].replace(' ', '-')}"
+                    (
+                        f"{route['virtual-router']}_"
+                        f"{route['destination']}_"
+                        f"{route['interface'] if route['interface'] else ''}_"
+                        f"{route['nexthop'].replace(' ', '-')}"
+                    )
                 ] = dict(route)
 
         return result
