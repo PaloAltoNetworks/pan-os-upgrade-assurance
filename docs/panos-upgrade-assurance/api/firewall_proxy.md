@@ -106,6 +106,7 @@ __Raises__
 
 __Returns__
 
+
 `dict, xml.etree.ElementTree.Element`: The actual command output. A type is defined by the `return_xml` parameter.
 
 ### `FirewallProxy.get_parser`
@@ -135,6 +136,7 @@ __Raises__
 - `GetXpathConfigFailedException`: This exception is raised when XPATH is not provided or does not exist.
 
 __Returns__
+
 
 `dict, xml.etree.ElementTree.Element`: The actual command output. A type is defined by the `return_xml` parameter.
 
