@@ -693,9 +693,9 @@ def check_device_root_certificate_issue(
         fail_when_affected_version_only: bool = True) -> CheckResult
 ```
 
-Checks whether the target device is affected by the [Root Certificate Expiration][loop] issue.
+Checks whether the target device is affected by the [Root Certificate Expiration][live-564672] issue.
 
-[loop]: https://live.paloaltonetworks.com/t5/customer-advisories/emergency-update-required-pan-os-root-and-default-certificate/ta-p/564672
+[live-564672]: https://live.paloaltonetworks.com/t5/customer-advisories/emergency-update-required-pan-os-root-and-default-certificate/ta-p/564672
 
 This check will FAIL if so, allowing you to build upgrade logic based on when and how it's failed.
 
