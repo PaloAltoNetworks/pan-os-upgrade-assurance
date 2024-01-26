@@ -1280,7 +1280,6 @@ class CheckFirewall:
 
         * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) if the device is not affected,
         * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise.
-
         """
         result = CheckResult()
 
