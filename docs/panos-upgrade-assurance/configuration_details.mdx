@@ -1514,62 +1514,6 @@ reports:
 </Tabs>
 ```
 
-### `session_stats`
-
-This report is slightly different than reports made with the [`SnapshotCompare.get_diff_and_threshold()`](/panos/docs/panos-upgrade-assurance/api/snapshot_compare#snapshotcompareget_diff_and_threshold) method as the snapshot data is different (refer to the [`FirewallProxy.get_session_stats()`](/panos/docs/panos-upgrade-assurance/api/firewall_proxy#firewallproxyget_session_stats) method documentation for details).
-
-It takes one parameter only: `thresholds`. It contains a list of sessions stats as available in the snapshot. For each stat a threshold value is provided. This report calculates a change in the session statistics and compares it to the threshold value. This parameter does not have a default value - when skipped the report gives no results.
-
-**Method:** [`SnapshotCompare.get_count_change_percentage()`](/panos/docs/panos-upgrade-assurance/api/snapshot_compare#snapshotcompareget_count_change_percentage)
-
-**Configuration parameters**
-
-parameter | description
---- | ---
-`thresholds` | a list of sessions with change threshold value to analyze
-
-**Sample configuration**
-
-The following configuration compares only stats for `num-max` and `num-tcp`. For both, the accepted difference is 10%.
-
-This report produces a `dict` as documented in the [`SnapshotCompare.get_count_change_percentage()`](/panos/docs/panos-upgrade-assurance/api/snapshot_compare#snapshotcompareget_count_change_percentage) method documentation.
-
-```mdx-code-block
-<Tabs>
-<TabItem value="python" label="Python" default>
-```
-
-```python showLineNumbers
-reports = [
-    {
-        'session_stats': {
-            'thresholds': [
-                {'num-max': 10},
-                {'num-tcp': 10}
-            ]
-        }
-    }
-]
-```
-
-```mdx-code-block
-</TabItem>
-<TabItem value="ansible" label="YAML">
-```
-
-```yaml showLineNumbers
-reports:
-  - session_stats:
-      thresholds:
-        - num-max: 10
-        - num-tcp: 10
-```
-
-```mdx-code-block
-</TabItem>
-</Tabs>
-```
-
 ## Health Checks
 
 Health checks are another category of check that look for specific issues or configuration that might either

@@ -107,6 +107,7 @@ class FirewallProxy:
             XML response.
 
         # Returns
+
         dict, xml.etree.ElementTree.Element: The actual command output. A type is defined by the `return_xml` parameter.
 
         """
@@ -144,6 +145,7 @@ class FirewallProxy:
         GetXpathConfigFailedException: This exception is raised when XPATH is not provided or does not exist.
 
         # Returns
+
         dict, xml.etree.ElementTree.Element: The actual command output. A type is defined by the `return_xml` parameter.
 
         """
@@ -1404,8 +1406,7 @@ class FirewallProxy:
         return version.parse(fw_version)
 
     def get_fib(self) -> dict:
-        """
-        Get the information from the forwarding information table (FIB).
+        """Get the information from the forwarding information table (FIB).
 
         The actual API command run is `show routing fib`.
 
