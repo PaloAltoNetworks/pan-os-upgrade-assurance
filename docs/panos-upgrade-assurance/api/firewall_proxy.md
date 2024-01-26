@@ -106,6 +106,7 @@ __Raises__
 
 __Returns__
 
+
 `dict, xml.etree.ElementTree.Element`: The actual command output. A type is defined by the `return_xml` parameter.
 
 ### `FirewallProxy.get_parser`
@@ -135,6 +136,7 @@ __Raises__
 - `GetXpathConfigFailedException`: This exception is raised when XPATH is not provided or does not exist.
 
 __Returns__
+
 
 `dict, xml.etree.ElementTree.Element`: The actual command output. A type is defined by the `return_xml` parameter.
 
@@ -1145,10 +1147,10 @@ Get the status of the User ID agent service.
 
 The user-id service is used to redistribute user-id information to other firewalls.
 
-__Returns the clients and agents known to this device.__
+__Returns__
 
 
-dict: The state of the user-id agent. Only returns up or down.
+`dict`: The state of the user-id agent. Only returns up or down.
 
 ```python showLineNumbers title="Sample output"
 {
@@ -1164,12 +1166,12 @@ def get_redistribution_status() -> dict
 
 Get the status of the Data Redistribution service.
 
-Redistribution is used to share data, such as user-id information, between PAN-OS firewalls or Agents.
+Redistribution service is used to share data, such as user-id information, between PAN-OS firewalls or Agents.
 
-__Returns the clients and agents known to this device.__
+__Returns__
 
 
-dict: The state of the redistribution service, and the associated clients, if available.
+`dict`: The state of the redistribution service, and the associated clients, if available.
 
 ```python showLineNumbers title="Sample output"
 {
@@ -1209,15 +1211,15 @@ dict: The state of the redistribution service, and the associated clients, if av
 def get_device_software_version()
 ```
 
-Gets the current running device software version, as a packaging.version.Version object.
+Gets the current running device software version, as a `packaging.version.Version` object.
 
 This allows you to do comparators between other Version objects easily. Note that this strips out information
-    like 'xfr' but maintains the hotfix (i.e 9.1.12-h3 becaomes 9.1.12.3 for the purpose of versioning).
+    like `xfr` but maintains the hotfix (i.e `9.1.12-h3` becomes `9.1.12.3` for the purpose of versioning).
 
-__Returns the software version as a packaging 'Version' object.__
+__Returns__
 
 
-Version: Version(9.1.12)
+`Version`: the software version as a packaging 'Version' object.
 
 ### `FirewallProxy.get_fib`
 
