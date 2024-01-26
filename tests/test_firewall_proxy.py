@@ -1676,3 +1676,88 @@ class TestFirewallProxy:
         assert fw_proxy_mock.get_device_software_version() < version.parse("9.1.12.4")
         assert fw_proxy_mock.get_device_software_version() < version.parse("10.1.1")
         assert fw_proxy_mock.get_device_software_version() > version.parse("9.0.4.2")
+
+    def test_get_fib_routes(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <dp>dp0</dp>
+                <total>16</total>
+                <fibs>
+                    <entry>
+                        <id>2</id>
+                        <vr>VR-MAIN</vr>
+                        <max>32768</max>
+                        <type>0</type>
+                        <ecmp>0</ecmp>
+                        <entries>
+                            <entry>
+                                <id>19</id>
+                                <dst>0.0.0.0/0</dst>
+                                <interface>ethernet1/1</interface>
+                                <nh_type>0</nh_type>
+                                <flags>ug</flags>
+                                <nexthop>10.10.11.1</nexthop>
+                                <mtu>1500</mtu>
+                            </entry>
+                            <entry>
+                                <id>1</id>
+                                <dst>1.1.1.1/32</dst>
+                                <interface>loopback.10</interface>
+                                <nh_type>3</nh_type>
+                                <flags>uh</flags>
+                                <nexthop>1.2.3.4</nexthop>
+                                <mtu>1500</mtu>
+                            </entry>
+                        </entries>
+                        <nentries>16</nentries>
+                    </entry>
+                    <entry>
+                        <id>3</id>
+                        <vr>VR-MAIN</vr>
+                        <max>32768</max>
+                        <type>1</type>
+                        <ecmp>0</ecmp>
+                        <entries/>
+                        <nentries>0</nentries>
+                    </entry>
+                </fibs>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_fib() == {
+            "0.0.0.0/0_ethernet1/1": {
+                "Destination": "0.0.0.0/0",
+                "Interface": "ethernet1/1",
+                "Next Hop Type": "0",
+                "Flags": "ug",
+                "Next Hop": "10.10.11.1",
+                "MTU": "1500",
+            },
+            "1.1.1.1/32_loopback.10": {
+                "Destination": "1.1.1.1/32",
+                "Interface": "loopback.10",
+                "Next Hop Type": "3",
+                "Flags": "uh",
+                "Next Hop": "1.2.3.4",
+                "MTU": "1500",
+            },
+        }
+
+    def test_get_fib_routes_none(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <dp>dp0</dp>
+                <total>0</total>
+                <fibs/>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_fib() == {}
