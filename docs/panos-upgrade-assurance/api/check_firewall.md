@@ -691,26 +691,28 @@ __Returns__
 ```python
 @staticmethod
 def check_version_against_version_match_dict(version: Version,
-                                             match_dict: dict)
+                                             match_dict: dict) -> bool
 ```
 
 Compare the given software version against the match dict.
 
-# Parameters
-version (str): The software version to compare. Example: "10.1.11"
-match_dict (dict): A dictionary of tuples mapping major/minor versions to match criteria
-example
+__Parameters__
 
 
-Returns
-
-bool: `True` If the given software version matches the provided match criteria
+- __version__ (`Version`): The software version to compare (e.g. "10.1.11").
+- __match_dict__ (`dict`): A dictionary of tuples mapping major/minor versions to match criteria.
+    For example;
     ```python
     {
-        "81": [("==", "8.1.21.2"), (">=", "8.1.25.1")],
-        "90": [(">=", "9.0.16.5")],
+- __"81"__: [("==", "8.1.21.2"), (">=", "8.1.25.1")],
+- __"90"__: [(">=", "9.0.16.5")],
     }
     ```
+
+__Returns__
+
+
+`bool`: `True` If the given software version matches the provided match criteria
 
 ### `CheckFirewall.check_device_root_certificate_issue`
 
@@ -750,12 +752,12 @@ __Returns__
 ### `CheckFirewall.check_cdss_and_panorama_certificate_issue`
 
 ```python
-def check_cdss_and_panorama_certificate_issue()
+def check_cdss_and_panorama_certificate_issue() -> CheckResult
 ```
 
-Checks whether the device is affected by the following advisory;
+Checks whether the device is affected by the [PAN-OS Certificate Expirations Jan 2024 advisory][live-572158].
 
-https://live.paloaltonetworks.com/t5/customer-advisories/additional-pan-os-certificate-expirations-and-new-comprehensive/ta-p/572158
+[live-572158]: https://live.paloaltonetworks.com/t5/customer-advisories/additional-pan-os-certificate-expirations-and-new-comprehensive/ta-p/572158
 
 Check will fail in either of following scenarios:
 
@@ -763,3 +765,12 @@ Check will fail in either of following scenarios:
  * Device is running an affected content version
  * Device is running the fixed content version or higher but has not been rebooted - note this is best effort,
     and is based on when the content version was released and the device was rebooted
+
+__Returns__
+
+
+`CheckResult`: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking             value of:
+
+* [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) if the device is not affected,
+* [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise.
+

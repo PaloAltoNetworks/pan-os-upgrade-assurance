@@ -1258,15 +1258,14 @@ class CheckFirewall:
         return result
 
     @staticmethod
-    def check_version_against_version_match_dict(version: Version, match_dict: dict):
+    def check_version_against_version_match_dict(version: Version, match_dict: dict) -> bool:
         """Compare the given software version against the match dict.
 
         # Parameters
 
-        version (str): The software version to compare. Example: "10.1.11".
-        match_dict (dict): A dictionary of tuples mapping major/minor versions to match criteria. For
-            example:
-
+        version (Version): The software version to compare (e.g. "10.1.11").
+        match_dict (dict): A dictionary of tuples mapping major/minor versions to match criteria.
+            For example;
             ```python
             {
                 "81": [("==", "8.1.21.2"), (">=", "8.1.25.1")],
@@ -1289,6 +1288,7 @@ class CheckFirewall:
                 elif operator == ">=":
                     if version >= match_version:
                         return True
+        return False
 
     def check_device_root_certificate_issue(self, fail_when_affected_version_only: bool = True) -> CheckResult:
         """Checks whether the target device is affected by the [Root Certificate Expiration][live-564672] issue.
@@ -1410,7 +1410,7 @@ class CheckFirewall:
         )
         return result
 
-    def check_cdss_and_panorama_certificate_issue(self):
+    def check_cdss_and_panorama_certificate_issue(self) -> CheckResult:
         """Checks whether the device is affected by the [PAN-OS Certificate Expirations Jan 2024 advisory][live-572158].
 
         [live-572158]: https://live.paloaltonetworks.com/t5/customer-advisories/additional-pan-os-certificate-expirations-and-new-comprehensive/ta-p/572158
