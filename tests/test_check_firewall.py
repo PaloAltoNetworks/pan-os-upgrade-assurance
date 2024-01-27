@@ -1315,7 +1315,7 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
             ("10.1.13", CheckStatus.SUCCESS),  # Device running fixed version
         ],
     )
-    def test_check_cdss_and_panorama_certificate_issue(self, check_firewall_mock, running_software, expected_status):
+    def test_check_cdss_and_panorama_certificate_issue(self, running_software, expected_status, check_firewall_mock):
         """This test validates the behavior when the test is only checking the software version is affected by
         the issue."""
 
@@ -1333,7 +1333,7 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         ],
     )
     def test_check_cdss_and_panorama_certificate_issue_by_content_version(
-        self, check_firewall_mock, running_content_version, expected_status, last_reboot
+        self, running_content_version, last_reboot, expected_status, check_firewall_mock
     ):
         """Tests that we check the content version and use a best effort approach for seeing if the device has been
         rebooted in the time since it was released/installed"""

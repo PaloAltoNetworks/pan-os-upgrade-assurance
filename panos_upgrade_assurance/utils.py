@@ -63,7 +63,7 @@ class HealthType:
     """
 
     DEVICE_ROOT_CERTIFICATE_ISSUE = "device_root_certificate_issue"
-    DEVICE_CDSS_AND_PANORAMA_CERTIFICATE_ISSUE = "check_cdss_and_panorama_certificate_issue"
+    DEVICE_CDSS_AND_PANORAMA_CERTIFICATE_ISSUE = "cdss_and_panorama_certificate_issue"
 
 
 class CheckStatus(Enum):

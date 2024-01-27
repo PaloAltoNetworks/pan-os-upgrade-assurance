@@ -1262,9 +1262,10 @@ class CheckFirewall:
         """Compare the given software version against the match dict.
 
         # Parameters
-        version (str): The software version to compare. Example: "10.1.11"
-        match_dict (dict): A dictionary of tuples mapping major/minor versions to match criteria
-            example
+
+        version (str): The software version to compare. Example: "10.1.11".
+        match_dict (dict): A dictionary of tuples mapping major/minor versions to match criteria. For
+            example:
 
             ```python
             {
@@ -1273,9 +1274,10 @@ class CheckFirewall:
             }
             ```
 
-        Returns
+        # Returns
 
         bool: `True` If the given software version matches the provided match criteria
+
         """
         match_versions = match_dict.get(f"{version.major}{version.minor}")
         if match_versions:
@@ -1315,6 +1317,7 @@ class CheckFirewall:
 
         * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) if the device is not affected,
         * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise.
+
         """
         result = CheckResult()
 
@@ -1360,11 +1363,9 @@ class CheckFirewall:
         }
         fixed_content_version = 8776.8390
 
+        # If the device is already running fixed software, we can return immediately
         if self.check_version_against_version_match_dict(software_version, fixed_version_map):
             result.status = CheckStatus.SUCCESS
-
-        # If the device is already running fixed software, we can return immediately
-        if result.status == CheckStatus.SUCCESS:
             return result
 
         # Return if this check is just looking at the software and not implementing any other checks
@@ -1410,9 +1411,9 @@ class CheckFirewall:
         return result
 
     def check_cdss_and_panorama_certificate_issue(self):
-        """Checks whether the device is affected by the following advisory;
+        """Checks whether the device is affected by the [PAN-OS Certificate Expirations Jan 2024 advisory][live-572158].
 
-        https://live.paloaltonetworks.com/t5/customer-advisories/additional-pan-os-certificate-expirations-and-new-comprehensive/ta-p/572158
+        [live-572158]: https://live.paloaltonetworks.com/t5/customer-advisories/additional-pan-os-certificate-expirations-and-new-comprehensive/ta-p/572158
 
         Check will fail in either of following scenarios:
 
@@ -1420,6 +1421,14 @@ class CheckFirewall:
          * Device is running an affected content version
          * Device is running the fixed content version or higher but has not been rebooted - note this is best effort,
             and is based on when the content version was released and the device was rebooted
+
+        # Returns
+
+        CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking \
+            value of:
+
+        * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) if the device is not affected,
+        * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise.
 
         """
         fixed_version_map = {

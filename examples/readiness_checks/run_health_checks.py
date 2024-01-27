@@ -71,7 +71,7 @@ if __name__ == "__main__":
             hostname=address, api_password=password, api_username=username
         )
         firewall = FirewallProxy(serial=serial)
-        panorama.add(firewall._fw)
+        panorama.add(firewall)
     else:
         firewall = FirewallProxy(
             hostname=address, api_password=password, api_username=username, vsys=vsys
@@ -81,7 +81,7 @@ if __name__ == "__main__":
 
     checks = [
         "device_root_certificate_issue",
-        "check_cdss_and_panorama_certificate_issue"
+        "cdss_and_panorama_certificate_issue"
     ]
 
     check_health = check_node.run_health_checks(
