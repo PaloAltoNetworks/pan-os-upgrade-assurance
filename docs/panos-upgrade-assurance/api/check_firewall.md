@@ -700,14 +700,14 @@ __Parameters__
 
 
 - __version__ (`Version`): The software version to compare (e.g. "10.1.11").
-- __match_dict__ (`dict`): A dictionary of tuples mapping major/minor versions to match criteria.
-    For example;
-    ```python
-    {
-- __"81"__: [("==", "8.1.21.2"), (">=", "8.1.25.1")],
-- __"90"__: [(">=", "9.0.16.5")],
-    }
-    ```
+- __match_dict__ (`dict`): A dictionary of tuples mapping major/minor versions to match criteria:
+
+```python showLineNumbers title="Example"
+{
+    "81": [("==", "8.1.21.2"), (">=", "8.1.25.1")],
+    "90": [(">=", "9.0.16.5")],
+}
+```
 
 __Returns__
 
