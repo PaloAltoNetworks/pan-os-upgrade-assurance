@@ -7,7 +7,7 @@ from panos.firewall import Firewall
 from pan.xapi import PanXapiError
 from panos_upgrade_assurance import exceptions
 from math import floor
-from datetime import datetime
+from datetime import datetime, timedelta
 from packaging import version
 
 
@@ -1462,3 +1462,32 @@ class FirewallProxy:
                         results[key] = result_entry
 
         return results
+
+    def get_system_time_rebooted(self) -> datetime:
+        """Returns the date and time the system last rebooted using the system uptime.
+
+        The actual API command is `show system info`.
+
+        # Returns
+
+        datetime: Time system was last rebooted based on current time - system uptime string
+
+        ```python showLineNumbers title="Sample output"
+        datetime(2024, 01, 01, 00, 00, 00)
+        ```
+
+        """
+        response = self.op_parser(cmd="show system info", return_xml=True)
+        uptime_string = response.findtext("./system/uptime")
+        current_time = datetime.now()
+
+        time_re_match = re.search(r"(\d+) days, (\d+):(\d+):(\d+)", uptime_string)
+
+        rebooted_time = current_time - timedelta(
+            days=int(time_re_match.group(1)),
+            hours=int(time_re_match.group(2)),
+            minutes=int(time_re_match.group(3)),
+            seconds=int(time_re_match.group(4)),
+        )
+
+        return rebooted_time
