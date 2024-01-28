@@ -1776,8 +1776,7 @@ class TestFirewallProxy:
                     <default-gateway>1.1.1.1</default-gateway>
                     <is-dhcp>no</is-dhcp>
                     <mac-address>ab:cd:ef:11:22:33</mac-address>
-                    <time>Sun Dec  3 18:27:29 2023
-        </time>
+                    <time>Sun Dec  3 18:27:29 2023</time>
                     <uptime>5 days, 1:02:03</uptime>
                     <devicename>testfw</devicename>
                     <family>7000</family>
