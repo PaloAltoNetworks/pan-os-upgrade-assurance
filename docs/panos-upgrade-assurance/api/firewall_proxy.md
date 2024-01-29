@@ -106,6 +106,7 @@ __Raises__
 
 __Returns__
 
+
 `dict, xml.etree.ElementTree.Element`: The actual command output. A type is defined by the `return_xml` parameter.
 
 ### `FirewallProxy.get_parser`
@@ -135,6 +136,7 @@ __Raises__
 - `GetXpathConfigFailedException`: This exception is raised when XPATH is not provided or does not exist.
 
 __Returns__
+
 
 `dict, xml.etree.ElementTree.Element`: The actual command output. A type is defined by the `return_xml` parameter.
 
@@ -1133,5 +1135,144 @@ __Returns__
     'type': 'Downld',
     'user': None,
     'warnings': None}}
+```
+
+### `FirewallProxy.get_user_id_service_status`
+
+```python
+def get_user_id_service_status() -> dict
+```
+
+Get the status of the User ID agent service.
+
+The user-id service is used to redistribute user-id information to other firewalls.
+
+__Returns__
+
+
+`dict`: The state of the user-id agent. Only returns up or down.
+
+```python showLineNumbers title="Sample output"
+{
+    "status": "up"
+}
+```
+
+### `FirewallProxy.get_redistribution_status`
+
+```python
+def get_redistribution_status() -> dict
+```
+
+Get the status of the Data Redistribution service.
+
+Redistribution service is used to share data, such as user-id information, between PAN-OS firewalls or Agents.
+
+__Returns__
+
+
+`dict`: The state of the redistribution service, and the associated clients, if available.
+
+```python showLineNumbers title="Sample output"
+{
+    'clients': [
+        {
+            'host': '1.1.1.1', 'port': '34518', 'vsys': 'vsys1', 'version': '6', 'status': 'idle',
+            'redistribution': 'I'
+        },
+        {
+            'host': '1.1.1.2', 'port': '34518', 'vsys': 'vsys1', 'version': '6', 'status': 'idle',
+            'redistribution': 'I'
+        }
+    ],
+    'agents': [
+        {
+            '@name': 'FW3367',
+            'host': '1.1.1.1',
+            'job-id': '0',
+            'last-heard-time': '1701651677',
+            'num_recv_msgs': '0',
+            'num_sent_msgs': '0',
+            'peer-address': '1.1.1.1',
+            'port': '5007',
+            'state': 'conn:idle',
+            'status-msg': '-',
+            'version': '0x6',
+            'vsys': 'vsys1',
+            'vsys_hub': 'no'
+        }
+    ]
+}
+```
+
+### `FirewallProxy.get_device_software_version`
+
+```python
+def get_device_software_version()
+```
+
+Gets the current running device software version, as a `packaging.version.Version` object.
+
+This allows you to do comparators between other Version objects easily. Note that this strips out information
+    like `xfr` but maintains the hotfix (i.e `9.1.12-h3` becomes `9.1.12.3` for the purpose of versioning).
+
+__Returns__
+
+
+`Version`: the software version as a packaging 'Version' object.
+
+### `FirewallProxy.get_fib`
+
+```python
+def get_fib() -> dict
+```
+
+Get the information from the forwarding information table (FIB).
+
+The actual API command run is `show routing fib`.
+
+__Returns__
+
+
+`dict`: Status of the route entries in the FIB
+
+```python showLineNumbers title="Sample output"
+{
+    '0.0.0.0/0_ethernet1/1': {
+        'Destination': '0.0.0.0/0',
+        'Interface': 'ethernet1/1',
+        'Next Hop Type': '0',
+        'Flags': 'ug',
+        'Next Hop': '10.10.11.1',
+        'MTU': '1500'
+    },
+    '1.1.1.1/32_loopback.10': {
+        'Destination': '1.1.1.1/32',
+        'Interface': 'loopback.10',
+        'Next Hop Type': '3',
+        'Flags': 'uh',
+        'Next Hop': '0.0.0.0',
+        'MTU': '1500'
+    }
+}
+```
+
+### `FirewallProxy.get_system_time_rebooted`
+
+```python
+def get_system_time_rebooted() -> datetime
+```
+
+Returns the date and time the system last rebooted using the system uptime.
+
+The actual API command is `show system info`.
+
+__Returns__
+
+
+`datetime`: Time system was last rebooted based on current time - system uptime string
+
+```python showLineNumbers title="Sample output"
+datetime(2024, 01, 01, 00, 00, 00)
 ```
 

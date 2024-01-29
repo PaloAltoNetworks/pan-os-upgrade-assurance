@@ -49,6 +49,21 @@ class SnapType:
     CONTENT_VERSION = "content_version"
     SESSION_STATS = "session_stats"
     IPSEC_TUNNELS = "ip_sec_tunnels"
+    FIB_ROUTES = "fib_routes"
+
+
+class HealthType:
+    """Class mapping the health check configuration strings to commonly used variables.
+
+    [`CheckFirewall`](/panos/docs/panos-upgrade-assurance/api/check_firewall#class-checkfirewall) class is in a form of a list of
+    strings. These strings are compared in several places to parse the configuration.
+
+    This class is used to avoid hardcoding these strings. It maps the actual configuration string to a variable that can be
+    referenced in the code.
+    """
+
+    DEVICE_ROOT_CERTIFICATE_ISSUE = "device_root_certificate_issue"
+    DEVICE_CDSS_AND_PANORAMA_CERTIFICATE_ISSUE = "cdss_and_panorama_certificate_issue"
 
 
 class CheckStatus(Enum):

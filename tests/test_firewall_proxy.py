@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import pytest
 from unittest.mock import MagicMock
 from panos.firewall import Firewall
@@ -1488,3 +1489,375 @@ class TestFirewallProxy:
         fw_proxy_mock.xapi.get.return_value = raw_response
 
         assert fw_proxy_mock.get_update_schedules() == {}
+
+    def test_get_redistribution_status_up_agent_multiple_clients(self, fw_proxy_mock):
+        show_redist_service_client_all_xml = """
+        <response status="success">
+            <result>
+                <entry>
+                    <host>1.1.1.1</host>
+                    <port>34518</port>
+                    <vsys>vsys1</vsys>
+                    <version>6</version>
+                    <status>idle</status>
+                    <redistribution>I    </redistribution>
+                </entry>
+                <entry>
+                    <host>1.1.1.2</host>
+                    <port>34518</port>
+                    <vsys>vsys1</vsys>
+                    <version>6</version>
+                    <status>idle</status>
+                    <redistribution>I    </redistribution>
+                </entry>
+            </result>
+        </response>"""
+        show_redist_service_client_all_xml_raw_response = ET.fromstring(show_redist_service_client_all_xml)
+
+        show_redist_service_agent_all_xml = """
+        <response status="success">
+            <result>
+                <entry name="FW3367">
+                    <vsys>vsys1</vsys>
+                    <vsys_hub>no</vsys_hub>
+                    <host>1.1.1.1</host>
+                    <peer-address>1.1.1.1</peer-address>
+                    <port>5007</port>
+                    <state>conn:idle</state>
+                    <status-msg>-</status-msg>
+                    <version>0x6</version>
+                    <last-heard-time>1701651677</last-heard-time>
+                    <job-id>0</job-id>
+                    <num_sent_msgs>0</num_sent_msgs>
+                    <num_recv_msgs>0</num_recv_msgs>
+                </entry>
+            </result>
+        </response>
+        """
+        show_redist_service_agent_all_xml_raw_response = ET.fromstring(show_redist_service_agent_all_xml)
+
+        fw_proxy_mock.op.side_effect = [
+            show_redist_service_client_all_xml_raw_response,
+            show_redist_service_agent_all_xml_raw_response,
+        ]
+
+        assert fw_proxy_mock.get_redistribution_status() == {
+            "agents": OrderedDict(
+                [
+                    ("@name", "FW3367"),
+                    ("vsys", "vsys1"),
+                    ("vsys_hub", "no"),
+                    ("host", "1.1.1.1"),
+                    ("peer-address", "1.1.1.1"),
+                    ("port", "5007"),
+                    ("state", "conn:idle"),
+                    ("status-msg", "-"),
+                    ("version", "0x6"),
+                    ("last-heard-time", "1701651677"),
+                    ("job-id", "0"),
+                    ("num_sent_msgs", "0"),
+                    ("num_recv_msgs", "0"),
+                ]
+            ),
+            "clients": [
+                OrderedDict(
+                    [
+                        ("host", "1.1.1.1"),
+                        ("port", "34518"),
+                        ("vsys", "vsys1"),
+                        ("version", "6"),
+                        ("status", "idle"),
+                        ("redistribution", "I"),
+                    ]
+                ),
+                OrderedDict(
+                    [
+                        ("host", "1.1.1.2"),
+                        ("port", "34518"),
+                        ("vsys", "vsys1"),
+                        ("version", "6"),
+                        ("status", "idle"),
+                        ("redistribution", "I"),
+                    ]
+                ),
+            ],
+        }
+
+    def test_get_redistribution_status_up_empty_results(self, fw_proxy_mock):
+        show_redist_service_client_all_xml = """
+        <response status="success">
+            <result>
+                <entry></entry>
+            </result>
+        </response>"""
+        show_redist_service_client_all_xml_raw_response = ET.fromstring(show_redist_service_client_all_xml)
+
+        show_redist_service_agent_all_xml = """
+        <response status="success">
+            <result>
+                <entry></entry>
+            </result>
+        </response>
+        """
+        show_redist_service_agent_all_xml_raw_response = ET.fromstring(show_redist_service_agent_all_xml)
+
+        fw_proxy_mock.op.side_effect = [
+            show_redist_service_client_all_xml_raw_response,
+            show_redist_service_agent_all_xml_raw_response,
+        ]
+
+        assert fw_proxy_mock.get_redistribution_status() == {"clients": [], "agents": []}
+
+    def test_get_redistribution_status_wrong_panos_version(self, fw_proxy_mock):
+        """This tests what happens if this method is run against an older firewall that doesn't support the
+        redist commands."""
+        xml_text = """
+        <response status="error" code="17">
+            <msg>
+                <line>
+                    <![CDATA[ show -> redistribution  is unexpected]]>
+                </line>
+            </msg>
+        </response>"""
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        with pytest.raises(CommandRunFailedException):
+            fw_proxy_mock.get_redistribution_status()
+
+    def test_get_user_id_service_status_down(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <![CDATA[
+        User ID service info: 
+            User id service:               down           
+            Reason:                        user_id service is not enabled
+        ]]>
+            </result>
+        </response>"""  # noqa: W291
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_user_id_service_status() == {"status": "down"}
+
+    def test_get_user_id_service_status_up(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <![CDATA[
+        User ID service info: 
+            User id service:               up           
+            listening port:                5007           
+            number of clients:             1
+        ]]>
+            </result>
+        </response>"""  # noqa: W291
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_user_id_service_status() == {"status": "up"}
+
+    def test_get_device_software_version(self, fw_proxy_mock):
+        fw_proxy_mock._fw.xapi.op = MagicMock()
+
+        xml_text = """
+        <response status="success">
+            <result>
+                <system>
+                    <hostname>testfw</hostname>
+                    <ip-address>1.1.1.1</ip-address>
+                    <public-ip-address>unknown</public-ip-address>
+                    <netmask>255.255.254.0</netmask>
+                    <default-gateway>1.1.1.1</default-gateway>
+                    <is-dhcp>no</is-dhcp>
+                    <mac-address>ab:cd:ef:11:22:33</mac-address>
+                    <time>Sun Dec  3 18:27:29 2023
+        </time>
+                    <uptime>179 days, 5:07:34</uptime>
+                    <devicename>testfw</devicename>
+                    <family>7000</family>
+                    <model>PA-7050</model>
+                    <serial>11111111111</serial>
+                    <cloud-mode>non-cloud</cloud-mode>
+                    <sw-version>9.1.12-h3</sw-version>
+                    <global-protect-client-package-version>0.0.0</global-protect-client-package-version>
+                    <app-version>8709-8047</app-version>
+                    <app-release-date></app-release-date>
+                    <av-version>4455-4972</av-version>
+                    <av-release-date>2023/05/18 14:50:34 PDT</av-release-date>
+                    <threat-version>8709-8047</threat-version>
+                    <threat-release-date></threat-release-date>
+                    <wf-private-version>0</wf-private-version>
+                    <wf-private-release-date>unknown</wf-private-release-date>
+                    <url-db>paloaltonetworks</url-db>
+                    <wildfire-version>0</wildfire-version>
+                    <wildfire-release-date></wildfire-release-date>
+                    <url-filtering-version>20231204.20037</url-filtering-version>
+                    <global-protect-datafile-version>1684375262</global-protect-datafile-version>
+                    <global-protect-datafile-release-date>2023/05/17 19:01:02</global-protect-datafile-release-date>
+                    <global-protect-clientless-vpn-version>97-245</global-protect-clientless-vpn-version>
+                    <global-protect-clientless-vpn-release-date>2023/01/27 14:38:39 PST</global-protect-clientless-vpn-release-date>
+                    <logdb-version>9.1.22</logdb-version>
+                    <platform-family>7000</platform-family>
+                    <high-speed-log-forwarding-mode>off</high-speed-log-forwarding-mode>
+                    <vpn-disable-mode>off</vpn-disable-mode>
+                    <multi-vsys>on</multi-vsys>
+                    <operational-mode>normal</operational-mode>
+                    <device-certificate-status>Valid</device-certificate-status>
+                </system>
+            </result>
+        </response>
+        """
+
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock._fw.xapi.op.return_value = raw_response
+
+        from packaging import version
+
+        assert fw_proxy_mock.get_device_software_version() == version.parse("9.1.12.3")
+        assert fw_proxy_mock.get_device_software_version() < version.parse("9.1.13")
+        assert fw_proxy_mock.get_device_software_version() < version.parse("9.1.12.4")
+        assert fw_proxy_mock.get_device_software_version() < version.parse("10.1.1")
+        assert fw_proxy_mock.get_device_software_version() > version.parse("9.0.4.2")
+
+    def test_get_fib_routes(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <dp>dp0</dp>
+                <total>16</total>
+                <fibs>
+                    <entry>
+                        <id>2</id>
+                        <vr>VR-MAIN</vr>
+                        <max>32768</max>
+                        <type>0</type>
+                        <ecmp>0</ecmp>
+                        <entries>
+                            <entry>
+                                <id>19</id>
+                                <dst>0.0.0.0/0</dst>
+                                <interface>ethernet1/1</interface>
+                                <nh_type>0</nh_type>
+                                <flags>ug</flags>
+                                <nexthop>10.10.11.1</nexthop>
+                                <mtu>1500</mtu>
+                            </entry>
+                            <entry>
+                                <id>1</id>
+                                <dst>1.1.1.1/32</dst>
+                                <interface>loopback.10</interface>
+                                <nh_type>3</nh_type>
+                                <flags>uh</flags>
+                                <nexthop>1.2.3.4</nexthop>
+                                <mtu>1500</mtu>
+                            </entry>
+                        </entries>
+                        <nentries>16</nentries>
+                    </entry>
+                    <entry>
+                        <id>3</id>
+                        <vr>VR-MAIN</vr>
+                        <max>32768</max>
+                        <type>1</type>
+                        <ecmp>0</ecmp>
+                        <entries/>
+                        <nentries>0</nentries>
+                    </entry>
+                </fibs>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_fib() == {
+            "0.0.0.0/0_ethernet1/1": {
+                "Destination": "0.0.0.0/0",
+                "Interface": "ethernet1/1",
+                "Next Hop Type": "0",
+                "Flags": "ug",
+                "Next Hop": "10.10.11.1",
+                "MTU": "1500",
+            },
+            "1.1.1.1/32_loopback.10": {
+                "Destination": "1.1.1.1/32",
+                "Interface": "loopback.10",
+                "Next Hop Type": "3",
+                "Flags": "uh",
+                "Next Hop": "1.2.3.4",
+                "MTU": "1500",
+            },
+        }
+
+    def test_get_fib_routes_none(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <dp>dp0</dp>
+                <total>0</total>
+                <fibs/>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_fib() == {}
+
+    def test_get_system_time_rebooted(self, fw_proxy_mock):
+        fw_proxy_mock.op = MagicMock()
+
+        xml_text = """
+        <response status="success">
+            <result>
+                <system>
+                    <hostname>testfw</hostname>
+                    <ip-address>1.1.1.1</ip-address>
+                    <public-ip-address>unknown</public-ip-address>
+                    <netmask>255.255.254.0</netmask>
+                    <default-gateway>1.1.1.1</default-gateway>
+                    <is-dhcp>no</is-dhcp>
+                    <mac-address>ab:cd:ef:11:22:33</mac-address>
+                    <time>Sun Dec  3 18:27:29 2023</time>
+                    <uptime>5 days, 1:02:03</uptime>
+                    <devicename>testfw</devicename>
+                    <family>7000</family>
+                    <model>PA-7050</model>
+                    <serial>11111111111</serial>
+                    <cloud-mode>non-cloud</cloud-mode>
+                    <sw-version>9.1.12-h3</sw-version>
+                    <global-protect-client-package-version>0.0.0</global-protect-client-package-version>
+                    <app-version>8709-8047</app-version>
+                    <app-release-date></app-release-date>
+                    <av-version>4455-4972</av-version>
+                    <av-release-date>2023/05/18 14:50:34 PDT</av-release-date>
+                    <threat-version>8709-8047</threat-version>
+                    <threat-release-date></threat-release-date>
+                    <wf-private-version>0</wf-private-version>
+                    <wf-private-release-date>unknown</wf-private-release-date>
+                    <url-db>paloaltonetworks</url-db>
+                    <wildfire-version>0</wildfire-version>
+                    <wildfire-release-date></wildfire-release-date>
+                    <url-filtering-version>20231204.20037</url-filtering-version>
+                    <global-protect-datafile-version>1684375262</global-protect-datafile-version>
+                    <global-protect-datafile-release-date>2023/05/17 19:01:02</global-protect-datafile-release-date>
+                    <global-protect-clientless-vpn-version>97-245</global-protect-clientless-vpn-version>
+                    <global-protect-clientless-vpn-release-date>2023/01/27 14:38:39 PST</global-protect-clientless-vpn-release-date>
+                    <logdb-version>9.1.22</logdb-version>
+                    <platform-family>7000</platform-family>
+                    <high-speed-log-forwarding-mode>off</high-speed-log-forwarding-mode>
+                    <vpn-disable-mode>off</vpn-disable-mode>
+                    <multi-vsys>on</multi-vsys>
+                    <operational-mode>normal</operational-mode>
+                    <device-certificate-status>Valid</device-certificate-status>
+                </system>
+            </result>
+        </response>
+        """
+
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert type(fw_proxy_mock.get_system_time_rebooted()) is datetime

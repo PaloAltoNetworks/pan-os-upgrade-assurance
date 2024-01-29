@@ -1,3 +1,4 @@
+import re
 import xml.etree.ElementTree as ET
 from panos_upgrade_assurance.utils import interpret_yes_no
 from xmltodict import parse as XMLParse
@@ -6,7 +7,8 @@ from panos.firewall import Firewall
 from pan.xapi import PanXapiError
 from panos_upgrade_assurance import exceptions
 from math import floor
-from datetime import datetime
+from datetime import datetime, timedelta
+from packaging import version
 
 
 class FirewallProxy:
@@ -105,6 +107,7 @@ class FirewallProxy:
             XML response.
 
         # Returns
+
         dict, xml.etree.ElementTree.Element: The actual command output. A type is defined by the `return_xml` parameter.
 
         """
@@ -142,6 +145,7 @@ class FirewallProxy:
         GetXpathConfigFailedException: This exception is raised when XPATH is not provided or does not exist.
 
         # Returns
+
         dict, xml.etree.ElementTree.Element: The actual command output. A type is defined by the `return_xml` parameter.
 
         """
@@ -1300,3 +1304,190 @@ class FirewallProxy:
                 results[jid] = job
 
         return results
+
+    def get_user_id_service_status(self) -> dict:
+        """Get the status of the User ID agent service.
+
+        The user-id service is used to redistribute user-id information to other firewalls.
+
+        # Returns
+
+        dict: The state of the user-id agent. Only returns up or down.
+
+        ```python showLineNumbers title="Sample output"
+        {
+            "status": "up"
+        }
+        ```
+        """
+
+        # This returns a value when the firewall is redistributing data to other devices
+        result = self.op_parser("show user user-id-service status")
+        for line in result.split("\n"):
+            match = re.search(r"User id service:\s+(up|down)", line)
+            if match:
+                return {"status": match.group(1)}
+
+        return {"status": "unknown"}
+
+    def get_redistribution_status(self) -> dict:
+        """Get the status of the Data Redistribution service.
+
+        Redistribution service is used to share data, such as user-id information, between PAN-OS firewalls or Agents.
+
+        # Returns
+
+        dict: The state of the redistribution service, and the associated clients, if available.
+
+        ```python showLineNumbers title="Sample output"
+        {
+            'clients': [
+                {
+                    'host': '1.1.1.1', 'port': '34518', 'vsys': 'vsys1', 'version': '6', 'status': 'idle',
+                    'redistribution': 'I'
+                },
+                {
+                    'host': '1.1.1.2', 'port': '34518', 'vsys': 'vsys1', 'version': '6', 'status': 'idle',
+                    'redistribution': 'I'
+                }
+            ],
+            'agents': [
+                {
+                    '@name': 'FW3367',
+                    'host': '1.1.1.1',
+                    'job-id': '0',
+                    'last-heard-time': '1701651677',
+                    'num_recv_msgs': '0',
+                    'num_sent_msgs': '0',
+                    'peer-address': '1.1.1.1',
+                    'port': '5007',
+                    'state': 'conn:idle',
+                    'status-msg': '-',
+                    'version': '0x6',
+                    'vsys': 'vsys1',
+                    'vsys_hub': 'no'
+                }
+            ]
+        }
+        ```
+        """
+
+        # This returns a result if the firewall is acting as a redistribution agent
+        return_dict = {"clients": [], "agents": []}
+        result = self.op_parser("show redistribution service client all")
+        if result.get("entry"):
+            entries = result.get("entry")
+            if type(entries) is dict:
+                entries = [entries]
+            return_dict["clients"] = entries
+
+        result = self.op_parser("show redistribution service agent all")
+        if result.get("entry"):
+            entries = result.get("entry")
+            if type(entries) is dict:
+                entries = [entries]
+            return_dict["agents"] = entries
+
+        return return_dict
+
+    def get_device_software_version(self):
+        """Gets the current running device software version, as a `packaging.version.Version` object.
+
+        This allows you to do comparators between other Version objects easily. Note that this strips out information
+            like `xfr` but maintains the hotfix (i.e `9.1.12-h3` becomes `9.1.12.3` for the purpose of versioning).
+
+        # Returns
+
+        Version: the software version as a packaging 'Version' object.
+        """
+        self._fw.refresh_system_info()
+        self._fw.get_device_version()
+        fw_version = self._fw.version.replace("-h", ".")
+        return version.parse(fw_version)
+
+    def get_fib(self) -> dict:
+        """Get the information from the forwarding information table (FIB).
+
+        The actual API command run is `show routing fib`.
+
+        # Returns
+
+        dict: Status of the route entries in the FIB
+
+        ```python showLineNumbers title="Sample output"
+        {
+            '0.0.0.0/0_ethernet1/1': {
+                'Destination': '0.0.0.0/0',
+                'Interface': 'ethernet1/1',
+                'Next Hop Type': '0',
+                'Flags': 'ug',
+                'Next Hop': '10.10.11.1',
+                'MTU': '1500'
+            },
+            '1.1.1.1/32_loopback.10': {
+                'Destination': '1.1.1.1/32',
+                'Interface': 'loopback.10',
+                'Next Hop Type': '3',
+                'Flags': 'uh',
+                'Next Hop': '0.0.0.0',
+                'MTU': '1500'
+            }
+        }
+        ```
+
+        """
+        response = self.op_parser(cmd="show routing fib")
+        if response["fibs"] is None:
+            return {}
+        fibs = response["fibs"]["entry"]
+
+        results = {}
+
+        for fib_entry in fibs:
+            if isinstance(fib_entry, dict):
+                entries_data = fib_entry.get("entries", {})
+                entries = entries_data.get("entry", []) if entries_data is not None else []
+
+                for entry in entries if isinstance(entries, list) else [entries]:
+                    if isinstance(entry, dict):
+                        key = f'{entry["dst"]}_{entry["interface"]}'
+                        result_entry = {
+                            "Destination": entry.get("dst"),
+                            "Interface": entry.get("interface"),
+                            "Next Hop Type": entry.get("nh_type"),
+                            "Flags": entry.get("flags"),
+                            "Next Hop": entry.get("nexthop"),
+                            "MTU": entry.get("mtu"),
+                        }
+                        results[key] = result_entry
+
+        return results
+
+    def get_system_time_rebooted(self) -> datetime:
+        """Returns the date and time the system last rebooted using the system uptime.
+
+        The actual API command is `show system info`.
+
+        # Returns
+
+        datetime: Time system was last rebooted based on current time - system uptime string
+
+        ```python showLineNumbers title="Sample output"
+        datetime(2024, 01, 01, 00, 00, 00)
+        ```
+
+        """
+        response = self.op_parser(cmd="show system info", return_xml=True)
+        uptime_string = response.findtext("./system/uptime")
+        current_time = datetime.now()
+
+        time_re_match = re.search(r"(\d+) days, (\d+):(\d+):(\d+)", uptime_string)
+
+        rebooted_time = current_time - timedelta(
+            days=int(time_re_match.group(1)),
+            hours=int(time_re_match.group(2)),
+            minutes=int(time_re_match.group(3)),
+            seconds=int(time_re_match.group(4)),
+        )
+
+        return rebooted_time
