@@ -1,7 +1,7 @@
 from typing import Optional, Union, List, Dict
-from panos_upgrade_assurance.utils import ConfigParser, SnapType
+from panos_upgrade_assurance.utils import ConfigParser, SnapType, get_all_dict_keys
 from panos_upgrade_assurance import exceptions
-
+from itertools import chain
 
 class SnapshotCompare:
     """Class comparing snapshots of Firewall Nodes.
@@ -238,10 +238,10 @@ class SnapshotCompare:
     ) -> Dict[str, dict]:
         """The static method to calculate a difference between two dictionaries.
 
-        By default dictionaries are compared by going down all nested levels, to the point where key-value pairs are just strings
-        or numbers. It is possible to configure which keys from these pairs should be compared (by default we compare all
-        available keys). This is done using the `properties` parameter. It's a list of the bottom most level keys. For example,
-        when comparing route tables snapshots are formatted like:
+        By default dictionaries are compared by going down all nested levels. It is possible to configure which keys on each
+        level should be compared (by default we compare all available keys). This is done using the `properties` parameter.
+        It's a list of keys that can be compared or skipped on each level. For example, when comparing route tables snapshots are
+        formatted like:
 
         ```python showLineNumbers
         {
@@ -261,8 +261,9 @@ class SnapshotCompare:
         }
         ```
 
-        The bottom most level keys are:
+        The keys to process here can be:
 
+        - 'default_0.0.0.0/0_ethernet1/3',
         - `virtual-router`,
         - `destination`,
         - `nexthop`,
@@ -394,51 +395,67 @@ class SnapshotCompare:
             changed=dict(passed=True, changed_raw={}),
         )
 
+        chain_unique_set = lambda set1, set2: set(chain(set1,set2))
+
         missing = left_side_to_compare.keys() - right_side_to_compare.keys()
-        if missing:
-            result["missing"]["passed"] = False
-            for key in missing:
+        for key in missing:
+            if ConfigParser.is_element_included(key, properties):
                 result["missing"]["missing_keys"].append(key)
+                result["missing"]["passed"] = False
 
         added = right_side_to_compare.keys() - left_side_to_compare.keys()
-        if added:
-            result["added"]["passed"] = False
-            for key in added:
+        for key in added:
+            if ConfigParser.is_element_included(key, properties):
                 result["added"]["added_keys"].append(key)
+                result["added"]["passed"] = False
 
         common_keys = left_side_to_compare.keys() & right_side_to_compare.keys()
-        if common_keys:
-            next_level_value = left_side_to_compare[next(iter(common_keys))]
-            at_lowest_level = True if not isinstance(next_level_value, dict) else False
-            keys_to_check = (
-                ConfigParser(valid_elements=set(common_keys), requested_config=properties).prepare_config()
-                if at_lowest_level
-                else common_keys
-            )
 
-            item_changed = False
-            for key in keys_to_check:
-                if right_side_to_compare[key] != left_side_to_compare[key]:
-                    if isinstance(left_side_to_compare[key], str):
+        item_changed = False
+        for key in common_keys:
+            if right_side_to_compare[key] != left_side_to_compare[key]:
+                if left_side_to_compare[key] is None or right_side_to_compare[key] is None:
+                    if ConfigParser.is_element_included(key, properties):
                         result["changed"]["changed_raw"][key] = dict(
                             left_snap=left_side_to_compare[key],
                             right_snap=right_side_to_compare[key],
                         )
                         item_changed = True
-                    elif isinstance(left_side_to_compare[key], dict):
+
+                elif isinstance(left_side_to_compare[key], str):
+                    if ConfigParser.is_element_included(key, properties):
+                        result["changed"]["changed_raw"][key] = dict(
+                            left_snap=left_side_to_compare[key],
+                            right_snap=right_side_to_compare[key],
+                        )
+                        item_changed = True
+
+                elif isinstance(left_side_to_compare[key], dict):
+                    nested_keys_within_common_key = chain_unique_set(get_all_dict_keys(left_side_to_compare[key]),
+                                                                     get_all_dict_keys(right_side_to_compare[key]))
+                    if ConfigParser.is_element_explicit_excluded(key, properties):
+                        continue  # skip to the next key
+
+                    if properties and key in properties:
+                        # call without properties - do not allow multi level (combined with parent) filtering..
+                        nested_results = SnapshotCompare.calculate_diff_on_dicts(
+                            left_side_to_compare=left_side_to_compare[key],
+                            right_side_to_compare=right_side_to_compare[key],
+                        )
+                    else:
                         nested_results = SnapshotCompare.calculate_diff_on_dicts(
                             left_side_to_compare=left_side_to_compare[key],
                             right_side_to_compare=right_side_to_compare[key],
                             properties=properties,
                         )
 
-                        SnapshotCompare.calculate_passed(nested_results)
-                        if not nested_results["passed"]:
-                            result["changed"]["changed_raw"][key] = nested_results
-                            item_changed = True
-                    else:
-                        raise exceptions.WrongDataTypeException(f"Unknown value format for key {key}.")
-                result["changed"]["passed"] = not item_changed
+                    SnapshotCompare.calculate_passed(nested_results)
+                    if not nested_results["passed"]:
+                        result["changed"]["changed_raw"][key] = nested_results
+                        item_changed = True
+                else:
+                    raise exceptions.WrongDataTypeException(f"Unknown value format for key {key}.")
+            result["changed"]["passed"] = not item_changed
 
         return result
 
