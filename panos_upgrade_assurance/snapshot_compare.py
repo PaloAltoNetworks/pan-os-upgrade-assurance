@@ -60,6 +60,7 @@ class SnapshotCompare:
         self._functions_mapping = {
             SnapType.NICS: self.get_diff_and_threshold,
             SnapType.ROUTES: self.get_diff_and_threshold,
+            SnapType.BGP_PEERS: self.get_diff_and_threshold,
             SnapType.LICENSE: self.get_diff_and_threshold,
             SnapType.ARP_TABLE: self.get_diff_and_threshold,
             SnapType.CONTENT_VERSION: self.get_diff_and_threshold,

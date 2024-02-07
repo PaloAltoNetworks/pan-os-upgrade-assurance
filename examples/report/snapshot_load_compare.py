@@ -21,6 +21,8 @@ if __name__ == "__main__":
         {"nics": {"count_change_threshold": 10}},
         {"license": {"properties": ["!serial"]}},
         {"routes": {"properties": ["!flags"], "count_change_threshold": 10}},
+        {"bgp_peers": {"properties": ["status"]}},
+        "!fib_routes",
         "!content_version",
         {
             "session_stats": {

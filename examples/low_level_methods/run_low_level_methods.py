@@ -94,6 +94,8 @@ if __name__ == "__main__":
 
     print(f"\n  routes information\n{firewall.get_routes()}")
 
+    print(f"\n  BGP peers information\n{firewall.get_bgp_peers()}")
+
     print(f"\n  arp entries information\n{firewall.get_arp_table()}")
 
     print(f"\n  session information\n{firewall.get_session_stats()}")
