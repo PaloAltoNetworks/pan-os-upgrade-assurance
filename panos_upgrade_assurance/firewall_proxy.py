@@ -606,7 +606,7 @@ class FirewallProxy:
             for route in routes if isinstance(routes, list) else [routes]:
                 result[
                     (
-                        f"{route['virtual-router']}_"
+                        f"{route['virtual-router'].replace(' ', '-')}_"
                         f"{route['destination']}_"
                         f"{route['interface'] if route['interface'] else ''}_"
                         f"{route['nexthop'].replace(' ', '-')}"
