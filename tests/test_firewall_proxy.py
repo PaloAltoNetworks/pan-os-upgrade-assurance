@@ -562,7 +562,6 @@ class TestFirewallProxy:
             },
         }
 
-
     def test_get_arp_table(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
