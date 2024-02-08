@@ -1821,7 +1821,7 @@ class TestFirewallProxy:
         fw_proxy_mock.op.return_value = raw_response
 
         assert fw_proxy_mock.get_fib() == {
-            "0.0.0.0/0_ethernet1/1": {
+            "0.0.0.0/0_ethernet1/1_10.10.11.1": {
                 "Destination": "0.0.0.0/0",
                 "Interface": "ethernet1/1",
                 "Next Hop Type": "0",
@@ -1829,7 +1829,7 @@ class TestFirewallProxy:
                 "Next Hop": "10.10.11.1",
                 "MTU": "1500",
             },
-            "1.1.1.1/32_loopback.10": {
+            "1.1.1.1/32_loopback.10_1.2.3.4": {
                 "Destination": "1.1.1.1/32",
                 "Interface": "loopback.10",
                 "Next Hop Type": "3",

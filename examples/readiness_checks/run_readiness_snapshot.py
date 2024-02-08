@@ -82,6 +82,7 @@ if __name__ == "__main__":
         # 'all',
         "nics",
         "routes",
+        "fib_routes",
         "license",
         "arp_table",
         "content_version",

@@ -504,7 +504,7 @@ Get route table entries, either retrieved from DHCP or configured manually.
 
 The actual API command is `show routing route`.
 
-In the returned `dict` the key is made of three route properties delimited with an underscore (`_`) in the following
+In the returned `dict` the key is made of four route properties delimited with an underscore (`_`) in the following
 order:
 
 * virtual router name,
@@ -1230,6 +1230,16 @@ Get the information from the forwarding information table (FIB).
 
 The actual API command run is `show routing fib`.
 
+In the returned `dict` the key is made of three route properties delimited with an underscore (`_`) in the following
+order:
+
+* destination CIDR,
+* network interface name,
+* next-hop address or name.
+
+The key does not provide any meaningful information, it's there only to introduce uniqueness for each entry. All
+properties that make a key are also available in the value of a dictionary element.
+
 __Returns__
 
 
@@ -1237,7 +1247,7 @@ __Returns__
 
 ```python showLineNumbers title="Sample output"
 {
-    '0.0.0.0/0_ethernet1/1': {
+    '0.0.0.0/0_ethernet1/1_10.10.11.1': {
         'Destination': '0.0.0.0/0',
         'Interface': 'ethernet1/1',
         'Next Hop Type': '0',
@@ -1245,7 +1255,7 @@ __Returns__
         'Next Hop': '10.10.11.1',
         'MTU': '1500'
     },
-    '1.1.1.1/32_loopback.10': {
+    '1.1.1.1/32_loopback.10_0.0.0.0': {
         'Destination': '1.1.1.1/32',
         'Interface': 'loopback.10',
         'Next Hop Type': '3',
