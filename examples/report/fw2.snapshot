@@ -85,7 +85,7 @@
       "msg-total-in": "0",
       "msg-total-out": "0",
       "last-update-age": "0",
-      "last-error": "None",
+      "last-error": null,
       "status-flap-counts": "0",
       "established-counts": "0",
       "ORF-entry-received": "0",
@@ -93,8 +93,8 @@
       "nexthop-thirdparty": "yes",
       "nexthop-peer": "no",
       "config": {"remove-private-as": "no"},
-      "peer-capability": "None",
-      "prefix-counter": "None"
+      "peer-capability": null,
+      "prefix-counter": null
     }
   },
   "session_stats": {

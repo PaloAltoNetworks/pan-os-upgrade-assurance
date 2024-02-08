@@ -98,7 +98,7 @@
       "msg-total-in": "385",
       "msg-total-out": "442",
       "last-update-age": "3",
-      "last-error": "None",
+      "last-error": null,
       "status-flap-counts": "2",
       "established-counts": "1",
       "ORF-entry-received": "0",
