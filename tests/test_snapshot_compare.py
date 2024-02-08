@@ -425,16 +425,16 @@ class TestSnapshotCompare:
                                     "added": {"added_keys": [], "passed": True},
                                     "changed": {
                                         "changed_raw": {"status": {"left_snap": "Established", "right_snap": "Idle"}},
-                                        "passed": False
+                                        "passed": False,
                                     },
                                     "missing": {"missing_keys": [], "passed": True},
-                                    "passed": False
+                                    "passed": False,
                                 }
                             },
-                            "passed": False
+                            "passed": False,
                         },
                         "missing": {"missing_keys": [], "passed": True},
-                        "passed": False
+                        "passed": False,
                     }
                 },
             ),

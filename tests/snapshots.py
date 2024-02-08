@@ -111,7 +111,7 @@ snap1 = {
                     {"capability": "Multiprotocol Extensions(1)", "value": "IPv4 Unicast"},
                     {"capability": "Route Refresh(2)", "value": "yes"},
                     {"capability": "4-Byte AS Number(65)", "value": "64512"},
-                    {"capability": "Route Refresh (Cisco)(128)", "value": "yes"}
+                    {"capability": "Route Refresh (Cisco)(128)", "value": "yes"},
                 ]
             },
             "prefix-counter": {
@@ -122,9 +122,9 @@ snap1 = {
                     "incoming-rejected": "0",
                     "policy-rejected": "0",
                     "outgoing-total": "0",
-                    "outgoing-advertised": "0"
+                    "outgoing-advertised": "0",
                 }
-            }
+            },
         }
     },
     "session_stats": {
@@ -377,7 +377,7 @@ snap2 = {
             "nexthop-peer": "no",
             "config": {"remove-private-as": "no"},
             "peer-capability": None,
-            "prefix-counter": None
+            "prefix-counter": None,
         }
     },
     "session_stats": {
