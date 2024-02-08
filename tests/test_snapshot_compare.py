@@ -386,7 +386,7 @@ class TestSnapshotCompare:
                         "added": {"added_keys": [], "passed": True},
                         "changed": {
                             "changed_raw": {
-                                "default_10.26.130.0/25_ethernet1/2": {
+                                "default_10.26.130.0/25_ethernet1/2_10.26.129.1": {
                                     "added": {"added_keys": [], "passed": True},
                                     "changed": {
                                         "changed_raw": {"flags": {"left_snap": "A S", "right_snap": "A"}},
