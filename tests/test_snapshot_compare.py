@@ -166,7 +166,7 @@ class TestSnapshotCompare:
     # NOTE: Non-dictionary input is not handled in the code and not tested
     # if non supported input is passed it raises AttributeError since it doesnt have keys() method
     def test_calculate_diff_on_dicts_invalid_input(self):
-        left_snapshot = {"key1": 123, "key2": "value2"}
+        left_snapshot = {"key1": 1.23, "key2": "value2"}
         right_snapshot = {"key1": {"nested_key1": "value1"}, "key2": "value2"}
 
         with pytest.raises(WrongDataTypeException) as exception_msg:
