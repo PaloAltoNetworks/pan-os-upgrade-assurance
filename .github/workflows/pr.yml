@@ -10,6 +10,8 @@ on:
       - synchronize
       - ready_for_review
     branches: main
+  repository_dispatch:
+    types: [ok-to-test-command]
 
 permissions:
   contents: read
