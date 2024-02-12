@@ -11,7 +11,7 @@ on:
         description: A version of Python to install
         type: string
         required: true
-      event_ref:
+      ref:
         description: Ref to checkout
         type: string
 
@@ -42,7 +42,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.event_ref }}
+          ref: ${{ inputs.ref }}
           # ref: ${{ steps.ref.outputs.event_ref }}
 
       - name: Install Python
