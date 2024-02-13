@@ -31,6 +31,7 @@ jobs:
         with:
           name: pr
           path: pr
+          run-id: ${{ github.event.workflow_run.id }}
 
       - name: read PR details from artifact
         id: read
@@ -87,6 +88,7 @@ jobs:
         with:
           name: documentation
           path: products/panos/docs
+          run-id: ${{ github.event.workflow_run.id }}
 
       - name: unpack the documentation
         working-directory: products/panos/docs
