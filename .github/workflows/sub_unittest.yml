@@ -61,18 +61,17 @@ jobs:
       - name: Run unit tests and coverage
         run: poetry run make test_coverage
 
-      - name: save PR details with coverage results
-        if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          mkdir -p ./pr
-          echo ${{ github.event.number }} > ./pr/NR
-          echo ${{ github.event.pull_request.head.ref }} > ./pr/HEAD_REF
-          mv coverage.xml ./pr/coverage.xml
+      # - name: save coverage results
+      #   if: ${{ github.event_name == 'pull_request' }}
+      #   run: |
+      #     mkdir -p ./pr-coverage
+      #     mv coverage.xml ./pr-coverage/coverage.xml
 
-      - uses: actions/upload-artifact@v4
+      - name: Save coverage results
+        uses: actions/upload-artifact@v4
         with:
-          name: pr
-          path: pr/
+          name: pr-coverage
+          path: coverage.xml
         if: ${{ github.event_name == 'pull_request' }}
 
 

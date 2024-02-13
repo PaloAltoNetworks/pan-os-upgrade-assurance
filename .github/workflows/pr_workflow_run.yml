@@ -71,10 +71,17 @@ jobs:
       #       thresholdNew: 0.90
       #       thresholdModified: 0.95
 
-      - name: Pytest coverage comment
+      - name: download PR coverage artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-coverage
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@v1.1.51
         with:
-          pytest-xml-coverage-path: ./pr/coverage.xml
+          pytest-xml-coverage-path: coverage.xml
           issue-number: ${{ needs.pr_status.outputs.pr_number }}
           # report-only-changed-files: true
 
