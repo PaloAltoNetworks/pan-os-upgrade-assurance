@@ -1,7 +1,10 @@
 name: PR
-run-name: "PR - (#${{ github.event.number }}) ${{ github.event.pull_request.title }}"
-# TODO conditionally set PR title for repository_dispatch
-# check github.event.client_payload.pull_request.number for similar
+run-name: >-
+  ${{ github.event_name == 'pull_request'
+    && format('PR - (#{0}) {1}', github.event.number, github.event.pull_request.title)
+    || format('PR - (#{0}) {1}', github.event.client_payload.pull_request.number, github.event.client_payload.pull_request.title) }}
+
+# run-name: "PR - (#${{ github.event.number }}) ${{ github.event.pull_request.title }}"
 
 on:
   pull_request:
