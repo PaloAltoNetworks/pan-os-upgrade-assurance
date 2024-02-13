@@ -11,9 +11,9 @@ on:
         description: A version of Python to install
         type: string
         required: true
-      ref:
-        description: Ref to checkout
-        type: string
+      # ref:
+      #   description: Ref to checkout
+      #   type: string
 
 jobs:
 
@@ -41,9 +41,9 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-          # ref: ${{ steps.ref.outputs.event_ref }}
+        # with:
+        #   ref: ${{ inputs.ref }}
+        #   # ref: ${{ steps.ref.outputs.event_ref }}
 
       - name: Install Python
         uses: actions/setup-python@v4
@@ -61,17 +61,36 @@ jobs:
       - name: Run unit tests and coverage
         run: poetry run make test_coverage
 
-      # requires pull-requests: write permissions when triggered from PRs
-      - name: Get coverage
-        uses: orgoro/coverage@v3.1
-        with:
-            coverageFile: coverage.xml
-            token: ${{ secrets.GITHUB_TOKEN }}
-            thresholdAll: 0.95
-            thresholdNew: 0.90
-            thresholdModified: 0.95
-        if: ${{ github.event_name == 'pull_request' || github.event_name == 'repository_dispatch' }}
+  upload:
+    name: Save PR details with coverage results
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
+    steps:
 
+      - name: save PR details
+        run: |
+          mkdir -p ./pr
+          echo ${{ github.event.number }} > ./pr/NR
+          echo ${{ github.event.pull_request.head.ref }} > ./pr/HEAD_REF
+          mv coverage.xml ./pr/coverage.xml
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: pr
+          path: pr/
+
+      # # requires pull-requests: write permissions when triggered from PRs
+      # - name: Get coverage
+      #   uses: orgoro/coverage@v3.1
+      #   with:
+      #       coverageFile: coverage.xml
+      #       token: ${{ secrets.GITHUB_TOKEN }}
+      #       thresholdAll: 0.95
+      #       thresholdNew: 0.90
+      #       thresholdModified: 0.95
+
+
+      # if: ${{ github.event_name == 'pull_request' || github.event_name == 'repository_dispatch' }}
       # if: ${{ contains(['pull_request', 'repository_dispatch'], github.event_name) }}
 
       # # Update check run called "unittests"
