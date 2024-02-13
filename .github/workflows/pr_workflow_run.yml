@@ -38,6 +38,7 @@ jobs:
         id: read
         working-directory: pr
         run: |
+          ls -R ./
           unzip pr.zip
           echo "pr_number=$(cat NR)" >> "$GITHUB_OUTPUT"
           echo "pr_head_ref=$(cat HEAD_REF)" >> "$GITHUB_OUTPUT"
