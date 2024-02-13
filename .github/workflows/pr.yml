@@ -21,11 +21,11 @@ permissions:
 
 jobs:
 
-  debug:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Dump Event Context
-        run: echo '${{ toJson(github.event) }}'
+  # debug:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Dump Event Context
+  #       run: echo '${{ toJson(github.event) }}'
 
   pyversion:
     name: Discover minimum Python version
