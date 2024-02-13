@@ -83,7 +83,7 @@ jobs:
         with:
           pytest-xml-coverage-path: coverage.xml
           issue-number: ${{ needs.pr_status.outputs.pr_number }}
-          # report-only-changed-files: true
+          report-only-changed-files: true
 
   pandev_pr:
     name: Create a preview PR for pan.dev
