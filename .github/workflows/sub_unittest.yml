@@ -61,13 +61,8 @@ jobs:
       - name: Run unit tests and coverage
         run: poetry run make test_coverage
 
-  upload:
-    name: Save PR details with coverage results
-    runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'pull_request' }}
-    steps:
-
-      - name: save PR details
+      - name: save PR details with coverage results
+        if: ${{ github.event_name == 'pull_request' }}
         run: |
           mkdir -p ./pr
           echo ${{ github.event.number }} > ./pr/NR
@@ -78,6 +73,8 @@ jobs:
         with:
           name: pr
           path: pr/
+        if: ${{ github.event_name == 'pull_request' }}
+
 
       # # requires pull-requests: write permissions when triggered from PRs
       # - name: Get coverage
