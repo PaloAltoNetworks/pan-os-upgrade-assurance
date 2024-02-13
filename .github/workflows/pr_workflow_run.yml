@@ -27,10 +27,11 @@ jobs:
 
     steps:
       - name: download PR artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: pr
           path: pr
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
 
       - name: read PR details from artifact
@@ -84,10 +85,11 @@ jobs:
           token: ${{ secrets.CLSC_PAT }}
 
       - name: download documentation artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: documentation
           path: products/panos/docs
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
 
       - name: unpack the documentation
