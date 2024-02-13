@@ -70,7 +70,9 @@ jobs:
             thresholdAll: 0.95
             thresholdNew: 0.90
             thresholdModified: 0.95
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ contains(['pull_request', 'repository_dispatch'], github.event_name) }}
+        # if: ${{ github.event_name == 'pull_request' || github.event_name == 'repository_dispatch' }}
+        # TODO maybe we can even check for slash command name
 
       # # Update check run called "unittests"
       # - uses: actions/github-script@v6

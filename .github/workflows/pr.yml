@@ -1,5 +1,7 @@
 name: PR
 run-name: "PR - (#${{ github.event.number }}) ${{ github.event.pull_request.title }}"
+# TODO conditionally set PR title for repository_dispatch
+# check github.event.client_payload.pull_request.number for similar
 
 on:
   pull_request:
@@ -17,6 +19,12 @@ permissions:
   contents: read
 
 jobs:
+
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump Event Context
+        run: echo '${{ toJson(github.event) }}'
 
   pyversion:
     name: Discover minimum Python version
