@@ -92,17 +92,56 @@ jobs:
           issue-number: ${{ needs.pr_status.outputs.pr_number }}
           report-only-changed-files: true
 
-      # Update check run called "Update coverage report on PR"
-      - uses: actions/github-script@v6
-        id: update-check-run
-        if: ${{ always() }}
+      # # Update check run called "Update coverage report on PR"
+      # - uses: actions/github-script@v6
+      #   id: update-check-run
+      #   if: ${{ always() }}
+      #   env:
+      #     number: ${{ needs.pr_status.outputs.pr_number }}
+      #     job: ${{ github.job }}
+      #     # Conveniently, job.status maps to https://developer.github.com/v3/checks/runs/#update-a-check-run
+      #     conclusion: ${{ job.status }}
+      #   with:
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      #     script: |
+      #       const { data: pull } = await github.rest.pulls.get({
+      #         ...context.repo,
+      #         pull_number: process.env.number
+      #       });
+      #       const ref = pull.head.sha;
+
+      #       console.log('Job name:' + process.env.job)
+      #       console.log('Pull request ref:' + ref)
+
+      #       const { data: checks } = await github.rest.checks.listForRef({
+      #         ...context.repo,
+      #         ref
+      #       });
+      #       console.log('list of checks:' + checks.check_runs)
+
+      #       const check = checks.check_runs.filter(c => c.name === process.env.job);
+      #       console.log('check:' + check)
+
+      #       const { data: result } = await github.rest.checks.update({
+      #         ...context.repo,
+      #         check_run_id: check[0].id,
+      #         status: 'completed',
+      #         conclusion: process.env.conclusion
+      #       });
+
+      #       return result;
+
+  mark-check-in-progress:
+    name: Mark check in-progress on originating PR
+    runs-on: ubuntu-latest
+    needs:
+      - pr_status
+    steps:
+      - name: 'Set check status in-progress'
+        uses: actions/github-script@v6
         env:
           number: ${{ needs.pr_status.outputs.pr_number }}
-          job: ${{ github.job }}
-          # Conveniently, job.status maps to https://developer.github.com/v3/checks/runs/#update-a-check-run
-          conclusion: ${{ job.status }}
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const { data: pull } = await github.rest.pulls.get({
               ...context.repo,
@@ -110,26 +149,20 @@ jobs:
             });
             const ref = pull.head.sha;
 
-            console.log('Job name:' + process.env.job)
-            console.log('Pull request ref:' + ref)
-
-            const { data: checks } = await github.rest.checks.listForRef({
-              ...context.repo,
-              ref
-            });
-            console.log('list of checks:' + checks.check_runs)
-
-            const check = checks.check_runs.filter(c => c.name === process.env.job);
-            console.log('check:' + check)
-
-            const { data: result } = await github.rest.checks.update({
-              ...context.repo,
-              check_run_id: check[0].id,
-              status: 'completed',
-              conclusion: process.env.conclusion
+            github.rest.checks.create({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               name: "Update coverage report on PR",
+               head_sha: ref,
+               status: "in_progress",
+               output: {
+                  title: "Update coverage report on PR",
+                  summary: "Using data from untrusted workflow, won't be a minute.",
+                  text: '',
+               },
             });
 
-            return result;
+
 
   # TEMP disable create PR for pan.dev for tests
   # pandev_pr:
