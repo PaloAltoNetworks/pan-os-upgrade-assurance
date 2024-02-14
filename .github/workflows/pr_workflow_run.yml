@@ -1,7 +1,9 @@
 name: Post PR Workflow Run
+run-name: "Post PR - (#${{ github.event.workflow_run.pull_requests[0].number }}) ${{ github.event.workflow_run.pull_requests[0].title }}"
+# we always expect a single PR to trigger this workflow_run - take care of event filtering below to match a single workflow
 
-# read-write repo token
-# access to secrets
+# Post PR workflow_run has write access to PR as it's not run from the fork repo
+
 on:
   workflow_run:
     workflows: ["PR"]
