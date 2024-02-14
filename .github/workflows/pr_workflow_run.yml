@@ -142,6 +142,7 @@ jobs:
         env:
           number: ${{ needs.pr_status.outputs.pr_number }}
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const { data: pull } = await github.rest.pulls.get({
               ...context.repo,
