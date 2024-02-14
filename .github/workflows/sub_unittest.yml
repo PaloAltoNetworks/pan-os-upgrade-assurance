@@ -11,9 +11,6 @@ on:
         description: A version of Python to install
         type: string
         required: true
-      # ref:
-      #   description: Ref to checkout
-      #   type: string
 
 jobs:
 
@@ -22,28 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      # - name: Find out ref to checkout
-      #   id: ref
-      #   run: |
-      #       if [ "${{ github.event_name  == 'repository_dispatch' &&
-      #       github.event.client_payload.slash_command.args.named.sha != '' &&
-      #       contains(
-      #         github.event.client_payload.pull_request.head.sha,
-      #         github.event.client_payload.slash_command.args.named.sha
-      #       ) }}" = "true" ]; then
-      #         echo "::set-output name=event_ref::refs/pull/${{ github.event.client_payload.pull_request.number }}/merge"
-      #       else
-      #         echo "::set-output name=event_ref::"
-      #       fi
-
-      # - name: Checkout code
-      #   uses: actions/checkout@v4
-
       - name: Checkout code
         uses: actions/checkout@v4
-        # with:
-        #   ref: ${{ inputs.ref }}
-        #   # ref: ${{ steps.ref.outputs.event_ref }}
 
       - name: Install Python
         uses: actions/setup-python@v4
@@ -61,70 +38,10 @@ jobs:
       - name: Run unit tests and coverage
         run: poetry run make test_coverage
 
-      # - name: save coverage results
-      #   if: ${{ github.event_name == 'pull_request' }}
-      #   run: |
-      #     mkdir -p ./pr-coverage
-      #     mv coverage.xml ./pr-coverage/coverage.xml
-
+      # coverage results are uploaded to artifact to be inspected by post PR workflow run
       - name: Save coverage results
         uses: actions/upload-artifact@v4
         with:
           name: pr-coverage
           path: coverage.xml
         if: ${{ github.event_name == 'pull_request' }}
-
-
-      # # requires pull-requests: write permissions when triggered from PRs
-      # - name: Get coverage
-      #   uses: orgoro/coverage@v3.1
-      #   with:
-      #       coverageFile: coverage.xml
-      #       token: ${{ secrets.GITHUB_TOKEN }}
-      #       thresholdAll: 0.95
-      #       thresholdNew: 0.90
-      #       thresholdModified: 0.95
-
-
-      # if: ${{ github.event_name == 'pull_request' || github.event_name == 'repository_dispatch' }}
-      # if: ${{ contains(['pull_request', 'repository_dispatch'], github.event_name) }}
-
-      # # Update check run called "unittests"
-      # - uses: actions/github-script@v6
-      #   id: update-check-run
-      #   if: |
-      #     github.event_name == 'repository_dispatch' &&
-      #     github.event.client_payload.slash_command.args.named.sha != '' &&
-      #     contains(
-      #       github.event.client_payload.pull_request.head.sha,
-      #       github.event.client_payload.slash_command.args.named.sha
-      #     )
-      #   env:
-      #     number: ${{ github.event.client_payload.pull_request.number }}
-      #     job: ${{ github.job }}
-      #     # Conveniently, job.status maps to https://developer.github.com/v3/checks/runs/#update-a-check-run
-      #     conclusion: ${{ job.status }} 
-      #   with:
-      #     github-token: ${{ secrets.GITHUB_TOKEN }}
-      #     script: |
-      #       const { data: pull } = await github.rest.pulls.get({
-      #         ...context.repo,
-      #         pull_number: process.env.number
-      #       });
-      #       const ref = pull.head.sha;
-
-      #       const { data: checks } = await github.rest.checks.listForRef({
-      #         ...context.repo,
-      #         ref
-      #       });
-
-      #       const check = checks.check_runs.filter(c => c.name === process.env.job);
-
-      #       const { data: result } = await github.rest.checks.update({
-      #         ...context.repo,
-      #         check_run_id: check[0].id,
-      #         status: 'completed',
-      #         conclusion: process.env.conclusion
-      #       });
-
-      #       return result;

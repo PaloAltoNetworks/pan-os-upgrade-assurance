@@ -1,12 +1,6 @@
 name: PR
 run-name: "PR - (#${{ github.event.number }}) ${{ github.event.pull_request.title }}"
 
-# run-name: >-
-#   ${{ github.event_name == 'pull_request'
-#     && format('PR - (#{0}) {1}', github.event.number, github.event.pull_request.title)
-#     || format('PR - (#{0}) {1}', github.event.client_payload.pull_request.number, github.event.client_payload.pull_request.title) }}
-
-
 on:
   pull_request:
     types:
@@ -22,12 +16,6 @@ permissions:
 
 jobs:
 
-  # debug:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Dump Event Context
-  #       run: echo '${{ toJson(github.event) }}'
-
   pyversion:
     name: Discover minimum Python version
     uses: ./.github/workflows/_discover_python_ver.yml
@@ -42,9 +30,6 @@ jobs:
   unit_tests:
     name: Unit Tests
     needs: pyversion
-    # permissions:
-    #   contents: read
-    #   pull-requests: write
     uses: ./.github/workflows/sub_unittest.yml
     with:
       python_version: ${{ needs.pyversion.outputs.pyversion }}
@@ -59,9 +44,6 @@ jobs:
   docker_image_test_build:
     name: Build Docker image
     needs: pyversion
-    permissions:
-      contents: read
-      packages: write
     uses: ./.github/workflows/_docker.yml
     with:
       publish: false
@@ -96,76 +78,7 @@ jobs:
           mkdir -p ./pr
           echo ${{ github.event.number }} > ./pr/NR
           echo ${{ github.event.pull_request.head.ref }} > ./pr/HEAD_REF
-
       - uses: actions/upload-artifact@v4
         with:
           name: pr
           path: pr/
-
-
-
-  # pandev_pr:
-  #   name: Create a preview PR for pan.dev
-  #   needs: store_documentation
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     contents: write
-  #     pull-requests: write
-  #   # TODO should only run on a branch PR OR on repository_dispatch
-  #   if: (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || github.event_name == 'repository_dispatch'
-
-  #   steps:
-  #     - name: checkout pan.dev
-  #       uses: actions/checkout@v4
-  #       with:
-  #         repository: PaloAltoNetworks/pan.dev
-  #         token: ${{ secrets.CLSC_PAT }}
-
-  #     - name: download documentation artifact
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: documentation
-  #         path: products/panos/docs
-
-  #     - name: unpack the documentation
-  #       working-directory: products/panos/docs
-  #       run: |
-  #         rm -rf 'panos-upgrade-assurance'
-  #         tar xvf documentation.tar
-  #         rm -f documentation.tar
-
-  #     - name: create a PR to upstream pan.dev
-  #       id: pr
-  #       uses: peter-evans/create-pull-request@v5
-  #       with:
-  #         token: ${{ secrets.CLSC_PAT }}
-  #         delete-branch: true
-  #         branch: "pua_prev_${{ github.event.pull_request.head.ref }}"
-  #         title: "[PAN-OS Upgrade Assurance][${{ github.event.pull_request.head.ref }}] documentation PREVIEW - do NOT MERGE"
-  #         commit-message: "docs: PanOS Upgrade Assurance documentation update"
-  #         labels: netsec, DO NOT MERGE
-  #         body: |
-  #           # Description
-            
-  #           DO NOT MERGE - preview PR made for changes on branch: ${{ github.event.pull_request.head.ref }}.
-
-  #           # Types of changes
-
-  #           New feature (non-breaking change which adds functionality)
-
-  #     - name: find if we have a comment
-  #       uses: peter-evans/find-comment@v2
-  #       id: find
-  #       with:
-  #         issue-number: ${{ github.event.pull_request.number }}
-  #         body-includes: A Preview PR in PanDev repo has been created
-  #         repository: ${{ github.repository }}
-
-  #     - name: comment back on the original PR
-  #       if: steps.find.outputs.comment-id == '' &&  steps.pr.outputs.pull-request-url != ''
-  #       uses: peter-evans/create-or-update-comment@v3
-  #       with:
-  #         issue-number: ${{ github.event.pull_request.number }}
-  #         repository: ${{ github.repository }}
-  #         body: |
-  #           A Preview PR in PanDev repo has been created. You can view it [here](${{ steps.pr.outputs.pull-request-url }}).
