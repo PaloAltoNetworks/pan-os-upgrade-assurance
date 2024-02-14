@@ -1,9 +1,9 @@
 name: Post PR Workflow Run
-run-name: "Post PR - (#${{ github.event.workflow_run.pull_requests[0].number }}) ${{ github.event.workflow_run.pull_requests[0].title }}"
-# we always expect a single PR to trigger this workflow_run - take care of event filtering below to match a single workflow
+run-name: "Post ${{ github.event.workflow_run.display_title }}"
 
 # Post PR workflow_run has write access to PR as it's not run from the fork repo
 
+# we always expect a single PR to trigger this workflow_run - take care of event filtering below to match a single workflow
 on:
   workflow_run:
     workflows: ["PR"]
@@ -29,9 +29,9 @@ jobs:
 
     steps:
 
-      - name: Echo pull request attributes
-        run: |
-          echo "Pull Request Attributes: ${{ toJSON(github.event.workflow_run) }}"
+      # - name: Echo pull request attributes
+      #   run: |
+      #     echo "Pull Request Attributes: ${{ toJSON(github.event.workflow_run) }}"
 
       - name: download PR artifact
         uses: actions/download-artifact@v4
