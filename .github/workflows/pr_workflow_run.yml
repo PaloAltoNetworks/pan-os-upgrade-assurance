@@ -28,6 +28,11 @@ jobs:
       pr_head_ref: ${{ steps.read.outputs.pr_head_ref }}
 
     steps:
+
+      - name: Echo pull request attributes
+        run: |
+          echo "Pull Request Attributes: ${{ toJSON(github.event.workflow_run.pull_requests[0]) }}"
+
       - name: download PR artifact
         uses: actions/download-artifact@v4
         with:
@@ -86,6 +91,40 @@ jobs:
           pytest-xml-coverage-path: coverage.xml
           issue-number: ${{ needs.pr_status.outputs.pr_number }}
           report-only-changed-files: true
+
+      # Update check run called "Update coverage report on PR"
+      - uses: actions/github-script@v6
+        id: update-check-run
+        if: ${{ always() }}
+        env:
+          number: ${{ needs.pr_status.outputs.pr_number }}
+          job: ${{ github.job }}
+          # Conveniently, job.status maps to https://developer.github.com/v3/checks/runs/#update-a-check-run
+          conclusion: ${{ job.status }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: pull } = await github.rest.pulls.get({
+              ...context.repo,
+              pull_number: process.env.number
+            });
+            const ref = pull.head.sha;
+
+            const { data: checks } = await github.rest.checks.listForRef({
+              ...context.repo,
+              ref
+            });
+
+            const check = checks.check_runs.filter(c => c.name === process.env.job);
+
+            const { data: result } = await github.rest.checks.update({
+              ...context.repo,
+              check_run_id: check[0].id,
+              status: 'completed',
+              conclusion: process.env.conclusion
+            });
+
+            return result;
 
   pandev_pr:
     name: Create a preview PR for pan.dev
