@@ -45,6 +45,9 @@ jobs:
     name: Build Docker image
     needs: pyversion
     uses: ./.github/workflows/_docker.yml
+    permissions:
+      contents: read
+      packages: read            # since publish is false, read access is ok
     with:
       publish: false
       python_version: ${{ needs.pyversion.outputs.pyversion }}

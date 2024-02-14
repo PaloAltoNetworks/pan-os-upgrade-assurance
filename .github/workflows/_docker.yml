@@ -24,9 +24,10 @@ jobs:
   build:
     name: Build ${{ inputs.publish && 'and publish' || '' }} a Docker image
     runs-on: ubuntu-latest
-    permissions:
-      packages: write
-      contents: read
+    # packages write should be needed for publish only
+    # permissions:
+    #   packages: write
+    #   contents: read
     steps:
       - name: checkout code
         uses: actions/checkout@v4
