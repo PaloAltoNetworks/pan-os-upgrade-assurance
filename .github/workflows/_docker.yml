@@ -24,7 +24,7 @@ jobs:
   build:
     name: Build ${{ inputs.publish && 'and publish' || '' }} a Docker image
     runs-on: ubuntu-latest
-    # packages write should be needed for publish only
+    # packages write should be needed for publish only - set permissions accordingly from calling workflow
     # permissions:
     #   packages: write
     #   contents: read

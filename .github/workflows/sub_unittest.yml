@@ -45,14 +45,7 @@ jobs:
       - name: Run unit tests and coverage
         run: poetry run make test_coverage
 
-      # # coverage results are uploaded to artifact to be inspected by post PR workflow run
-      # - name: Save coverage results
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: pr-coverage
-      #     path: coverage.xml
-      #   if: ${{ github.event_name == 'pull_request' }}
-
+      # coverage results comment is uploaded to artifact to be written by post PR workflow run
       - name: Coverage comment
         id: coverage_comment
         uses: py-cov-action/python-coverage-comment-action@v3
