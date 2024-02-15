@@ -1,0 +1,66 @@
+name: Post Close PR Workflow Run
+run-name: "Post ${{ github.event.workflow_run.display_title }}"
+# This workflow is to be triggerred after Close PR workflow is completed to get access to secrets for fork repo PRs securely.
+
+# we always expect a single PR to trigger this workflow_run - take care of event filtering below to match a single workflow
+on:
+  workflow_run:
+    workflows: ["Close PR"]
+    types:
+      - completed
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  close_pr:
+    name: Close PAN.DEV preview PR
+    runs-on: ubuntu-latest
+    if: >
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - name: download PR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pr
+          path: pr
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: read PR details from artifact
+        id: read
+        working-directory: pr
+        run: |
+          ls -R ./
+          echo "pr_number=$(cat NR)" >> "$GITHUB_OUTPUT"
+          echo "pr_head_ref=$(cat HEAD_REF)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/github-script@v6
+        with:
+          result-encoding: string
+          github-token: ${{ secrets.CLSC_PAT }}
+          script: |
+            let prs = await github.rest.pulls.list({
+              owner: "PaloAltoNetworks",
+              repo: "pan.dev",
+              state: "open",
+            })
+
+            let prs_list = prs.data
+
+            for (let pr of prs_list){
+              if (pr.head.label == "PaloAltoNetworks:pua_prev_${{ steps.read.outputs.pr_head_ref }}"){
+                await github.rest.pulls.update({
+                  owner: "PaloAltoNetworks",
+                  repo: "pan.dev",
+                  pull_number: pr.number,
+                  state: "closed",
+                })
+                console.log("Closing related PAN.DEV PR: #" + pr.number + " - " + pr.title + " -> " + pr.url)
+                break
+              }
+            }
