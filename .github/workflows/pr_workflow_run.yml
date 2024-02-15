@@ -12,6 +12,10 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  # Gives the action the necessary permissions for looking up the
+  # workflow that launched this workflow, and download the related
+  # artifact that contains the comment to be published
+  actions: read
 
 jobs:
 
