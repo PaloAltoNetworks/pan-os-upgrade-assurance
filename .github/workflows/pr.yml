@@ -30,6 +30,8 @@ jobs:
   unit_tests:
     name: Unit Tests
     needs: pyversion
+    permissions:
+      contents: write
     uses: ./.github/workflows/sub_unittest.yml
     with:
       python_version: ${{ needs.pyversion.outputs.pyversion }}

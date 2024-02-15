@@ -16,7 +16,7 @@ permissions:
 jobs:
 
   pr_status:
-    name: Get PR details and coverage results from artifacts
+    name: Get PR details from artifacts
     runs-on: ubuntu-latest
     if: >
       github.event.workflow_run.event == 'pull_request' &&
@@ -48,19 +48,28 @@ jobs:
     needs: pr_status
     runs-on: ubuntu-latest
     steps:
-      - name: download PR coverage artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: pr-coverage
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ github.event.workflow_run.id }}
+      # - name: download PR coverage artifact
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: pr-coverage
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      #     run-id: ${{ github.event.workflow_run.id }}
 
-      - name: pytest coverage comment
-        uses: MishaKav/pytest-coverage-comment@v1.1.51
+      # - name: pytest coverage comment
+      #   uses: MishaKav/pytest-coverage-comment@v1.1.51
+      #   with:
+      #     pytest-xml-coverage-path: coverage.xml
+      #     issue-number: ${{ needs.pr_status.outputs.pr_number }}
+      #     report-only-changed-files: true
+
+      - name: post coverage comment
+        uses: py-cov-action/python-coverage-comment-action@v3
         with:
-          pytest-xml-coverage-path: coverage.xml
-          issue-number: ${{ needs.pr_status.outputs.pr_number }}
-          report-only-changed-files: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_PR_RUN_ID: ${{ github.event.workflow_run.id }}
+          # Update those if you changed the default values:
+          # COMMENT_ARTIFACT_NAME: python-coverage-comment-action
+          # COMMENT_FILENAME: python-coverage-comment-action.txt
 
   pandev_pr:
     name: Create a preview PR for pan.dev
