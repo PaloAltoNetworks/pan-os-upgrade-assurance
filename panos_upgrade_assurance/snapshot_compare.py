@@ -419,7 +419,7 @@ class SnapshotCompare:
             item_changed = False
             for key in keys_to_check:
                 if right_side_to_compare[key] != left_side_to_compare[key]:
-                    if isinstance(left_side_to_compare[key], str):
+                    if isinstance(left_side_to_compare[key], (str, int)):
                         result["changed"]["changed_raw"][key] = dict(
                             left_snap=left_side_to_compare[key],
                             right_snap=right_side_to_compare[key],

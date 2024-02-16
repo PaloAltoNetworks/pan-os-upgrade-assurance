@@ -7,7 +7,7 @@ from panos.firewall import Firewall
 from pan.xapi import PanXapiError
 from panos_upgrade_assurance import exceptions
 from math import floor
-from datetime import datetime
+from datetime import datetime, timedelta
 from packaging import version
 
 
@@ -107,6 +107,7 @@ class FirewallProxy:
             XML response.
 
         # Returns
+
         dict, xml.etree.ElementTree.Element: The actual command output. A type is defined by the `return_xml` parameter.
 
         """
@@ -144,6 +145,7 @@ class FirewallProxy:
         GetXpathConfigFailedException: This exception is raised when XPATH is not provided or does not exist.
 
         # Returns
+
         dict, xml.etree.ElementTree.Element: The actual command output. A type is defined by the `return_xml` parameter.
 
         """
@@ -1314,7 +1316,7 @@ class FirewallProxy:
 
         The user-id service is used to redistribute user-id information to other firewalls.
 
-        # Returns the clients and agents known to this device.
+        # Returns
 
         dict: The state of the user-id agent. Only returns up or down.
 
@@ -1337,9 +1339,9 @@ class FirewallProxy:
     def get_redistribution_status(self) -> dict:
         """Get the status of the Data Redistribution service.
 
-        Redistribution is used to share data, such as user-id information, between PAN-OS firewalls or Agents.
+        Redistribution service is used to share data, such as user-id information, between PAN-OS firewalls or Agents.
 
-        # Returns the clients and agents known to this device.
+        # Returns
 
         dict: The state of the redistribution service, and the associated clients, if available.
 
@@ -1395,14 +1397,14 @@ class FirewallProxy:
         return return_dict
 
     def get_device_software_version(self):
-        """Gets the current running device software version, as a packaging.version.Version object.
+        """Gets the current running device software version, as a `packaging.version.Version` object.
 
         This allows you to do comparators between other Version objects easily. Note that this strips out information
-            like 'xfr' but maintains the hotfix (i.e 9.1.12-h3 becaomes 9.1.12.3 for the purpose of versioning).
+            like `xfr` but maintains the hotfix (i.e `9.1.12-h3` becomes `9.1.12.3` for the purpose of versioning).
 
-        # Returns the software version as a packaging 'Version' object.
+        # Returns
 
-        Version: Version(9.1.12)
+        Version: the software version as a packaging 'Version' object.
         """
         self._fw.refresh_system_info()
         self._fw.get_device_version()
@@ -1410,8 +1412,7 @@ class FirewallProxy:
         return version.parse(fw_version)
 
     def get_fib(self) -> dict:
-        """
-        Get the information from the forwarding information table (FIB).
+        """Get the information from the forwarding information table (FIB).
 
         The actual API command run is `show routing fib`.
 
@@ -1477,3 +1478,32 @@ class FirewallProxy:
                         results[key] = result_entry
 
         return results
+
+    def get_system_time_rebooted(self) -> datetime:
+        """Returns the date and time the system last rebooted using the system uptime.
+
+        The actual API command is `show system info`.
+
+        # Returns
+
+        datetime: Time system was last rebooted based on current time - system uptime string
+
+        ```python showLineNumbers title="Sample output"
+        datetime(2024, 01, 01, 00, 00, 00)
+        ```
+
+        """
+        response = self.op_parser(cmd="show system info", return_xml=True)
+        uptime_string = response.findtext("./system/uptime")
+        current_time = datetime.now()
+
+        time_re_match = re.search(r"(\d+) days, (\d+):(\d+):(\d+)", uptime_string)
+
+        rebooted_time = current_time - timedelta(
+            days=int(time_re_match.group(1)),
+            hours=int(time_re_match.group(2)),
+            minutes=int(time_re_match.group(3)),
+            seconds=int(time_re_match.group(4)),
+        )
+
+        return rebooted_time

@@ -6,6 +6,7 @@ import time
 
 import panos.errors
 from packaging.version import parse as parse_version
+from packaging.version import Version
 
 from panos_upgrade_assurance.utils import (
     CheckResult,
@@ -104,7 +105,10 @@ class CheckFirewall:
             CheckType.JOBS: self.check_non_finished_jobs,
         }
 
-        self._health_check_method_mapping = {HealthType.DEVICE_ROOT_CERTIFICATE_ISSUE: self.check_device_root_certificate_issue}
+        self._health_check_method_mapping = {
+            HealthType.DEVICE_ROOT_CERTIFICATE_ISSUE: self.check_device_root_certificate_issue,
+            HealthType.DEVICE_CDSS_AND_PANORAMA_CERTIFICATE_ISSUE: self.check_cdss_and_panorama_certificate_issue,
+        }
 
         if not skip_force_locale:
             locale.setlocale(
@@ -1215,7 +1219,7 @@ class CheckFirewall:
 
         # Parameters
 
-        checks_configuration (list(str,dict), optional): (defaults to `None`) List of readiness checks to run.
+        checks_configuration (list(str,dict), optional): (defaults to `None`) List of health checks to run.
         report_style (bool): (defaults to `False`) Changes the output to more descriptive. Can be used when generating a report
             from the checks.
 
@@ -1253,24 +1257,67 @@ class CheckFirewall:
 
         return result
 
-    def check_device_root_certificate_issue(self, fail_when_affected_version_only: bool = True) -> CheckResult:
-        """Checks whether the target device is affected by the Root Certificate Expiration issue;
+    @staticmethod
+    def check_version_against_version_match_dict(version: Version, match_dict: dict) -> bool:
+        """Compare the given software version against the match dict.
 
-        https://live.paloaltonetworks.com/t5/customer-advisories/emergency-update-required-pan-os-root-and-default-certificate/ta-p/564672
+        # Parameters
+
+        version (Version): The software version to compare (e.g. "10.1.11").
+        match_dict (dict): A dictionary of tuples mapping major/minor versions to match criteria:
+
+        ```python showLineNumbers title="Example"
+        {
+            "81": [("==", "8.1.21.2"), (">=", "8.1.25.1")],
+            "90": [(">=", "9.0.16.5")],
+        }
+        ```
+
+        # Returns
+
+        bool: `True` If the given software version matches the provided match criteria
+
+        """
+        match_versions = match_dict.get(f"{version.major}{version.minor}")
+        if match_versions:
+            for operator, match_version in match_versions:
+                match_version = parse_version(match_version)
+                if operator == "==":
+                    if version == match_version:
+                        return True
+                elif operator == ">=":
+                    if version >= match_version:
+                        return True
+        return False
+
+    def check_device_root_certificate_issue(self, fail_when_affected_version_only: bool = True) -> CheckResult:
+        """Checks whether the target device is affected by the [Root Certificate Expiration][live-564672] issue.
+
+        [live-564672]: https://live.paloaltonetworks.com/t5/customer-advisories/emergency-update-required-pan-os-root-and-default-certificate/ta-p/564672
 
         This check will FAIL if so, allowing you to build upgrade logic based on when and how it's failed.
 
-        This check will fail in the following scenarios;
-            1. The device is running software that is affected by the issue AND is running out of date content
-                AND is NOT running the user-id service or data redistribution
-            2. The device is running software that is affected by the issue AND IS running user-id service OR data
-                redistribution
+        This check will fail in the following scenarios:
+
+        1. The device is running software that is affected by the issue AND is running out of date content
+            AND is NOT running the user-id service or data redistribution
+        2. The device is running software that is affected by the issue AND IS running user-id service OR data
+            redistribution
 
         # Parameters
 
         fail_when_affected_version_only (bool, optional): (defaults to `True`) When set to False, this test will only
             fail if the software version is affected by the root certificate issue, AND the device is used for data
             redistribution OR it's using an out-of-date content DB version.
+
+        # Returns
+
+        CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking \
+            value of:
+
+        * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) if the device is not affected,
+        * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise.
+
         """
         result = CheckResult()
 
@@ -1316,19 +1363,9 @@ class CheckFirewall:
         }
         fixed_content_version = 8776.8390
 
-        fixed_versions = fixed_version_map.get(f"{software_version.major}{software_version.minor}")
-        if fixed_versions:
-            for operator, fixed_version in fixed_versions:
-                fixed_version = parse_version(fixed_version)
-                if operator == "==":
-                    if software_version == fixed_version:
-                        result.status = CheckStatus.SUCCESS
-                elif operator == ">=":
-                    if software_version >= fixed_version:
-                        result.status = CheckStatus.SUCCESS
-
         # If the device is already running fixed software, we can return immediately
-        if result.status == CheckStatus.SUCCESS:
+        if self.check_version_against_version_match_dict(software_version, fixed_version_map):
+            result.status = CheckStatus.SUCCESS
             return result
 
         # Return if this check is just looking at the software and not implementing any other checks
@@ -1371,4 +1408,98 @@ class CheckFirewall:
             "Device is running out of date content and out of date software. Device root certificate will "
             "expire December 31st, 2023."
         )
+        return result
+
+    def check_cdss_and_panorama_certificate_issue(self) -> CheckResult:
+        """Checks whether the device is affected by the [PAN-OS Certificate Expirations Jan 2024 advisory][live-572158].
+
+        [live-572158]: https://live.paloaltonetworks.com/t5/customer-advisories/additional-pan-os-certificate-expirations-and-new-comprehensive/ta-p/572158
+
+        Check will fail in either of following scenarios:
+
+         * Device is running an affected software version
+         * Device is running an affected content version
+         * Device is running the fixed content version or higher but has not been rebooted - note this is best effort,
+            and is based on when the content version was released and the device was rebooted
+
+        # Returns
+
+        CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking \
+            value of:
+
+        * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) if the device is not affected,
+        * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise.
+
+        """
+        fixed_version_map = {
+            "81": [("==", "8.1.21.3"), ("==", "8.1.25.3"), (">=", "8.1.26")],
+            "90": [("==", "9.0.16.7"), ("==", "9.0.17.5")],
+            "91": [
+                ("==", "9.1.11.5"),
+                ("==", "9.1.12.7"),
+                ("==", "9.1.13.5"),
+                ("==", "9.1.14.8"),
+                ("==", "9.1.16.5"),
+                (">=", "9.1.17"),
+            ],
+            "100": [("==", "10.0.8.11"), ("==", "10.0.11.4"), ("==", "10.0.12.5")],
+            "101": [
+                ("==", "10.1.3.3"),
+                ("==", "10.1.4.6"),
+                ("==", "10.1.5.4"),
+                ("==", "10.1.6.8"),
+                ("==", "10.1.7.1"),
+                ("==", "10.1.8.7"),
+                ("==", "10.1.9.8"),
+                ("==", "10.1.10.5"),
+                ("==", "10.1.11.4"),
+                (">=", "10.1.12"),
+            ],
+            "102": [
+                ("==", "10.2.0.2"),
+                ("==", "10.2.1.1"),
+                ("==", "10.2.2.4"),
+                ("==", "10.2.3.11"),
+                ("==", "10.2.4.10"),
+                ("==", "10.2.5.4"),
+                ("==", "10.2.6.1"),
+                ("==", "10.2.7.3"),
+                (">=", "10.2.8"),
+            ],
+            "110": [("==", "11.0.0.2"), ("==", "11.0.1.3"), ("==", "11.0.2.3"), (">=", "11.0.3.3"), (">=", "11.0.4")],
+            "111": [("==", "11.1.0.2"), (">=", "11.1.1")],
+        }
+
+        # Release date and fixed version are both static
+        fixed_content_version = 8795.8489
+        fixed_content_version_release_date = datetime(2024, 1, 8, 19, 26, 43)
+
+        result = CheckResult()
+
+        software_version = self._node.get_device_software_version()
+
+        if self.check_version_against_version_match_dict(software_version, fixed_version_map):
+            # Fixed software means we can return immediately, no need to further check
+            result.status = CheckStatus.SUCCESS
+            return result
+
+        content_version = float(self._node.get_content_db_version().replace("-", "."))
+
+        if content_version >= fixed_content_version:
+            # Check the device has been rebooted since the release of the fixed content version
+            # This is not a perfect test - if the customer reboots without installing the content update, then
+            # later installs it, it will pass even though one further restart is required.
+            reboot_time = self._node.get_system_time_rebooted()
+            if reboot_time < fixed_content_version_release_date:
+                result.reason = "Device is running fixed Content but still requires a restart for the fix to take " "effect."
+                return result
+            else:
+                result.status = CheckStatus.SUCCESS
+                return result
+
+        result.reason = (
+            "Device is running a software version, and a content version, that is affected by the 2024 certificate"
+            " expiration, the first of which will occur on the 7th of April, 2024."
+        )
+
         return result
