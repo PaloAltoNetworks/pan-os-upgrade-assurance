@@ -52,3 +52,7 @@ line-length = 130
 [tool.flake8]
 select = ["C","E","F","W","B","D","B950"]
 ignore = ["E203","E501","W503","D203","D102","D103","D107","D400","E501"]
+
+[tool.coverage.run]
+source = [ "panos_upgrade_assurance" ]
+relative_files = true
