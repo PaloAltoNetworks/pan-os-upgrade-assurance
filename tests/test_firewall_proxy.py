@@ -458,13 +458,105 @@ class TestFirewallProxy:
         fw_proxy_mock.op.return_value = raw_response
 
         assert fw_proxy_mock.get_routes() == {
-            "default_0.0.0.0/0_ethernet1/1": {
+            "default_0.0.0.0/0_ethernet1/1_10.10.11.1": {
                 "age": None,
                 "destination": "0.0.0.0/0",
                 "flags": "A S E",
                 "interface": "ethernet1/1",
                 "metric": "10",
                 "nexthop": "10.10.11.1",
+                "route-table": "unicast",
+                "virtual-router": "default",
+            },
+        }
+
+    def test_get_routes_same_dest(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <flags>flags: A:active, ?:loose, C:connect, H:host, S:static, ~:internal, R:rip, O:ospf,
+                    B:bgp, Oi:ospf intra-area, Oo:ospf inter-area, O1:ospf ext-type-1, O2:ospf ext-type-2,
+                    E:ecmp, M:multicast</flags>
+                <entry>
+                    <virtual-router>default</virtual-router>
+                    <destination>0.0.0.0/0</destination>
+                    <nexthop>10.10.11.1</nexthop>
+                    <metric>10</metric>
+                    <flags>A S E </flags>
+                    <age />
+                    <interface>ethernet1/1</interface>
+                    <route-table>unicast</route-table>
+                </entry>
+                <entry>
+                    <virtual-router>default</virtual-router>
+                    <destination>0.0.0.0/0</destination>
+                    <nexthop>10.10.12.1</nexthop>
+                    <metric>10</metric>
+                    <flags>A S E </flags>
+                    <age />
+                    <interface>ethernet1/1</interface>
+                    <route-table>unicast</route-table>
+                </entry>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_routes() == {
+            "default_0.0.0.0/0_ethernet1/1_10.10.11.1": {
+                "age": None,
+                "destination": "0.0.0.0/0",
+                "flags": "A S E",
+                "interface": "ethernet1/1",
+                "metric": "10",
+                "nexthop": "10.10.11.1",
+                "route-table": "unicast",
+                "virtual-router": "default",
+            },
+            "default_0.0.0.0/0_ethernet1/1_10.10.12.1": {
+                "age": None,
+                "destination": "0.0.0.0/0",
+                "flags": "A S E",
+                "interface": "ethernet1/1",
+                "metric": "10",
+                "nexthop": "10.10.12.1",
+                "route-table": "unicast",
+                "virtual-router": "default",
+            },
+        }
+
+    def test_get_routes_nexthop_name(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <flags>flags: A:active, ?:loose, C:connect, H:host, S:static, ~:internal, R:rip, O:ospf,
+                    B:bgp, Oi:ospf intra-area, Oo:ospf inter-area, O1:ospf ext-type-1, O2:ospf ext-type-2,
+                    E:ecmp, M:multicast</flags>
+                <entry>
+                    <virtual-router>default</virtual-router>
+                    <destination>0.0.0.0/0</destination>
+                    <nexthop>public vr</nexthop>
+                    <metric>10</metric>
+                    <flags>A S E </flags>
+                    <age />
+                    <interface>ethernet1/1</interface>
+                    <route-table>unicast</route-table>
+                </entry>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_routes() == {
+            "default_0.0.0.0/0_ethernet1/1_public-vr": {
+                "age": None,
+                "destination": "0.0.0.0/0",
+                "flags": "A S E",
+                "interface": "ethernet1/1",
+                "metric": "10",
+                "nexthop": "public vr",
                 "route-table": "unicast",
                 "virtual-router": "default",
             },
@@ -1867,7 +1959,7 @@ class TestFirewallProxy:
         fw_proxy_mock.op.return_value = raw_response
 
         assert fw_proxy_mock.get_fib() == {
-            "0.0.0.0/0_ethernet1/1": {
+            "0.0.0.0/0_ethernet1/1_10.10.11.1": {
                 "Destination": "0.0.0.0/0",
                 "Interface": "ethernet1/1",
                 "Next Hop Type": "0",
@@ -1875,7 +1967,7 @@ class TestFirewallProxy:
                 "Next Hop": "10.10.11.1",
                 "MTU": "1500",
             },
-            "1.1.1.1/32_loopback.10": {
+            "1.1.1.1/32_loopback.10_1.2.3.4": {
                 "Destination": "1.1.1.1/32",
                 "Interface": "loopback.10",
                 "Next Hop Type": "3",
@@ -1899,3 +1991,59 @@ class TestFirewallProxy:
         fw_proxy_mock.op.return_value = raw_response
 
         assert fw_proxy_mock.get_fib() == {}
+
+    def test_get_system_time_rebooted(self, fw_proxy_mock):
+        fw_proxy_mock.op = MagicMock()
+
+        xml_text = """
+        <response status="success">
+            <result>
+                <system>
+                    <hostname>testfw</hostname>
+                    <ip-address>1.1.1.1</ip-address>
+                    <public-ip-address>unknown</public-ip-address>
+                    <netmask>255.255.254.0</netmask>
+                    <default-gateway>1.1.1.1</default-gateway>
+                    <is-dhcp>no</is-dhcp>
+                    <mac-address>ab:cd:ef:11:22:33</mac-address>
+                    <time>Sun Dec  3 18:27:29 2023</time>
+                    <uptime>5 days, 1:02:03</uptime>
+                    <devicename>testfw</devicename>
+                    <family>7000</family>
+                    <model>PA-7050</model>
+                    <serial>11111111111</serial>
+                    <cloud-mode>non-cloud</cloud-mode>
+                    <sw-version>9.1.12-h3</sw-version>
+                    <global-protect-client-package-version>0.0.0</global-protect-client-package-version>
+                    <app-version>8709-8047</app-version>
+                    <app-release-date></app-release-date>
+                    <av-version>4455-4972</av-version>
+                    <av-release-date>2023/05/18 14:50:34 PDT</av-release-date>
+                    <threat-version>8709-8047</threat-version>
+                    <threat-release-date></threat-release-date>
+                    <wf-private-version>0</wf-private-version>
+                    <wf-private-release-date>unknown</wf-private-release-date>
+                    <url-db>paloaltonetworks</url-db>
+                    <wildfire-version>0</wildfire-version>
+                    <wildfire-release-date></wildfire-release-date>
+                    <url-filtering-version>20231204.20037</url-filtering-version>
+                    <global-protect-datafile-version>1684375262</global-protect-datafile-version>
+                    <global-protect-datafile-release-date>2023/05/17 19:01:02</global-protect-datafile-release-date>
+                    <global-protect-clientless-vpn-version>97-245</global-protect-clientless-vpn-version>
+                    <global-protect-clientless-vpn-release-date>2023/01/27 14:38:39 PST</global-protect-clientless-vpn-release-date>
+                    <logdb-version>9.1.22</logdb-version>
+                    <platform-family>7000</platform-family>
+                    <high-speed-log-forwarding-mode>off</high-speed-log-forwarding-mode>
+                    <vpn-disable-mode>off</vpn-disable-mode>
+                    <multi-vsys>on</multi-vsys>
+                    <operational-mode>normal</operational-mode>
+                    <device-certificate-status>Valid</device-certificate-status>
+                </system>
+            </result>
+        </response>
+        """
+
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert type(fw_proxy_mock.get_system_time_rebooted()) is datetime
