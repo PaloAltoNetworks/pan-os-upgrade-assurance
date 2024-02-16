@@ -458,13 +458,105 @@ class TestFirewallProxy:
         fw_proxy_mock.op.return_value = raw_response
 
         assert fw_proxy_mock.get_routes() == {
-            "default_0.0.0.0/0_ethernet1/1": {
+            "default_0.0.0.0/0_ethernet1/1_10.10.11.1": {
                 "age": None,
                 "destination": "0.0.0.0/0",
                 "flags": "A S E",
                 "interface": "ethernet1/1",
                 "metric": "10",
                 "nexthop": "10.10.11.1",
+                "route-table": "unicast",
+                "virtual-router": "default",
+            },
+        }
+
+    def test_get_routes_same_dest(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <flags>flags: A:active, ?:loose, C:connect, H:host, S:static, ~:internal, R:rip, O:ospf,
+                    B:bgp, Oi:ospf intra-area, Oo:ospf inter-area, O1:ospf ext-type-1, O2:ospf ext-type-2,
+                    E:ecmp, M:multicast</flags>
+                <entry>
+                    <virtual-router>default</virtual-router>
+                    <destination>0.0.0.0/0</destination>
+                    <nexthop>10.10.11.1</nexthop>
+                    <metric>10</metric>
+                    <flags>A S E </flags>
+                    <age />
+                    <interface>ethernet1/1</interface>
+                    <route-table>unicast</route-table>
+                </entry>
+                <entry>
+                    <virtual-router>default</virtual-router>
+                    <destination>0.0.0.0/0</destination>
+                    <nexthop>10.10.12.1</nexthop>
+                    <metric>10</metric>
+                    <flags>A S E </flags>
+                    <age />
+                    <interface>ethernet1/1</interface>
+                    <route-table>unicast</route-table>
+                </entry>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_routes() == {
+            "default_0.0.0.0/0_ethernet1/1_10.10.11.1": {
+                "age": None,
+                "destination": "0.0.0.0/0",
+                "flags": "A S E",
+                "interface": "ethernet1/1",
+                "metric": "10",
+                "nexthop": "10.10.11.1",
+                "route-table": "unicast",
+                "virtual-router": "default",
+            },
+            "default_0.0.0.0/0_ethernet1/1_10.10.12.1": {
+                "age": None,
+                "destination": "0.0.0.0/0",
+                "flags": "A S E",
+                "interface": "ethernet1/1",
+                "metric": "10",
+                "nexthop": "10.10.12.1",
+                "route-table": "unicast",
+                "virtual-router": "default",
+            },
+        }
+
+    def test_get_routes_nexthop_name(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <flags>flags: A:active, ?:loose, C:connect, H:host, S:static, ~:internal, R:rip, O:ospf,
+                    B:bgp, Oi:ospf intra-area, Oo:ospf inter-area, O1:ospf ext-type-1, O2:ospf ext-type-2,
+                    E:ecmp, M:multicast</flags>
+                <entry>
+                    <virtual-router>default</virtual-router>
+                    <destination>0.0.0.0/0</destination>
+                    <nexthop>public vr</nexthop>
+                    <metric>10</metric>
+                    <flags>A S E </flags>
+                    <age />
+                    <interface>ethernet1/1</interface>
+                    <route-table>unicast</route-table>
+                </entry>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_routes() == {
+            "default_0.0.0.0/0_ethernet1/1_public-vr": {
+                "age": None,
+                "destination": "0.0.0.0/0",
+                "flags": "A S E",
+                "interface": "ethernet1/1",
+                "metric": "10",
+                "nexthop": "public vr",
                 "route-table": "unicast",
                 "virtual-router": "default",
             },
@@ -1729,7 +1821,7 @@ class TestFirewallProxy:
         fw_proxy_mock.op.return_value = raw_response
 
         assert fw_proxy_mock.get_fib() == {
-            "0.0.0.0/0_ethernet1/1": {
+            "0.0.0.0/0_ethernet1/1_10.10.11.1": {
                 "Destination": "0.0.0.0/0",
                 "Interface": "ethernet1/1",
                 "Next Hop Type": "0",
@@ -1737,7 +1829,7 @@ class TestFirewallProxy:
                 "Next Hop": "10.10.11.1",
                 "MTU": "1500",
             },
-            "1.1.1.1/32_loopback.10": {
+            "1.1.1.1/32_loopback.10_1.2.3.4": {
                 "Destination": "1.1.1.1/32",
                 "Interface": "loopback.10",
                 "Next Hop Type": "3",

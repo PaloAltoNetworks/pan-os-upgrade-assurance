@@ -919,7 +919,7 @@ The sample output containing a snapshot for *route tables*, *licenses*, and *IPS
     },
   }.
   "routes": {
-    "default_0.0.0.0/0_ethernet1/3": {
+    "default_0.0.0.0/0_ethernet1/3_10.26.129.129": {
       "virtual-router": "default",
       "destination": "0.0.0.0/0",
       "nexthop": "10.26.129.129",
@@ -966,6 +966,7 @@ snapshots_config = [
   'content_version',
   'session_stats',
   'ip_sec_tunnels',
+  'fib_routes',
 ]
 ```
 
@@ -983,6 +984,7 @@ snapshots_config:
   - content_version
   - session_stats
   - ip_sec_tunnels
+  - fib_routes
 ```
 
 ```mdx-code-block
@@ -1070,6 +1072,10 @@ reports = [
         'properties': ['!flags'],
         'count_change_threshold': 10
     }},
+    {'fib_routes': {
+        'properties': ['!flags'],
+        'count_change_threshold': 10
+    }},
     'content_version',
     {'session_stats': {
         'thresholds': [
@@ -1100,6 +1106,10 @@ reports:
       properties:
         - "!serial"
   - routes:
+      properties:
+        - "!flags"
+      count_change_threshold: 10
+  - fib_routes:
       properties:
         - "!flags"
       count_change_threshold: 10
