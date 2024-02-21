@@ -701,9 +701,7 @@ class FirewallProxy:
 
         """
 
-        response = self.op_parser(
-            cmd="<show><routing><protocol><bgp><peer></peer></bgp></protocol></routing></show>", cmd_in_xml=True
-        )
+        response = self.op_parser(cmd="show routing protocol bgp peer")
 
         result = {}
         if "entry" in response:
