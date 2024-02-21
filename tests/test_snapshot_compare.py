@@ -415,6 +415,30 @@ class TestSnapshotCompare:
                 },
             ),
             (
+                [{"bgp_peers": {"properties": ["status"]}}],
+                {
+                    "bgp_peers": {
+                        "added": {"added_keys": [], "passed": True},
+                        "changed": {
+                            "changed_raw": {
+                                "default_Peer-Group1_Peer1": {
+                                    "added": {"added_keys": [], "passed": True},
+                                    "changed": {
+                                        "changed_raw": {"status": {"left_snap": "Established", "right_snap": "Idle"}},
+                                        "passed": False,
+                                    },
+                                    "missing": {"missing_keys": [], "passed": True},
+                                    "passed": False,
+                                }
+                            },
+                            "passed": False,
+                        },
+                        "missing": {"missing_keys": [], "passed": True},
+                        "passed": False,
+                    }
+                },
+            ),
+            (
                 ["arp_table"],
                 {
                     "arp_table": {

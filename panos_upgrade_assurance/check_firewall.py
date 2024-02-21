@@ -79,6 +79,7 @@ class CheckFirewall:
         self._snapshot_method_mapping = {
             SnapType.NICS: self._node.get_nics,
             SnapType.ROUTES: self._node.get_routes,
+            SnapType.BGP_PEERS: self._node.get_bgp_peers,
             SnapType.LICENSE: self._node.get_licenses,
             SnapType.ARP_TABLE: self._node.get_arp_table,
             SnapType.CONTENT_VERSION: self.get_content_db_version,

@@ -617,6 +617,102 @@ class FirewallProxy:
 
         return result
 
+    def get_bgp_peers(self) -> dict:
+        """Get information about BGP peers and their status.
+
+        The actual API command is `<show><routing><protocol><bgp><peer></peer></bgp></protocol></routing></show>`.
+
+        In the returned `dict` the key is made of three route properties delimited with an underscore (`_`) in the following
+        order:
+
+        * virtual router name,
+        * peer group name,
+        * peer name.
+
+        The key does not provide any meaningful information, it's there only to introduce uniqueness for each entry. All
+        properties that make a key are also available in the value of a dictionary element.
+
+        ```python showLineNumbers title="Sample output"
+        {
+            'default_Peer-Group1_Peer1': {
+                '@peer': 'Peer1',
+                '@vr': 'default',
+                'peer-group': 'Peer-Group1',
+                'peer-router-id': '169.254.8.2',
+                'remote-as': '64512',
+                'status': 'Established',
+                'status-duration': '3804',
+                'password-set': 'no',
+                'passive': 'no',
+                'multi-hop-ttl': '2',
+                'peer-address': '169.254.8.2:35355',
+                'local-address': '169.254.8.1:179',
+                'reflector-client': 'not-client',
+                'same-confederation': 'no',
+                'aggregate-confed-as': 'yes',
+                'peering-type': 'Unspecified',
+                'connect-retry-interval': '15',
+                'open-delay': '0',
+                'idle-hold': '15',
+                'prefix-limit': '5000',
+                'holdtime': '30',
+                'holdtime-config': '30',
+                'keepalive': '10',
+                'keepalive-config': '10',
+                'msg-update-in': '2',
+                'msg-update-out': '1',
+                'msg-total-in': '385',
+                'msg-total-out': '442',
+                'last-update-age': '3',
+                'last-error': 'None',
+                'status-flap-counts': '2',
+                'established-counts': '1',
+                'ORF-entry-received': '0',
+                'nexthop-self': 'no',
+                'nexthop-thirdparty': 'yes',
+                'nexthop-peer': 'no',
+                'config': {'remove-private-as': 'no'},
+                'peer-capability': {
+                    'list': [
+                        {'capability': 'Multiprotocol Extensions(1)', 'value': 'IPv4 Unicast'},
+                        {'capability': 'Route Refresh(2)', 'value': 'yes'},
+                        {'capability': '4-Byte AS Number(65)', 'value': '64512'},
+                        {'capability': 'Route Refresh (Cisco)(128)', 'value': 'yes'}
+                    ]
+                },
+                'prefix-counter': {
+                    'entry': {
+                        '@afi-safi': 'bgpAfiIpv4-unicast',
+                        'incoming-total': '2',
+                        'incoming-accepted': '2',
+                        'incoming-rejected': '0',
+                        'policy-rejected': '0',
+                        'outgoing-total': '0',
+                        'outgoing-advertised': '0'
+                    }
+                }
+            }
+        }
+        ```
+
+        # Returns
+
+        dict: BGP peers information.
+
+        """
+
+        response = self.op_parser(cmd="show routing protocol bgp peer")
+
+        result = {}
+        if "entry" in response:
+            bgp_peers = response["entry"]
+            for peer in bgp_peers if isinstance(bgp_peers, list) else [bgp_peers]:
+                result[
+                    f"{peer['@vr'].replace(' ', '-')}_{peer['peer-group'].replace(' ', '-')}_{peer['@peer'].replace(' ', '-')}"
+                ] = dict(peer)
+
+        return result
+
     def get_arp_table(self) -> dict:
         """Get the currently available ARP table entries.
 

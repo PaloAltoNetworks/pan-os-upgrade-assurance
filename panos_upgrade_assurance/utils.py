@@ -44,6 +44,7 @@ class SnapType:
 
     NICS = "nics"
     ROUTES = "routes"
+    BGP_PEERS = "bgp_peers"
     LICENSE = "license"
     ARP_TABLE = "arp_table"
     CONTENT_VERSION = "content_version"

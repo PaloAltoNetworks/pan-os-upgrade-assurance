@@ -83,6 +83,7 @@ if __name__ == "__main__":
         "nics",
         "routes",
         "fib_routes",
+        "bgp_peers",
         "license",
         "arp_table",
         "content_version",

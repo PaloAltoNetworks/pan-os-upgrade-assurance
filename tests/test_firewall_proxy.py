@@ -562,6 +562,144 @@ class TestFirewallProxy:
             },
         }
 
+    def test_get_bgp_peers(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <entry peer="Peer1" vr="default">
+                    <peer-group>Peer-Group1</peer-group>
+                    <peer-router-id>169.254.8.2</peer-router-id>
+                    <remote-as>64512</remote-as>
+                    <status>Established</status>
+                    <status-duration>3804</status-duration>
+                    <password-set>no</password-set>
+                    <passive>no</passive>
+                    <multi-hop-ttl>2</multi-hop-ttl>
+                    <peer-address>169.254.8.2:35355</peer-address>
+                    <local-address>169.254.8.1:179</local-address>
+                    <reflector-client>not-client</reflector-client>
+                    <same-confederation>no</same-confederation>
+                    <aggregate-confed-as>yes</aggregate-confed-as>
+                    <peering-type>Unspecified</peering-type>
+                    <connect-retry-interval>15</connect-retry-interval>
+                    <open-delay>0</open-delay>
+                    <idle-hold>15</idle-hold>
+                    <prefix-limit>5000</prefix-limit>
+                    <holdtime>30</holdtime>
+                    <holdtime-config>30</holdtime-config>
+                    <keepalive>10</keepalive>
+                    <keepalive-config>10</keepalive-config>
+                    <msg-update-in>2</msg-update-in>
+                    <msg-update-out>1</msg-update-out>
+                    <msg-total-in>385</msg-total-in>
+                    <msg-total-out>442</msg-total-out>
+                    <last-update-age>3</last-update-age>
+                    <last-error/>
+                    <status-flap-counts>2</status-flap-counts>
+                    <established-counts>1</established-counts>
+                    <ORF-entry-received>0</ORF-entry-received>
+                    <nexthop-self>no</nexthop-self>
+                    <nexthop-thirdparty>yes</nexthop-thirdparty>
+                    <nexthop-peer>no</nexthop-peer>
+                    <config>
+                        <remove-private-as>no</remove-private-as>
+                    </config>
+                    <peer-capability>
+                        <list>
+                            <capability>Multiprotocol Extensions(1)</capability>
+                            <value>IPv4 Unicast</value>
+                        </list>
+                        <list>
+                            <capability>Route Refresh(2)</capability>
+                            <value>yes</value>
+                        </list>
+                        <list>
+                            <capability>4-Byte AS Number(65)</capability>
+                            <value>64512</value>
+                        </list>
+                        <list>
+                            <capability>Route Refresh (Cisco)(128)</capability>
+                            <value>yes</value>
+                        </list>
+                    </peer-capability>
+                    <prefix-counter>
+                        <entry afi-safi="bgpAfiIpv4-unicast">
+                            <incoming-total>2</incoming-total>
+                            <incoming-accepted>2</incoming-accepted>
+                            <incoming-rejected>0</incoming-rejected>
+                            <policy-rejected>0</policy-rejected>
+                            <outgoing-total>0</outgoing-total>
+                            <outgoing-advertised>0</outgoing-advertised>
+                        </entry>
+                    </prefix-counter>
+                </entry>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_bgp_peers() == {
+            "default_Peer-Group1_Peer1": {
+                "@peer": "Peer1",
+                "@vr": "default",
+                "peer-group": "Peer-Group1",
+                "peer-router-id": "169.254.8.2",
+                "remote-as": "64512",
+                "status": "Established",
+                "status-duration": "3804",
+                "password-set": "no",
+                "passive": "no",
+                "multi-hop-ttl": "2",
+                "peer-address": "169.254.8.2:35355",
+                "local-address": "169.254.8.1:179",
+                "reflector-client": "not-client",
+                "same-confederation": "no",
+                "aggregate-confed-as": "yes",
+                "peering-type": "Unspecified",
+                "connect-retry-interval": "15",
+                "open-delay": "0",
+                "idle-hold": "15",
+                "prefix-limit": "5000",
+                "holdtime": "30",
+                "holdtime-config": "30",
+                "keepalive": "10",
+                "keepalive-config": "10",
+                "msg-update-in": "2",
+                "msg-update-out": "1",
+                "msg-total-in": "385",
+                "msg-total-out": "442",
+                "last-update-age": "3",
+                "last-error": None,
+                "status-flap-counts": "2",
+                "established-counts": "1",
+                "ORF-entry-received": "0",
+                "nexthop-self": "no",
+                "nexthop-thirdparty": "yes",
+                "nexthop-peer": "no",
+                "config": {"remove-private-as": "no"},
+                "peer-capability": {
+                    "list": [
+                        {"capability": "Multiprotocol Extensions(1)", "value": "IPv4 Unicast"},
+                        {"capability": "Route Refresh(2)", "value": "yes"},
+                        {"capability": "4-Byte AS Number(65)", "value": "64512"},
+                        {"capability": "Route Refresh (Cisco)(128)", "value": "yes"},
+                    ]
+                },
+                "prefix-counter": {
+                    "entry": {
+                        "@afi-safi": "bgpAfiIpv4-unicast",
+                        "incoming-total": "2",
+                        "incoming-accepted": "2",
+                        "incoming-rejected": "0",
+                        "policy-rejected": "0",
+                        "outgoing-total": "0",
+                        "outgoing-advertised": "0",
+                    }
+                },
+            }
+        }
+
     def test_get_arp_table(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
