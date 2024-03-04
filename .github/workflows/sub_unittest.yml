@@ -12,13 +12,6 @@ on:
         type: string
         required: true
 
-
-permissions:
-  # Gives the action the necessary permissions for pushing data to the
-  # python-coverage-comment-action branch, and for editing existing
-  # comments (to avoid publishing multiple comments in the same PR)
-  contents: write
-
 jobs:
 
   unittests:
@@ -45,19 +38,22 @@ jobs:
       - name: Run unit tests and coverage
         run: poetry run make test_coverage
 
+  upload_coverage:
+    name: Upload coverage results to artifact
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
+
+    steps:
       # coverage results comment is uploaded to artifact to be written by post PR workflow run
       - name: Coverage comment
         id: coverage_comment
         uses: py-cov-action/python-coverage-comment-action@v3
         with:
           GITHUB_TOKEN: ${{ github.token }}
-        if: ${{ github.event_name == 'pull_request' }}
 
       - name: Store Pull Request comment to be posted
         uses: actions/upload-artifact@v4
-        if: |
-          ${{ github.event_name == 'pull_request' &&
-          steps.coverage_comment.outputs.COMMENT_FILE_WRITTEN == 'true' }}
+        if: steps.coverage_comment.outputs.COMMENT_FILE_WRITTEN == 'true'
         with:
           name: python-coverage-comment-action
           path: python-coverage-comment-action.txt

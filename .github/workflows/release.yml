@@ -53,6 +53,8 @@ jobs:
   unit_tests:
     name: Validate all Unit Tests pass
     needs: pyversion
+    permissions:
+      contents: write
     uses: ./.github/workflows/sub_unittest.yml
     with:
       python_version: ${{ needs.pyversion.outputs.pyversion }}
