@@ -262,6 +262,11 @@ class FirewallProxy:
                 pan_connected = interpret_yes_no((pan_status_list[i].split(":")[1]).strip())
                 if pan_connected:
                     return True
+        elif pan_status_list_length in [3, 6]:
+            for i in range(1, pan_status_list_length, 3):
+                pan_connected = interpret_yes_no((pan_status_list[i].split(":")[1]).strip())
+                if pan_connected:
+                    return True
         else:
             raise exceptions.MalformedResponseException(
                 f"Panorama configuration block does not have typical structure: <{pan_status}>."
