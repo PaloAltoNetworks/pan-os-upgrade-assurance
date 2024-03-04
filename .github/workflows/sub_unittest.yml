@@ -42,6 +42,11 @@ jobs:
     name: Upload coverage results to artifact
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'pull_request' }}
+    permissions:
+      # Gives the action the necessary permissions for pushing data to the
+      # python-coverage-comment-action branch, and for editing existing
+      # comments (to avoid publishing multiple comments in the same PR)
+      contents: write
 
     steps:
       # coverage results comment is uploaded to artifact to be written by post PR workflow run
