@@ -762,12 +762,12 @@ checks_configuration:
 
 ### `jobs`
 
-Verify if there are any running/pending jobs in the job queue. Any job with a status different than `FIN` will cause
-the check to fail.
+Verify if there are any running/pending jobs in the job queue. Any job with a type, status or result different than set in the
+parameters (by default checks only whether the job status equals to `FIN`), will cause the check to fail.
 
 Does not require configuration.
 
-**Method**: [`CheckFirewall.check_non_finished_jobs()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallcheck_non_finished_jobs)
+**Method**: [`CheckFirewall.check_jobs()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallcheck_jobs)
 
 ### `ntp_sync`
 
