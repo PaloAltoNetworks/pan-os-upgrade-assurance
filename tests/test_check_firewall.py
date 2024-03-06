@@ -1061,7 +1061,7 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
 
         check_firewall_mock._node.get_jobs = lambda: jobs
 
-        assert check_firewall_mock.check_non_finished_jobs() == CheckResult(status=CheckStatus.SUCCESS)
+        assert check_firewall_mock.check_jobs() == CheckResult(status=CheckStatus.SUCCESS)
 
     def test_check_jobs_failure(self, check_firewall_mock):
         jobs = {
@@ -1099,13 +1099,13 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
             },
         }
         check_firewall_mock._node.get_jobs = lambda: jobs
-        result = CheckResult(status=CheckStatus.FAIL, reason="At least one job (ID=4) is not in finished state (state=ACC).")
-        assert check_firewall_mock.check_non_finished_jobs() == result
+        result = CheckResult(status=CheckStatus.FAIL, reason="At least one job (ID=4) does not have a desired status of FIN (status=ACC).")
+        assert check_firewall_mock.check_jobs() == result
 
     def test_check_jobs_no_jobs(self, check_firewall_mock):
         check_firewall_mock._node.get_jobs = lambda: {}
         result = CheckResult(status=CheckStatus.SKIPPED, reason="No jobs found on device. This is unusual, please investigate.")
-        assert check_firewall_mock.check_non_finished_jobs() == result
+        assert check_firewall_mock.check_jobs() == result
 
     def test_run_readiness_checks(self, check_firewall_mock):
         check_firewall_mock._check_method_mapping = {
