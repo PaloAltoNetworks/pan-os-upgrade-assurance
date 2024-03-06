@@ -103,7 +103,7 @@ class CheckFirewall:
             CheckType.MP_DP_CLOCK_SYNC: self.check_mp_dp_sync,
             CheckType.CERTS: self.check_ssl_cert_requirements,
             CheckType.UPDATES: self.check_scheduled_updates,
-            CheckType.JOBS: self.check_non_finished_jobs,
+            CheckType.JOBS: self.check_jobs,
         }
 
         self._health_check_method_mapping = {
@@ -1048,33 +1048,48 @@ class CheckFirewall:
 
         return result
 
-    def check_non_finished_jobs(self) -> CheckResult:
-        """Check for any job with status different than FIN.
+    def check_jobs(self, job_type: str = None, job_status: str = "FIN", job_result: str = None) -> CheckResult:
+        """Check for any job that does not match with the type, status and result set in the parameters (by default looks for
+        jobs with status different than FIN).
 
         # Returns
 
         CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking \
             value of:
 
-        * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when all jobs are in FIN state.
+        * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when all jobs match the type,
+            status and result set in the parameters (by default, when all jobs are in FIN state).
         * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise, `CheckResult.reason`
-            field contains information about the 1<sup>st</sup> job found with status different than FIN (job ID and the actual
-            status).
+            field contains information about the 1<sup>st</sup> job found with type, status or result different than desired (job
+            ID and the actual value).
         * [`CheckStatus.SKIPPED`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when there are no jobs on a
             device.
 
         """
+        
+        if job_type is None and job_status is None and job_result is None:
+            result.status = CheckStatus.SKIPPED
+            result.reason = "Neither 'job_type', 'job_status' nor 'job_result' parameters were set."
+            return result
+        
         result = CheckResult()
 
         all_jobs = self._node.get_jobs()
 
         if all_jobs:
             for jid, job in all_jobs.items():
-                if job["status"] != "FIN":
-                    result.reason = f"At least one job (ID={jid}) is not in finished state (state={job['status']})."
+                if job_type and (job["type"] != job_type):
+                    result.reason = f"At least one job (ID={jid}) does not have a desired type of {job_type} (status={job['type']})."
                     return result
-            result.status = CheckStatus.SUCCESS
-            return result
+                elif job_status and (job["status"] != job_status):
+                    result.reason = f"At least one job (ID={jid}) does not have a desired status of {job_status} (status={job['status']})."
+                    return result
+                elif job_result and (job["result"] != job_result):
+                    result.reason = f"At least one job (ID={jid}) does not have a desired result of {job_result} (result={job['result']})."
+                    return result
+                else:
+                    result.status = CheckStatus.SUCCESS
+                    return result
         else:
             result.status = CheckStatus.SKIPPED
             result.reason = "No jobs found on device. This is unusual, please investigate."
