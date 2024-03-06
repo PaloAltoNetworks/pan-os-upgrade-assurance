@@ -254,7 +254,7 @@ class FirewallProxy:
         if not isinstance(pan_status, str):
             raise exceptions.MalformedResponseException("Response from device is not type of string.")
 
-        panorama_connection_pattern = r'connected\s*:\s*(yes|no)'
+        panorama_connection_pattern = r"connected\s*:\s*(yes|no)"
         match = re.search(panorama_connection_pattern, pan_status, re.IGNORECASE)
         if match:
             status = match.group(1).strip()
