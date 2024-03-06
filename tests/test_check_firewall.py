@@ -1099,7 +1099,9 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
             },
         }
         check_firewall_mock._node.get_jobs = lambda: jobs
-        result = CheckResult(status=CheckStatus.FAIL, reason="At least one job (ID=4) does not have a desired status of FIN (status=ACC).")
+        result = CheckResult(
+            status=CheckStatus.FAIL, reason="At least one job (ID=4) does not have a desired status of FIN (status=ACC)."
+        )
         assert check_firewall_mock.check_jobs() == result
 
     def test_check_jobs_no_jobs(self, check_firewall_mock):

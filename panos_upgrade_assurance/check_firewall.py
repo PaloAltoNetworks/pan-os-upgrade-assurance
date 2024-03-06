@@ -1066,26 +1066,31 @@ class CheckFirewall:
             device.
 
         """
-        
+        result = CheckResult()
+
         if job_type is None and job_status is None and job_result is None:
             result.status = CheckStatus.SKIPPED
             result.reason = "Neither 'job_type', 'job_status' nor 'job_result' parameters were set."
             return result
-        
-        result = CheckResult()
 
         all_jobs = self._node.get_jobs()
 
         if all_jobs:
             for jid, job in all_jobs.items():
                 if job_type and (job["type"] != job_type):
-                    result.reason = f"At least one job (ID={jid}) does not have a desired type of {job_type} (status={job['type']})."
+                    result.reason = (
+                        f"At least one job (ID={jid}) does not have a desired type of {job_type} (status={job['type']})."
+                    )
                     return result
                 elif job_status and (job["status"] != job_status):
-                    result.reason = f"At least one job (ID={jid}) does not have a desired status of {job_status} (status={job['status']})."
+                    result.reason = (
+                        f"At least one job (ID={jid}) does not have a desired status of {job_status} (status={job['status']})."
+                    )
                     return result
                 elif job_result and (job["result"] != job_result):
-                    result.reason = f"At least one job (ID={jid}) does not have a desired result of {job_result} (result={job['result']})."
+                    result.reason = (
+                        f"At least one job (ID={jid}) does not have a desired result of {job_result} (result={job['result']})."
+                    )
                     return result
                 else:
                     result.status = CheckStatus.SUCCESS

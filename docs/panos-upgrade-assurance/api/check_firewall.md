@@ -529,23 +529,27 @@ __Returns__
 * [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when the `test_window` parameter
     does not meet criteria.
 
-### `CheckFirewall.check_non_finished_jobs`
+### `CheckFirewall.check_jobs`
 
 ```python
-def check_non_finished_jobs() -> CheckResult
+def check_jobs(job_type: str = None,
+               job_status: str = "FIN",
+               job_result: str = None) -> CheckResult
 ```
 
-Check for any job with status different than FIN.
+Check for any job that does not match with the type, status and result set in the parameters (by default looks for
+jobs with status different than FIN).
 
 __Returns__
 
 
 `CheckResult`: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking             value of:
 
-* [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when all jobs are in FIN state.
+* [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when all jobs match the type,
+    status and result set in the parameters (by default, when all jobs are in FIN state).
 * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise, `CheckResult.reason`
-    field contains information about the 1<sup>st</sup> job found with status different than FIN (job ID and the actual
-    status).
+    field contains information about the 1<sup>st</sup> job found with type, status or result different than desired (job
+    ID and the actual value).
 * [`CheckStatus.SKIPPED`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when there are no jobs on a
     device.
 
