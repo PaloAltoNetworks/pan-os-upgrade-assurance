@@ -376,8 +376,25 @@ snap2 = {
             "nexthop-thirdparty": "yes",
             "nexthop-peer": "no",
             "config": {"remove-private-as": "no"},
-            "peer-capability": None,
-            "prefix-counter": None,
+            "peer-capability": {
+                "list": [
+                    {"capability": "Multiprotocol Extensions(1)", "value": "IPv4 Unicast"},
+                    {"capability": "Route Refresh(2)", "value": "yes"},
+                    {"capability": "4-Byte AS Number(65)", "value": "64512"},
+                    {"capability": "Route Refresh (Cisco)(128)", "value": "yes"},
+                ]
+            },
+            "prefix-counter": {
+                "entry": {
+                    "@afi-safi": "bgpAfiIpv4-unicast",
+                    "incoming-total": "2",
+                    "incoming-accepted": "2",
+                    "incoming-rejected": "0",
+                    "policy-rejected": "0",
+                    "outgoing-total": "0",
+                    "outgoing-advertised": "0",
+                }
+            },
         }
     },
     "session_stats": {
