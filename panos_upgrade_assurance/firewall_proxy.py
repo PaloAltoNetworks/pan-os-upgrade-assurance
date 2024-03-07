@@ -254,20 +254,14 @@ class FirewallProxy:
         if not isinstance(pan_status, str):
             raise exceptions.MalformedResponseException("Response from device is not type of string.")
 
-        pan_status_list = pan_status.split("\n")
-        pan_status_list_length = len(pan_status_list)
-
-        if pan_status_list_length in [3, 7]:
-            for i in range(1, pan_status_list_length, 4):
-                pan_connected = interpret_yes_no((pan_status_list[i].split(":")[1]).strip())
-                if pan_connected:
-                    return True
+        if re.search(r"connected\s*:\s*yes", pan_status, re.IGNORECASE):
+            return True
+        elif re.search(r"connected\s*:\s*no", pan_status, re.IGNORECASE):
+            return False
         else:
             raise exceptions.MalformedResponseException(
                 f"Panorama configuration block does not have typical structure: <{pan_status}>."
             )
-
-        return False
 
     def get_ha_configuration(self) -> dict:
         """Get high-availability configuration status.
