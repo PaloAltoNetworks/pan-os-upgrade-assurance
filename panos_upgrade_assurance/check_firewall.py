@@ -103,7 +103,7 @@ class CheckFirewall:
             CheckType.MP_DP_CLOCK_SYNC: self.check_mp_dp_sync,
             CheckType.CERTS: self.check_ssl_cert_requirements,
             CheckType.UPDATES: self.check_scheduled_updates,
-            CheckType.JOBS: self.check_jobs,
+            CheckType.JOBS: self.check_non_matching_jobs,
         }
 
         self._health_check_method_mapping = {
@@ -1048,7 +1048,7 @@ class CheckFirewall:
 
         return result
 
-    def check_jobs(self, job_type: str = None, job_status: str = "FIN", job_result: str = None) -> CheckResult:
+    def check_non_matching_jobs(self, job_type: str = None, job_status: str = "FIN", job_result: str = None) -> CheckResult:
         """Check for any job that does not match with the type, status and result set in the parameters (by default looks for
         jobs with status different than FIN).
 
@@ -1079,7 +1079,7 @@ class CheckFirewall:
             for jid, job in all_jobs.items():
                 if job_type and (job["type"] != job_type):
                     result.reason = (
-                        f"At least one job (ID={jid}) does not have a desired type of {job_type} (status={job['type']})."
+                        f"At least one job (ID={jid}) does not have a desired type of {job_type} (type={job['type']})."
                     )
                     return result
                 elif job_status and (job["status"] != job_status):
@@ -1092,9 +1092,8 @@ class CheckFirewall:
                         f"At least one job (ID={jid}) does not have a desired result of {job_result} (result={job['result']})."
                     )
                     return result
-                else:
-                    result.status = CheckStatus.SUCCESS
-                    return result
+            result.status = CheckStatus.SUCCESS
+            return result
         else:
             result.status = CheckStatus.SKIPPED
             result.reason = "No jobs found on device. This is unusual, please investigate."

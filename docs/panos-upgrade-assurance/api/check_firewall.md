@@ -529,12 +529,12 @@ __Returns__
 * [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when the `test_window` parameter
     does not meet criteria.
 
-### `CheckFirewall.check_jobs`
+### `CheckFirewall.check_non_matching_jobs`
 
 ```python
-def check_jobs(job_type: str = None,
-               job_status: str = "FIN",
-               job_result: str = None) -> CheckResult
+def check_non_matching_jobs(job_type: str = None,
+                            job_status: str = "FIN",
+                            job_result: str = None) -> CheckResult
 ```
 
 Check for any job that does not match with the type, status and result set in the parameters (by default looks for
