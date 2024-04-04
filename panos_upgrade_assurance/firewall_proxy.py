@@ -1393,11 +1393,16 @@ class FirewallProxy:
         jobs = self.op_parser(cmd="show jobs all")
         results = dict()
 
-        if jobs:
-            for job in jobs["job"]:
+        job_results = jobs.get("job")
+        if isinstance(job_results, list):
+            for job in job_results:
                 jid = job["id"]
                 job.pop("id")
                 results[jid] = job
+        elif isinstance(job_results, dict):  # single job entry - FW just started up
+            jid = job_results["id"]
+            job_results.pop("id")
+            results[jid] = job_results
 
         return results
 
