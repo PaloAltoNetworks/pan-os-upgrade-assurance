@@ -1393,7 +1393,7 @@ class FirewallProxy:
         jobs = self.op_parser(cmd="show jobs all")
         results = dict()
 
-        job_results = jobs.get("job")
+        job_results = jobs.get("job") if isinstance(jobs, dict) else None
         if isinstance(job_results, list):
             for job in job_results:
                 jid = job["id"]
