@@ -699,7 +699,7 @@ class FirewallProxy:
 
         result = {}
 
-        if response == None:
+        if response is None:
             return result
 
         if "entry" in response:
