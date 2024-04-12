@@ -704,7 +704,7 @@ class FirewallProxy:
 
         if "entry" in response:
             bgp_peers = response["entry"]
-            for peer in bgp_peers if isinstance(bgp_peers, list) else [bgp_peers]:
+            for peer in (bgp_peers if isinstance(bgp_peers, list) else [bgp_peers]):
                 result[
                     f"{peer['@vr'].replace(' ', '-')}_{peer['peer-group'].replace(' ', '-')}_{peer['@peer'].replace(' ', '-')}"
                 ] = dict(peer)
