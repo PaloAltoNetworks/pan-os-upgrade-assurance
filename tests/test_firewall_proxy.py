@@ -700,6 +700,17 @@ class TestFirewallProxy:
             }
         }
 
+    def test_get_bgp_peers_no_peers(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result/>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_bgp_peers() == {}
+
     def test_get_arp_table(self, fw_proxy_mock):
         xml_text = """
         <response status="success">

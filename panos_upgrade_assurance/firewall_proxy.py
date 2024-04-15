@@ -698,6 +698,10 @@ class FirewallProxy:
         response = self.op_parser(cmd="show routing protocol bgp peer")
 
         result = {}
+
+        if response is None:
+            return result
+
         if "entry" in response:
             bgp_peers = response["entry"]
             for peer in bgp_peers if isinstance(bgp_peers, list) else [bgp_peers]:
