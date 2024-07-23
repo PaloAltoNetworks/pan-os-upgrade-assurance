@@ -264,7 +264,7 @@ class SnapshotCompare:
 
         The keys to process here can be:
 
-        - 'default_0.0.0.0/0_ethernet1/3',
+        - 'default_0.0.0.0/0_ethernet1/3_10.26.129.129',
         - `virtual-router`,
         - `destination`,
         - `nexthop`,
@@ -287,11 +287,22 @@ class SnapshotCompare:
         represented under the `changed` key in the results.
 
         This is a **recursive** method. When calculating changed values, if a value for the key is `dict`, we run the method
-        again on that dictionary - we go down one level in the nested structure. We do that to a point where the value is of the
-        `str` type. Therefore, when the final comparison results are presented, the `changed` key usually contains a nested
-        results structure. This means it contains a dictionary with the `missing`, `added`, and `changed` keys.
+        again on that dictionary - we go down one level in the nested structure. We do that to a point where the value is one of
+        `str`, `int` type or None. Therefore, when the final comparison results are presented, the `changed` key usually contains
+        a nested results structure. This means it contains a dictionary with the `missing`, `added`, and `changed` keys.
         Each comparison perspective contains the `passed` property that immediately informs if this comparison gave any results
         (`False`) or not (`True`).
+
+        `properties` can be defined for any level for nested dictionaries which implies:
+
+        - Allow comparison of specific parent dictionaries.
+        - Skip specific parent dictionaries.
+        - Allow comparison/exclusion of specific sub-dictionaries or attributes only.
+        - If given attributes have parent-child relationship then all attributes for a matching parent are compared.
+        Meaning it doesn’t do an \"AND\" operation on the given properities for nested dictionaries.
+
+        Also note that missing/added attributes in parent dictionaries are not reported for comparison when specific attributes
+        are requested to compare with the `properties` parameter.
 
         **Example**
 
@@ -415,15 +426,8 @@ class SnapshotCompare:
         item_changed = False
         for key in common_keys:
             if right_side_to_compare[key] != left_side_to_compare[key]:
-                if left_side_to_compare[key] is None or right_side_to_compare[key] is None:
-                    if ConfigParser.is_element_included(key, properties):
-                        result["changed"]["changed_raw"][key] = dict(
-                            left_snap=left_side_to_compare[key],
-                            right_snap=right_side_to_compare[key],
-                        )
-                        item_changed = True
-
-                elif isinstance(left_side_to_compare[key], (str, int)):
+                if (left_side_to_compare[key] is None or right_side_to_compare[key] is None
+                    or isinstance(left_side_to_compare[key], (str, int))):
                     if ConfigParser.is_element_included(key, properties):
                         result["changed"]["changed_raw"][key] = dict(
                             left_snap=left_side_to_compare[key],

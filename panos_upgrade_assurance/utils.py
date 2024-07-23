@@ -169,7 +169,7 @@ class ConfigParser:
     # Attributes
 
     _requested_config_names (set): Contains only element names of the requested configuration. When no requested configuration is
-        passed (implicit `'all'`), this is equal to `self.valid_elements`.
+        passed, this is equal to `self.valid_elements` which is like an implicit `'all'`.
 
     """
 
