@@ -60,6 +60,7 @@ class SnapshotCompare:
         self._functions_mapping = {
             SnapType.NICS: self.get_diff_and_threshold,
             SnapType.ROUTES: self.get_diff_and_threshold,
+            SnapType.BGP_PEERS: self.get_diff_and_threshold,
             SnapType.LICENSE: self.get_diff_and_threshold,
             SnapType.ARP_TABLE: self.get_diff_and_threshold,
             SnapType.CONTENT_VERSION: self.get_diff_and_threshold,
@@ -246,7 +247,7 @@ class SnapshotCompare:
         ```python showLineNumbers
         {
             "routes": {
-                "default_0.0.0.0/0_ethernet1/3": {
+                "default_0.0.0.0/0_ethernet1/3_10.26.129.129": {
                     "virtual-router": "default",
                     "destination": "0.0.0.0/0",
                     "nexthop": "10.26.129.129",
@@ -422,7 +423,7 @@ class SnapshotCompare:
                         )
                         item_changed = True
 
-                elif isinstance(left_side_to_compare[key], str):
+                elif isinstance(left_side_to_compare[key], (str, int)):
                     if ConfigParser.is_element_included(key, properties):
                         result["changed"]["changed_raw"][key] = dict(
                             left_snap=left_side_to_compare[key],
@@ -484,7 +485,7 @@ class SnapshotCompare:
             },
             'missing': {
                 'missing_keys': [
-                    'default_0.0.0.0/0_ethernet1/3'
+                    'default_0.0.0.0/0_ethernet1/3_10.26.129.129'
                 ],
                 'passed': False
             },
@@ -537,21 +538,21 @@ class SnapshotCompare:
         {
             "added": {
                 "added_keys": [
-                    "default_10.26.129.0/25_ethernet1/2",
-                    "default_168.63.129.16/32_ethernet1/3"
+                    "default_10.26.129.0/25_ethernet1/2_10.26.129.1",
+                    "default_168.63.129.16/32_ethernet1/3_10.26.129.129"
                 ],
                 "passed": "False"
             },
             "missing": {
                 "missing_keys": [
-                    "default_0.0.0.0/0_ethernet1/3"
+                    "default_0.0.0.0/0_ethernet1/3_10.26.129.129"
                 ],
                 "passed": "False"
             },
             "changed": {
                 # highlight-start
                 "changed_raw": {
-                    "default_10.26.130.0/25_ethernet1/2": {
+                    "default_10.26.130.0/25_ethernet1/2_10.26.129.1": {
                         "added": {
                             "added_keys": [],
                             "passed": "True"

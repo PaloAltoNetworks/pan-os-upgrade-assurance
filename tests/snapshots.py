@@ -26,7 +26,7 @@ snap1 = {
         },
     },
     "routes": {
-        "default_0.0.0.0/0_ethernet1/3": {
+        "default_0.0.0.0/0_ethernet1/3_10.26.129.129": {
             "virtual-router": "default",
             "destination": "0.0.0.0/0",
             "nexthop": "10.26.129.129",
@@ -36,7 +36,7 @@ snap1 = {
             "interface": "ethernet1/3",
             "route-table": "unicast",
         },
-        "default_10.26.129.0/25_ethernet1/2": {
+        "default_10.26.129.0/25_ethernet1/2_10.26.129.1": {
             "virtual-router": "default",
             "destination": "10.26.129.0/25",
             "nexthop": "10.26.129.1",
@@ -46,7 +46,7 @@ snap1 = {
             "interface": "ethernet1/2",
             "route-table": "unicast",
         },
-        "default_10.26.130.0/25_ethernet1/2": {
+        "default_10.26.130.0/25_ethernet1/2_10.26.129.1": {
             "virtual-router": "default",
             "destination": "10.26.130.0/25",
             "nexthop": "10.26.129.1",
@@ -56,7 +56,7 @@ snap1 = {
             "interface": "ethernet1/2",
             "route-table": "unicast",
         },
-        "default_168.63.129.16/32_ethernet1/3": {
+        "default_168.63.129.16/32_ethernet1/3_10.26.129.129": {
             "virtual-router": "default",
             "destination": "168.63.129.16/32",
             "nexthop": "10.26.129.129",
@@ -66,6 +66,66 @@ snap1 = {
             "interface": "ethernet1/3",
             "route-table": "unicast",
         },
+    },
+    "bgp_peers": {
+        "default_Peer-Group1_Peer1": {
+            "@peer": "Peer1",
+            "@vr": "default",
+            "peer-group": "Peer-Group1",
+            "peer-router-id": "169.254.8.2",
+            "remote-as": "64512",
+            "status": "Established",
+            "status-duration": "3804",
+            "password-set": "no",
+            "passive": "no",
+            "multi-hop-ttl": "2",
+            "peer-address": "169.254.8.2:35355",
+            "local-address": "169.254.8.1:179",
+            "reflector-client": "not-client",
+            "same-confederation": "no",
+            "aggregate-confed-as": "yes",
+            "peering-type": "Unspecified",
+            "connect-retry-interval": "15",
+            "open-delay": "0",
+            "idle-hold": "15",
+            "prefix-limit": "5000",
+            "holdtime": "30",
+            "holdtime-config": "30",
+            "keepalive": "10",
+            "keepalive-config": "10",
+            "msg-update-in": "2",
+            "msg-update-out": "1",
+            "msg-total-in": "385",
+            "msg-total-out": "442",
+            "last-update-age": "3",
+            "last-error": None,
+            "status-flap-counts": "2",
+            "established-counts": "1",
+            "ORF-entry-received": "0",
+            "nexthop-self": "no",
+            "nexthop-thirdparty": "yes",
+            "nexthop-peer": "no",
+            "config": {"remove-private-as": "no"},
+            "peer-capability": {
+                "list": [
+                    {"capability": "Multiprotocol Extensions(1)", "value": "IPv4 Unicast"},
+                    {"capability": "Route Refresh(2)", "value": "yes"},
+                    {"capability": "4-Byte AS Number(65)", "value": "64512"},
+                    {"capability": "Route Refresh (Cisco)(128)", "value": "yes"},
+                ]
+            },
+            "prefix-counter": {
+                "entry": {
+                    "@afi-safi": "bgpAfiIpv4-unicast",
+                    "incoming-total": "2",
+                    "incoming-accepted": "2",
+                    "incoming-rejected": "0",
+                    "policy-rejected": "0",
+                    "outgoing-total": "0",
+                    "outgoing-advertised": "0",
+                }
+            },
+        }
     },
     "session_stats": {
         "tmo-5gcdelete": "15",
@@ -236,7 +296,7 @@ snap2 = {
         }
     },
     "routes": {
-        "default_0.0.0.0/0_ethernet1/3": {
+        "default_0.0.0.0/0_ethernet1/3_10.26.129.129": {
             "virtual-router": "default",
             "destination": "0.0.0.0/0",
             "nexthop": "10.26.129.129",
@@ -246,7 +306,7 @@ snap2 = {
             "interface": "ethernet1/3",
             "route-table": "unicast",
         },
-        "default_10.26.129.0/25_ethernet1/2": {
+        "default_10.26.129.0/25_ethernet1/2_10.26.129.1": {
             "virtual-router": "default",
             "destination": "10.26.129.0/25",
             "nexthop": "10.26.129.1",
@@ -256,7 +316,7 @@ snap2 = {
             "interface": "ethernet1/2",
             "route-table": "unicast",
         },
-        "default_10.26.130.0/25_ethernet1/2": {
+        "default_10.26.130.0/25_ethernet1/2_10.26.129.1": {
             "virtual-router": "default",
             "destination": "10.26.130.0/25",
             "nexthop": "10.26.129.1",
@@ -266,7 +326,7 @@ snap2 = {
             "interface": "ethernet1/2",
             "route-table": "unicast",
         },
-        "default_168.63.129.16/32_ethernet1/3": {
+        "default_168.63.129.16/32_ethernet1/3_10.26.129.129": {
             "virtual-router": "default",
             "destination": "168.63.129.16/32",
             "nexthop": "10.26.129.129",
@@ -276,6 +336,66 @@ snap2 = {
             "interface": "ethernet1/3",
             "route-table": "unicast",
         },
+    },
+    "bgp_peers": {
+        "default_Peer-Group1_Peer1": {
+            "@peer": "Peer1",
+            "@vr": "default",
+            "peer-group": "Peer-Group1",
+            "peer-router-id": "169.254.8.2",
+            "remote-as": "64512",
+            "status": "Idle",
+            "status-duration": "0",
+            "password-set": "no",
+            "passive": "no",
+            "multi-hop-ttl": "2",
+            "peer-address": "169.254.8.2",
+            "local-address": "169.254.8.1",
+            "reflector-client": "not-client",
+            "same-confederation": "no",
+            "aggregate-confed-as": "yes",
+            "peering-type": "Unspecified",
+            "connect-retry-interval": "15",
+            "open-delay": "0",
+            "idle-hold": "15",
+            "prefix-limit": "5000",
+            "holdtime": "0",
+            "holdtime-config": "30",
+            "keepalive": "0",
+            "keepalive-config": "10",
+            "msg-update-in": "0",
+            "msg-update-out": "0",
+            "msg-total-in": "0",
+            "msg-total-out": "0",
+            "last-update-age": "0",
+            "last-error": None,
+            "status-flap-counts": "0",
+            "established-counts": "0",
+            "ORF-entry-received": "0",
+            "nexthop-self": "no",
+            "nexthop-thirdparty": "yes",
+            "nexthop-peer": "no",
+            "config": {"remove-private-as": "no"},
+            "peer-capability": {
+                "list": [
+                    {"capability": "Multiprotocol Extensions(1)", "value": "IPv4 Unicast"},
+                    {"capability": "Route Refresh(2)", "value": "yes"},
+                    {"capability": "4-Byte AS Number(65)", "value": "64512"},
+                    {"capability": "Route Refresh (Cisco)(128)", "value": "yes"},
+                ]
+            },
+            "prefix-counter": {
+                "entry": {
+                    "@afi-safi": "bgpAfiIpv4-unicast",
+                    "incoming-total": "2",
+                    "incoming-accepted": "2",
+                    "incoming-rejected": "0",
+                    "policy-rejected": "0",
+                    "outgoing-total": "0",
+                    "outgoing-advertised": "0",
+                }
+            },
+        }
     },
     "session_stats": {
         "tmo-5gcdelete": "15",

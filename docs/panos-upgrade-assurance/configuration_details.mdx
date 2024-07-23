@@ -919,7 +919,7 @@ The sample output containing a snapshot for *route tables*, *licenses*, and *IPS
     },
   }.
   "routes": {
-    "default_0.0.0.0/0_ethernet1/3": {
+    "default_0.0.0.0/0_ethernet1/3_10.26.129.129": {
       "virtual-router": "default",
       "destination": "0.0.0.0/0",
       "nexthop": "10.26.129.129",
@@ -961,11 +961,13 @@ Following state areas are available:
 snapshots_config = [
   'nics',
   'routes',
+  'bgp_peers',
   'license',
   'arp_table',
   'content_version',
   'session_stats',
   'ip_sec_tunnels',
+  'fib_routes',
 ]
 ```
 
@@ -978,11 +980,13 @@ snapshots_config = [
 snapshots_config:
   - nics
   - routes
+  - bgp_peers
   - license
   - arp_table
   - content_version
   - session_stats
   - ip_sec_tunnels
+  - fib_routes
 ```
 
 ```mdx-code-block
@@ -1028,6 +1032,12 @@ Takes a snapshot of the Route Table (this includes routes populated from DHCP as
 
 **Method:** [`FirewallProxy.get_routes()`](/panos/docs/panos-upgrade-assurance/api/firewall_proxy#firewallproxyget_routes)
 
+### `bgp_peers`
+
+Takes a snapshot of configuration of BGP peers along with their status.
+
+**Method:** [`FirewallProxy.get_bgp_peers()`](/panos/docs/panos-upgrade-assurance/api/firewall_proxy#firewallproxyget_bgp_peers)
+
 ### `fib_routes`
 
 Takes a snapshot of the Forwarding table (routes that are actually taken into forwarding decisions based on routing table).
@@ -1070,6 +1080,13 @@ reports = [
         'properties': ['!flags'],
         'count_change_threshold': 10
     }},
+    {'fib_routes': {
+        'properties': ['!flags'],
+        'count_change_threshold': 10
+    }},
+    {'bgp_peers': {
+        'properties': ['status']
+    }},
     'content_version',
     {'session_stats': {
         'thresholds': [
@@ -1103,6 +1120,13 @@ reports:
       properties:
         - "!flags"
       count_change_threshold: 10
+  - fib_routes:
+      properties:
+        - "!flags"
+      count_change_threshold: 10
+  - bgp_peers:
+      properties:
+        - "status"
   - content_version
   - session_stats:
       thresholds:
@@ -1392,6 +1416,58 @@ reports:
       properties:
         - '!flags'
       count_change_threshold: 10
+```
+
+```mdx-code-block
+</TabItem>
+</Tabs>
+```
+
+### `bgp_peers`
+
+Compares configuration and the status of BGP peers.
+
+**Method:** [`SnapshotCompare.get_diff_and_threshold()`](/panos/docs/panos-upgrade-assurance/api/snapshot_compare#snapshotcompareget_diff_and_threshold)
+
+**Configuration parameters**
+
+parameter | description
+--- | ---
+`properties` | (optional) a set of properties to skip when comparing two BGP peers, all properties are checked when this parameter is skipped
+`count_change_threshold` | (optional) maximum difference percentage of changed entries in BGP peers in both snapshots, skipped when this property is not specified
+
+**Sample configuration**
+
+The following configuration compares the status of BGP peers as
+captured in snapshots.
+
+This report produces the standardized dictionary.
+
+```mdx-code-block
+<Tabs>
+<TabItem value="python" label="Python" default>
+```
+
+```python showLineNumbers
+reports = [
+    {
+        'bgp_peers': {
+            'properties': ['status']
+        }
+    }
+]
+```
+
+```mdx-code-block
+</TabItem>
+<TabItem value="ansible" label="YAML">
+```
+
+```yaml showLineNumbers
+reports:
+  - bgp_peers:
+      properties:
+        - 'status'
 ```
 
 ```mdx-code-block

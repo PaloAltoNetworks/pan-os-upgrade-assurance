@@ -254,20 +254,14 @@ class FirewallProxy:
         if not isinstance(pan_status, str):
             raise exceptions.MalformedResponseException("Response from device is not type of string.")
 
-        pan_status_list = pan_status.split("\n")
-        pan_status_list_length = len(pan_status_list)
-
-        if pan_status_list_length in [3, 7]:
-            for i in range(1, pan_status_list_length, 4):
-                pan_connected = interpret_yes_no((pan_status_list[i].split(":")[1]).strip())
-                if pan_connected:
-                    return True
+        if re.search(r"connected\s*:\s*yes", pan_status, re.IGNORECASE):
+            return True
+        elif re.search(r"connected\s*:\s*no", pan_status, re.IGNORECASE):
+            return False
         else:
             raise exceptions.MalformedResponseException(
                 f"Panorama configuration block does not have typical structure: <{pan_status}>."
             )
-
-        return False
 
     def get_ha_configuration(self) -> dict:
         """Get high-availability configuration status.
@@ -558,19 +552,20 @@ class FirewallProxy:
 
         The actual API command is `show routing route`.
 
-        In the returned `dict` the key is made of three route properties delimited with an underscore (`_`) in the following
+        In the returned `dict` the key is made of four route properties delimited with an underscore (`_`) in the following
         order:
 
         * virtual router name,
         * destination CIDR,
-        * network interface name if one is available, empty string otherwise.
+        * network interface name if one is available, empty string otherwise,
+        * next-hop address or name.
 
         The key does not provide any meaningful information, it's there only to introduce uniqueness for each entry. All
         properties that make a key are also available in the value of a dictionary element.
 
         ```python showLineNumbers title="Sample output"
         {
-            private_0.0.0.0/0_private/i3': {
+            private_0.0.0.0/0_private/i3_vr-public': {
                 'age': None,
                 'destination': '0.0.0.0/0',
                 'flags': 'A S',
@@ -580,7 +575,7 @@ class FirewallProxy:
                 'route-table': 'unicast',
                 'virtual-router': 'private'
             },
-            'public_10.0.0.0/8_public/i3': {
+            'public_10.0.0.0/8_public/i3_vr-private': {
                 'age': None,
                 'destination': '10.0.0.0/8',
                 'flags': 'A S',
@@ -606,8 +601,113 @@ class FirewallProxy:
             routes = response["entry"]
             for route in routes if isinstance(routes, list) else [routes]:
                 result[
-                    f"{route['virtual-router']}_{route['destination']}_{route['interface'] if route['interface'] else ''}"
+                    (
+                        f"{route['virtual-router'].replace(' ', '-')}_"
+                        f"{route['destination']}_"
+                        f"{route['interface'] if route['interface'] else ''}_"
+                        f"{route['nexthop'].replace(' ', '-')}"
+                    )
                 ] = dict(route)
+
+        return result
+
+    def get_bgp_peers(self) -> dict:
+        """Get information about BGP peers and their status.
+
+        The actual API command is `<show><routing><protocol><bgp><peer></peer></bgp></protocol></routing></show>`.
+
+        In the returned `dict` the key is made of three route properties delimited with an underscore (`_`) in the following
+        order:
+
+        * virtual router name,
+        * peer group name,
+        * peer name.
+
+        The key does not provide any meaningful information, it's there only to introduce uniqueness for each entry. All
+        properties that make a key are also available in the value of a dictionary element.
+
+        ```python showLineNumbers title="Sample output"
+        {
+            'default_Peer-Group1_Peer1': {
+                '@peer': 'Peer1',
+                '@vr': 'default',
+                'peer-group': 'Peer-Group1',
+                'peer-router-id': '169.254.8.2',
+                'remote-as': '64512',
+                'status': 'Established',
+                'status-duration': '3804',
+                'password-set': 'no',
+                'passive': 'no',
+                'multi-hop-ttl': '2',
+                'peer-address': '169.254.8.2:35355',
+                'local-address': '169.254.8.1:179',
+                'reflector-client': 'not-client',
+                'same-confederation': 'no',
+                'aggregate-confed-as': 'yes',
+                'peering-type': 'Unspecified',
+                'connect-retry-interval': '15',
+                'open-delay': '0',
+                'idle-hold': '15',
+                'prefix-limit': '5000',
+                'holdtime': '30',
+                'holdtime-config': '30',
+                'keepalive': '10',
+                'keepalive-config': '10',
+                'msg-update-in': '2',
+                'msg-update-out': '1',
+                'msg-total-in': '385',
+                'msg-total-out': '442',
+                'last-update-age': '3',
+                'last-error': 'None',
+                'status-flap-counts': '2',
+                'established-counts': '1',
+                'ORF-entry-received': '0',
+                'nexthop-self': 'no',
+                'nexthop-thirdparty': 'yes',
+                'nexthop-peer': 'no',
+                'config': {'remove-private-as': 'no'},
+                'peer-capability': {
+                    'list': [
+                        {'capability': 'Multiprotocol Extensions(1)', 'value': 'IPv4 Unicast'},
+                        {'capability': 'Route Refresh(2)', 'value': 'yes'},
+                        {'capability': '4-Byte AS Number(65)', 'value': '64512'},
+                        {'capability': 'Route Refresh (Cisco)(128)', 'value': 'yes'}
+                    ]
+                },
+                'prefix-counter': {
+                    'entry': {
+                        '@afi-safi': 'bgpAfiIpv4-unicast',
+                        'incoming-total': '2',
+                        'incoming-accepted': '2',
+                        'incoming-rejected': '0',
+                        'policy-rejected': '0',
+                        'outgoing-total': '0',
+                        'outgoing-advertised': '0'
+                    }
+                }
+            }
+        }
+        ```
+
+        # Returns
+
+        dict: BGP peers information.
+
+        """
+
+        response = self.op_parser(cmd="show routing protocol bgp peer")
+
+        result = {}
+
+        if response is None:
+            return result
+
+        if "entry" in response:
+            bgp_peers = response["entry"]
+            for peer in bgp_peers if isinstance(bgp_peers, list) else [bgp_peers]:
+                result[
+                    f"{peer['@vr'].replace(' ', '-')}_{peer['peer-group'].replace(' ', '-')}_{peer['@peer'].replace(' ', '-')}"
+                ] = dict(peer)
 
         return result
 
@@ -1297,11 +1397,16 @@ class FirewallProxy:
         jobs = self.op_parser(cmd="show jobs all")
         results = dict()
 
-        if jobs:
-            for job in jobs["job"]:
+        job_results = jobs.get("job") if isinstance(jobs, dict) else None
+        if isinstance(job_results, list):
+            for job in job_results:
                 jid = job["id"]
                 job.pop("id")
                 results[jid] = job
+        elif isinstance(job_results, dict):  # single job entry - FW just started up
+            jid = job_results["id"]
+            job_results.pop("id")
+            results[jid] = job_results
 
         return results
 
@@ -1410,13 +1515,23 @@ class FirewallProxy:
 
         The actual API command run is `show routing fib`.
 
+        In the returned `dict` the key is made of three route properties delimited with an underscore (`_`) in the following
+        order:
+
+        * destination CIDR,
+        * network interface name,
+        * next-hop address or name.
+
+        The key does not provide any meaningful information, it's there only to introduce uniqueness for each entry. All
+        properties that make a key are also available in the value of a dictionary element.
+
         # Returns
 
         dict: Status of the route entries in the FIB
 
         ```python showLineNumbers title="Sample output"
         {
-            '0.0.0.0/0_ethernet1/1': {
+            '0.0.0.0/0_ethernet1/1_10.10.11.1': {
                 'Destination': '0.0.0.0/0',
                 'Interface': 'ethernet1/1',
                 'Next Hop Type': '0',
@@ -1424,7 +1539,7 @@ class FirewallProxy:
                 'Next Hop': '10.10.11.1',
                 'MTU': '1500'
             },
-            '1.1.1.1/32_loopback.10': {
+            '1.1.1.1/32_loopback.10_0.0.0.0': {
                 'Destination': '1.1.1.1/32',
                 'Interface': 'loopback.10',
                 'Next Hop Type': '3',
@@ -1450,7 +1565,7 @@ class FirewallProxy:
 
                 for entry in entries if isinstance(entries, list) else [entries]:
                     if isinstance(entry, dict):
-                        key = f'{entry["dst"]}_{entry["interface"]}'
+                        key = f'{entry["dst"]}_{entry["interface"]}_{entry["nexthop"]}'
                         result_entry = {
                             "Destination": entry.get("dst"),
                             "Interface": entry.get("interface"),

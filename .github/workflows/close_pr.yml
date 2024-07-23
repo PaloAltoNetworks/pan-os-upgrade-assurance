@@ -14,35 +14,16 @@ on:
     types: ['closed']
 
 jobs:
-  close:
-    name: Close PAN.DEV preview PR
+  store_pr_details:
+    name: Upload PR details to artifact for closing
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
     steps:
-      - uses: actions/github-script@v6
+      - name: save PR details
+        run: |
+          mkdir -p ./pr
+          echo ${{ github.event.number }} > ./pr/NR
+          echo ${{ github.event.pull_request.head.ref }} > ./pr/HEAD_REF
+      - uses: actions/upload-artifact@v4
         with:
-          result-encoding: string
-          github-token: ${{ secrets.CLSC_PAT }}
-          script: |
-            let prs = await github.rest.pulls.list({
-              owner: "PaloAltoNetworks",
-              repo: "pan.dev",
-              state: "open",
-            })
-
-            let prs_list = prs.data
-
-            for (let pr of prs_list){
-              if (pr.head.label == "PaloAltoNetworks:pua_prev_${{ github.event.pull_request.head.ref }}"){
-                await github.rest.pulls.update({
-                  owner: "PaloAltoNetworks",
-                  repo: "pan.dev",
-                  pull_number: pr.number,
-                  state: "closed",
-                })
-                console.log("Closing related PAN.DEV PR: #" + pr.number + " - " + pr.title + " -> " + pr.url)
-                break
-              }
-            }
+          name: pr
+          path: pr/

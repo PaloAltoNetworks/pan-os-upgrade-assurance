@@ -166,7 +166,7 @@ class TestSnapshotCompare:
     # NOTE: Non-dictionary input is not handled in the code and not tested
     # if non supported input is passed it raises AttributeError since it doesnt have keys() method
     def test_calculate_diff_on_dicts_invalid_input(self):
-        left_snapshot = {"key1": 123, "key2": "value2"}
+        left_snapshot = {"key1": 1.23, "key2": "value2"}
         right_snapshot = {"key1": {"nested_key1": "value1"}, "key2": "value2"}
 
         with pytest.raises(WrongDataTypeException) as exception_msg:
@@ -386,7 +386,7 @@ class TestSnapshotCompare:
                         "added": {"added_keys": [], "passed": True},
                         "changed": {
                             "changed_raw": {
-                                "default_10.26.130.0/25_ethernet1/2": {
+                                "default_10.26.130.0/25_ethernet1/2_10.26.129.1": {
                                     "added": {"added_keys": [], "passed": True},
                                     "changed": {
                                         "changed_raw": {"flags": {"left_snap": "A S", "right_snap": "A"}},
@@ -411,6 +411,30 @@ class TestSnapshotCompare:
                         "changed": {"changed_raw": {}, "passed": True},
                         "missing": {"missing_keys": [], "passed": True},
                         "passed": True,
+                    }
+                },
+            ),
+            (
+                [{"bgp_peers": {"properties": ["status"]}}],
+                {
+                    "bgp_peers": {
+                        "added": {"added_keys": [], "passed": True},
+                        "changed": {
+                            "changed_raw": {
+                                "default_Peer-Group1_Peer1": {
+                                    "added": {"added_keys": [], "passed": True},
+                                    "changed": {
+                                        "changed_raw": {"status": {"left_snap": "Established", "right_snap": "Idle"}},
+                                        "passed": False,
+                                    },
+                                    "missing": {"missing_keys": [], "passed": True},
+                                    "passed": False,
+                                }
+                            },
+                            "passed": False,
+                        },
+                        "missing": {"missing_keys": [], "passed": True},
+                        "passed": False,
                     }
                 },
             ),
