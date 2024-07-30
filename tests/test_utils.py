@@ -52,13 +52,13 @@ class TestConfigParser:
         ],
     )
     def test_init_no_requested_config(self, valid_config_elements, requested_config):
-        """Check if ConfigParser sets _requested_config_names when requested_config is not provided."""
+        """Check if ConfigParser sets _requested_config_element_names when requested_config is not provided."""
         parser = ConfigParser(valid_config_elements, requested_config)
-        assert parser._requested_config_names == set(valid_config_elements)
+        assert parser._requested_config_element_names == set(valid_config_elements)
         assert parser.requested_config == valid_config_elements
 
     @pytest.mark.parametrize(
-        "requested_config, expected_requested_config_names",
+        "requested_config, expected_requested_config_element_names",
         [
             (
                 [
@@ -82,63 +82,435 @@ class TestConfigParser:
             ),
         ],
     )
-    def test_init_requested_config_names(self, requested_config, expected_requested_config_names, monkeypatch):
-        """Check if ConfigParser sets _requested_config_names properly according to requested_config."""
+    def test_init_requested_config_element_names(self, requested_config, expected_requested_config_element_names, monkeypatch):
+        """Check if ConfigParser sets _requested_config_element_names properly according to requested_config."""
 
-        def _is_element_valid_mock(*args, **kwargs):
+        def _is_valid_element_name_mock(*args, **kwargs):
             return True
 
-        # Overwrite _is_element_valid
-        monkeypatch.setattr(ConfigParser, "_is_element_valid", _is_element_valid_mock)
+        # Overwrite _is_valid_element_name
+        monkeypatch.setattr(ConfigParser, "_is_valid_element_name", _is_valid_element_name_mock)
 
         parser = ConfigParser([], requested_config)  # testing requested config - valid_elements is not important here
-        assert parser._requested_config_names == set(expected_requested_config_names)  # _requested_config_names is a set
+        assert parser._requested_config_element_names == set(expected_requested_config_element_names)  # _requested_config_element_names is a set
 
     @pytest.mark.parametrize(
-        "valid_config_elements, config_element",
+        "requested_config, expected_requested_all_not_elements",
+        [
+            (
+                ["!routes"],
+                True
+            ),
+            (
+                [
+                    {
+                        "!routes": {
+                            "properties": ["!flags"],
+                            "count_change_threshold": 10,
+                        }
+                    },
+                ],
+                True
+            ),
+            (
+                ["!routes", "!content_version", "!session_stats"],
+                True
+            ),
+            (
+                [
+                    {
+                        "!routes": {
+                            "properties": ["!flags"],
+                            "count_change_threshold": 10,
+                        }
+                    },
+                    "!content_version",
+                    {
+                        "!session_stats": {
+                            "thresholds": [
+                                {"num-max": 10},
+                                {"num-tcp": 10},
+                            ]
+                        }
+                    },
+                ],
+                True,
+            ),
+            (
+                ["all"],
+                False
+            ),
+            (
+                ["!routes", "all"],
+                False
+            ),
+            (
+                ["!routes", "!content_version", "session_stats"],
+                False
+            ),
+            (
+                ["routes", "content_version", "session_stats"],
+                False
+            ),
+            (
+                [],
+                False
+            ),
+            (
+                None,
+                False
+            )
+        ],
+    )
+    def test_init_requested_all_not_elements(self, requested_config, expected_requested_all_not_elements, monkeypatch):
+        """Check if _requested_all_not_elements is set correctly according to the requested config."""
+        def _is_valid_element_name_mock(*args, **kwargs):
+            return True
+
+        # Overwrite _is_valid_element_name
+        monkeypatch.setattr(ConfigParser, "_is_valid_element_name", _is_valid_element_name_mock)
+
+        parser = ConfigParser([], requested_config)  # testing requested config - valid_elements is not important here
+        assert parser._requested_all_not_elements == expected_requested_all_not_elements
+
+    @pytest.mark.parametrize(
+        "requested_config, element_name",
+        [
+            (valid_check_types, "content_version"),
+            (valid_check_types, "ntp_sync"),
+            (
+                ["!routes", "!content_version", "session_stats"],
+                "session_stats"
+            ),
+            (
+                ["!routes", "!content_version", "session_stats", "all"],
+                "ntp_sync"
+            ),
+            (
+                ["!routes", "!content_version", "!session_stats"],
+                "ntp_sync"
+            ),
+            (
+                [
+                    {
+                        "!routes": {
+                            "properties": ["!flags"],
+                            "count_change_threshold": 10,
+                        }
+                    },
+                    "!content_version",
+                    {
+                        "session_stats": {
+                            "thresholds": [
+                                {"num-max": 10},
+                                {"num-tcp": 10},
+                            ]
+                        }
+                    },
+                ],
+                "session_stats",
+            ),
+            (
+                [
+                    {
+                        "!routes": {
+                            "properties": ["!flags"],
+                            "count_change_threshold": 10,
+                        }
+                    },
+                    "!content_version",
+                    {
+                        "session_stats": {
+                            "thresholds": [
+                                {"num-max": 10},
+                                {"num-tcp": 10},
+                            ]
+                        }
+                    },
+                    "all"
+                ],
+                "ntp_sync",
+            ),
+            (
+                ["all"],
+                "ntp_sync"
+            ),
+            (
+                [],
+                "ntp_sync"
+            ),
+            (
+                None,
+                "ntp_sync"
+            ),
+        ],
+    )
+    def test__is_element_included_true(self, requested_config, element_name):
+        """Check if method returns True for given element name that should be included.
+        """
+        assert ConfigParser.is_element_included(element_name, requested_config)  # assert True
+
+    @pytest.mark.parametrize(
+        "requested_config, element_name",
+        [
+            (valid_check_types, "none_existing_element"),
+            (
+                ["!routes", "!content_version", "session_stats"],
+                "routes"
+            ),
+            (
+                ["!routes", "!content_version", "session_stats"],
+                "ntp_sync"
+            ),
+            (
+                ["!routes", "!content_version", "session_stats", "all"],
+                "content_version"
+            ),
+            (
+                ["!routes", "!content_version", "!session_stats"],
+                "session_stats"
+            ),
+            (
+                [
+                    {
+                        "!routes": {
+                            "properties": ["!flags"],
+                            "count_change_threshold": 10,
+                        }
+                    },
+                    "!content_version",
+                    {
+                        "session_stats": {
+                            "thresholds": [
+                                {"num-max": 10},
+                                {"num-tcp": 10},
+                            ]
+                        }
+                    },
+                ],
+                "routes"
+            ),
+            (
+                [
+                    {
+                        "!routes": {
+                            "properties": ["!flags"],
+                            "count_change_threshold": 10,
+                        }
+                    },
+                    "!content_version",
+                    {
+                        "session_stats": {
+                            "thresholds": [
+                                {"num-max": 10},
+                                {"num-tcp": 10},
+                            ]
+                        }
+                    },
+                    "all"
+                ],
+                "content_version"
+            )
+        ],
+    )
+    def test__is_element_included_false(self, requested_config, element_name):
+        """Check if method returns False for given element name that should NOT be included.
+        """
+        assert not ConfigParser.is_element_included(element_name, requested_config)  # assert False
+
+    @pytest.mark.parametrize(
+        "requested_config, element_name",
+        [
+            (
+                ["!routes", "!content_version", "session_stats"],
+                "routes"
+            ),
+            (
+                ["!routes", "!content_version", "session_stats", "all"],
+                "content_version"
+            ),
+            (
+                [
+                    {
+                        "!routes": {
+                            "properties": ["!flags"],
+                            "count_change_threshold": 10,
+                        }
+                    },
+                    "!content_version",
+                    {
+                        "session_stats": {
+                            "thresholds": [
+                                {"num-max": 10},
+                                {"num-tcp": 10},
+                            ]
+                        }
+                    },
+                ],
+                "routes",
+            ),
+            (
+                [
+                    {
+                        "!routes": {
+                            "properties": ["!flags"],
+                            "count_change_threshold": 10,
+                        }
+                    },
+                    "!content_version",
+                    {
+                        "session_stats": {
+                            "thresholds": [
+                                {"num-max": 10},
+                                {"num-tcp": 10},
+                            ]
+                        }
+                    },
+                    "all"
+                ],
+                "content_version",
+            )
+        ],
+    )
+    def test__is_element_explicit_excluded_true(self, requested_config, element_name):
+        """Check if method returns True for given element name that should be excluded.
+        """
+        assert ConfigParser.is_element_explicit_excluded(element_name, requested_config)  # assert True
+
+    @pytest.mark.parametrize(
+        "requested_config, element_name",
+        [
+            (valid_check_types, "content_version"),
+            (
+                ["!routes", "!content_version", "session_stats"],
+                "session_stats"
+            ),
+            (
+                ["!routes", "!content_version", "session_stats", "all"],
+                "ntp_sync"
+            ),
+            (
+                ["!routes", "!content_version", "!session_stats"],
+                "ntp_sync"
+            ),
+            (
+                [
+                    {
+                        "!routes": {
+                            "properties": ["!flags"],
+                            "count_change_threshold": 10,
+                        }
+                    },
+                    "!content_version",
+                    {
+                        "session_stats": {
+                            "thresholds": [
+                                {"num-max": 10},
+                                {"num-tcp": 10},
+                            ]
+                        }
+                    },
+                ],
+                "session_stats",
+            ),
+            (
+                [
+                    {
+                        "!routes": {
+                            "properties": ["!flags"],
+                            "count_change_threshold": 10,
+                        }
+                    },
+                    "!content_version",
+                    {
+                        "session_stats": {
+                            "thresholds": [
+                                {"num-max": 10},
+                                {"num-tcp": 10},
+                            ]
+                        }
+                    },
+                    "all"
+                ],
+                "ntp_sync",
+            ),
+            (
+                ["all"],
+                "ntp_sync"
+            ),
+            (
+                [],
+                "ntp_sync"
+            ),
+            (
+                None,
+                "ntp_sync"
+            ),
+        ],
+    )
+    def test__is_element_explicit_excluded_false(self, requested_config, element_name):
+        """Check if method returns False for given element name that is not excluded explicitly.
+        """
+        assert not ConfigParser.is_element_explicit_excluded(element_name, requested_config)  # assert True
+
+    @pytest.mark.parametrize(
+        "element_name, expected",
+        [
+            ("content_version", "content_version"),
+            ("!ntp_sync", "ntp_sync"),
+        ],
+    )
+    def test__strip_element_name(self, element_name, expected, monkeypatch):
+        """Check method removes leading exclamation mark from element name."""
+        monkeypatch.setattr(ConfigParser, "__init__", lambda _: None)
+        parser = ConfigParser()
+        assert parser._strip_element_name(element_name) == expected
+
+    @pytest.mark.parametrize(
+        "valid_config_elements, element_name",
         [
             (valid_check_types, "content_version"),
             (valid_check_types, "!ntp_sync"),
         ],
     )
-    def test__is_element_valid_true(self, valid_config_elements, config_element, monkeypatch):
+    def test__is_valid_element_name_true(self, valid_config_elements, element_name, monkeypatch):
         """Check if method returns True for given config element in valid elements."""
         monkeypatch.setattr(ConfigParser, "__init__", lambda _: None)
         parser = ConfigParser()
         parser.valid_elements = valid_config_elements
 
-        assert parser._is_element_valid(config_element)  # assert True
+        assert parser._is_valid_element_name(element_name)  # assert True
 
     @pytest.mark.parametrize(
-        "valid_config_elements, config_element",
+        "valid_config_elements, element_name",
         [
             (valid_check_types, "not_valid_check"),
             (valid_check_types, "!not_valid_check"),
         ],
     )
-    def test__is_element_valid_false(self, valid_config_elements, config_element, monkeypatch):
+    def test__is_valid_element_name_false(self, valid_config_elements, element_name, monkeypatch):
         """Check if method returns False if given config element is not in valid elements."""
         monkeypatch.setattr(ConfigParser, "__init__", lambda _: None)
         parser = ConfigParser()
         parser.valid_elements = valid_config_elements
 
-        assert not parser._is_element_valid(config_element)  # assert False
+        assert not parser._is_valid_element_name(element_name)  # assert False
 
     @pytest.mark.parametrize(
-        "valid_config_elements, config_element",
+        "valid_config_elements, element_name",
         [
             (valid_check_types, "all"),
             (valid_snap_types, "all"),
         ],
     )
-    def test__is_element_valid_all(self, valid_config_elements, config_element, monkeypatch):
+    def test__is_valid_element_name_all(self, valid_config_elements, element_name, monkeypatch):
         """Check if method returns True for all keyword with different valid elements."""
         monkeypatch.setattr(ConfigParser, "__init__", lambda _: None)
         parser = ConfigParser()
         parser.valid_elements = valid_config_elements
         parser.requested_config = ["all"]
 
-        assert parser._is_element_valid(config_element)  # assert True
+        assert parser._is_valid_element_name(element_name)  # assert True
 
     @pytest.mark.parametrize(
         "config_element, expected",
@@ -198,63 +570,95 @@ class TestConfigParser:
         assert expected == str(exc_info.value)
 
     @pytest.mark.parametrize(
-        "requested_config, requested_config_all_inserted",
+        "requested_config, expected",
         [
-            (["!ha", "!panorama"], ["all", "!ha", "!panorama"]),
+            (
+                ["!routes", "!content_version", "session_stats"],
+                ["!routes", "!content_version", "session_stats"]
+            ),
+            (
+                ["!routes", "!content_version", "session_stats", "all"],
+                ["!routes", "!content_version", "session_stats", "all"]
+            ),
+            (
+                [
+                    {
+                        "!routes": {
+                            "properties": ["!flags"],
+                            "count_change_threshold": 10,
+                        }
+                    },
+                    "!content_version",
+                    {
+                        "session_stats": {
+                            "thresholds": [
+                                {"num-max": 10},
+                                {"num-tcp": 10},
+                            ]
+                        }
+                    },
+                ],
+                ["!routes", "!content_version", "session_stats"]
+            ),
+            (
+                [
+                    {
+                        "!routes": {
+                            "properties": ["!flags"],
+                            "count_change_threshold": 10,
+                        }
+                    },
+                    "!content_version",
+                    {
+                        "session_stats": {
+                            "thresholds": [
+                                {"num-max": 10},
+                                {"num-tcp": 10},
+                            ]
+                        }
+                    },
+                    "all"
+                ],
+                ["!routes", "!content_version", "session_stats", "all"]
+            ),
+            (
+                [],
+                []
+            )
         ],
     )
-    def test_prepare_config_insert_all(self, requested_config, requested_config_all_inserted, monkeypatch):
-        """Check if method add "all" keyword when all provided tests are skipped in configuration."""
-
-        def _expand_all_mock(*args, **kwargs):
-            pass
-
-        def _is_element_valid_mock(*args, **kwargs):
-            return True
-
-        # Overwrite _is_element_valid and _expand_all
-        monkeypatch.setattr(ConfigParser, "_expand_all", _expand_all_mock)
-        monkeypatch.setattr(ConfigParser, "_is_element_valid", _is_element_valid_mock)
-
-        parser = ConfigParser([], requested_config)  # testing requested config - valid_elements is not important here
-        parser.prepare_config()
-
-        assert parser.requested_config == requested_config_all_inserted
+    def test__iter_config_element_names(self, requested_config, expected):
+        """Check method iterates correctly on the requested_config extracting config element names."""
+        assert list(ConfigParser._iter_config_element_names(requested_config)) == expected
 
     @pytest.mark.parametrize(
-        "requested_config",
+        "requested_config, element_name, expected",
         [
-            ["all"],
-            [
-                "all",
-                "!ntp_sync",
-                {"content_version": {"version": "8634-7678"}},
-            ],
-            ["!ha", "!panorama"],
-        ],
-    )
-    def test_prepare_config_call_expand_all(self, requested_config, monkeypatch):
-        """Check if _expand_all is called when there is "all" keyword in requested config or all elements are exclusions."""
-
-        def _is_element_valid_mock(*args, **kwargs):
-            return True
-
-        # Overwrite _is_element_valid
-        monkeypatch.setattr(ConfigParser, "_is_element_valid", _is_element_valid_mock)
-
-        parser = ConfigParser([], requested_config)  # testing requested config - valid_elements is not important here
-        parser._expand_all = MagicMock()
-
-        parser.prepare_config()
-        parser._expand_all.assert_called()
-
-    @pytest.mark.parametrize(
-        "requested_config",
-        [
-            ["panorama", "!ha"],
-            [
-                {"routes": {"properties": ["!flags"], "count_change_threshold": 10}},
-                "!content_version",
+            (
+                ["!routes", "!content_version", "session_stats"],
+                "session_stats",
+                "session_stats"
+            ),
+            (
+                [
+                    {
+                        "!routes": {
+                            "properties": ["!flags"],
+                            "count_change_threshold": 10,
+                        }
+                    },
+                    "!content_version",
+                    {
+                        "session_stats": {
+                            "thresholds": [
+                                {"num-max": 10},
+                                {"num-tcp": 10},
+                            ]
+                        }
+                    },
+                    "all"
+                ],
+                "session_stats",
                 {
                     "session_stats": {
                         "thresholds": [
@@ -262,26 +666,34 @@ class TestConfigParser:
                             {"num-tcp": 10},
                         ]
                     }
-                },
-            ],
+                }
+            ),
+            (
+                ["!routes", "!content_version", "session_stats"],
+                "none_existing_element",
+                None
+            ),
+            (
+                [],
+                "routes",
+                None
+            )
         ],
     )
-    def test_prepare_config_dont_call_expand_all(self, requested_config, monkeypatch):
-        """Check if _expand_all is not called without "all" keyword in requested_config
-        or all elements are not exclusions.
-        """
+    def test_get_config_element_by_name(self, requested_config, element_name, expected, monkeypatch):
+        """Check if method returns config element as str or dict for requested element name.
 
-        def _is_element_valid_mock(*args, **kwargs):
+        This method does not support returning `not-element` of a given config element so it's not
+        included in the tests.
+        """
+        def _is_valid_element_name_mock(*args, **kwargs):
             return True
 
-        # Overwrite _is_element_valid
-        monkeypatch.setattr(ConfigParser, "_is_element_valid", _is_element_valid_mock)
+        # Overwrite _is_valid_element_name
+        monkeypatch.setattr(ConfigParser, "_is_valid_element_name", _is_valid_element_name_mock)
 
-        parser = ConfigParser([], requested_config)  # testing requested config - valid_elements is not important here
-        parser._expand_all = MagicMock()
-
-        parser.prepare_config()
-        parser._expand_all.assert_not_called()
+        parser = ConfigParser([], requested_config)  # valid_elements is not important here
+        assert parser.get_config_element_by_name(element_name) == expected
 
     @pytest.mark.parametrize(
         "valid_config_elements, requested_config, expected",
@@ -393,7 +805,6 @@ class TestConfigParser:
         """Check if config is prepared in expected way."""
         parser = ConfigParser(valid_config_elements, requested_config)
         final_config = parser.prepare_config()
-        # print(final_config)
         assert not DeepDiff(
             final_config, expected, ignore_order=True
         )  # assert list == doesnt work for nested objects and unordered lists

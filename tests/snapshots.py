@@ -8,7 +8,7 @@ snap1 = {
             "localip": "0.0.0.1",
             "state": "init",
             "inner-if": "tunnel.1",
-            "mon": "off",
+            "mon": "on",
             "owner": "1",
             "id": "1",
         },
@@ -24,6 +24,18 @@ snap1 = {
             "owner": "1",
             "id": "2",
         },
+        "priv_tun": {
+            "peerip": "10.26.128.5",
+            "name": "priv_tun",
+            "outer-if": "ethernet1/4",
+            "gwid": "3",
+            "localip": "0.0.0.1",
+            "state": "active",
+            "inner-if": "tunnel.3",
+            "mon": "on",
+            "owner": "1",
+            "id": "3",
+        }
     },
     "routes": {
         "default_0.0.0.0/0_ethernet1/3_10.26.129.129": {
@@ -276,6 +288,18 @@ snap1 = {
             "base-license-name": "PA-VM",
             "authcode": None,
         },
+        "Logging Service": {
+            "feature": "Logging Service",
+            "description": "Device Logging Service",
+            "custom": {
+                "_Log_Storage_TB": "7"
+            },
+            "serial": "007257000334668",
+            "issued": "June 29, 2022",
+            "expires": "August 04, 2024",
+            "expired": "no",
+            "authcode": None,
+        },
     },
     "nics": {"ethernet1/1": "up", "ethernet1/2": "up", "ethernet1/3": "up", "tunnel": "up"},
 }
@@ -293,6 +317,18 @@ snap2 = {
             "mon": "off",
             "owner": "1",
             "id": "1",
+        },
+        "priv_tun": {
+            "peerip": "10.26.128.5",
+            "name": "priv_tun",
+            "outer-if": "ethernet1/4",
+            "gwid": "3",
+            "localip": "0.0.0.1",
+            "state": "init",
+            "inner-if": "tunnel.3",
+            "mon": "on",
+            "owner": "1",
+            "id": "3",
         }
     },
     "routes": {
@@ -526,6 +562,18 @@ snap2 = {
             "expires": "November 01, 2023",
             "expired": "no",
             "base-license-name": "PA-VM",
+            "authcode": None,
+        },
+        "Logging Service": {
+            "feature": "Logging Service",
+            "description": "Device Logging Service",
+            "custom": {
+                "_Log_Storage_TB": "9"
+            },
+            "serial": "007257000334667",
+            "issued": "June 29, 2022",
+            "expires": "August 04, 2024",
+            "expired": "no",
             "authcode": None,
         },
     },

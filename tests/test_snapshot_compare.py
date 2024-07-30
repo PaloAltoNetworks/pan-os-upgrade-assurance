@@ -161,7 +161,242 @@ class TestSnapshotCompare:
             "changed": {"passed": True, "changed_raw": {}},
         }
 
-    # TODO test_calculate_diff_on_dicts properties flag
+    def test_calculate_diff_on_dicts_parents(self):
+        """Check if specific parent dict is compared only on a report type."""
+        report_type = "ip_sec_tunnels"
+        properties = [          # compare specific ipsec tunnel only
+            "ipsec_tun"
+        ]
+        result = SnapshotCompare.calculate_diff_on_dicts(snap1[report_type],
+                                                         snap2[report_type],
+                                                         properties)
+        assert result == {
+            'added': {'added_keys': [], 'passed': True},
+            'changed': {
+                'changed_raw': {
+                    'ipsec_tun': {'added': {'added_keys': [], 'passed': True},
+                                  'changed': {
+                                      'changed_raw': {
+                                          'mon': {
+                                              'left_snap': 'on',
+                                              'right_snap': 'off'
+                                          }
+                                      },
+                                      'passed': False},
+                                  'missing': {
+                                      'missing_keys': ['gwid'],
+                                      'passed': False},
+                                  'passed': False}},
+                'passed': False},
+            'missing': {'missing_keys': [], 'passed': True}}
+
+
+    def test_calculate_diff_on_dicts_skip_parents(self):
+        """Check if rest is compared when specific parent dict is skipped on a report type."""
+        report_type = "ip_sec_tunnels"
+        properties = [          # skip specific ipsec tunnel and compare the rest
+            "!ipsec_tun"
+        ]
+        result = SnapshotCompare.calculate_diff_on_dicts(snap1[report_type],
+                                                         snap2[report_type],
+                                                         properties)
+        assert result == {
+            'added': {'added_keys': [], 'passed': True},
+            'changed': {
+                'changed_raw': {
+                    'priv_tun': {'added': {'added_keys': [], 'passed': True},
+                                 'changed': {
+                                     'changed_raw': {
+                                         'state': {
+                                             'left_snap': 'active',
+                                             'right_snap': 'init'
+                                         }
+                                     },
+                                     'passed': False},
+                                 'missing': {'missing_keys': [], 'passed': True},
+                                 'passed': False
+                                 }
+                },
+                'passed': False},
+            'missing': {
+                'missing_keys': ['sres'],
+                'passed': False
+            }
+        }
+
+    def test_calculate_diff_on_dicts_with_subdicts(self):
+        """Check if sub-dicts are also compared on a report type."""
+        report_type = "license"
+        properties = [          # Logging Service has "custom" sub-dict
+            "Logging Service"
+        ]
+        result = SnapshotCompare.calculate_diff_on_dicts(snap1[report_type],
+                                                         snap2[report_type],
+                                                         properties)
+        assert result == {
+            'added': {'added_keys': [], 'passed': True},
+            'changed': {
+                'changed_raw': {
+                    'Logging Service': {
+                        'added': {'added_keys': [], 'passed': True},
+                        'changed': {
+                            'changed_raw': {
+                                'custom': {'added': {'added_keys': [], 'passed': True},
+                                           'changed': {
+                                               'changed_raw': {
+                                                   '_Log_Storage_TB': {
+                                                       'left_snap': '7',
+                                                       'right_snap': '9'
+                                                   }
+                                               },
+                                               'passed': False},
+                                           'missing': {'missing_keys': [], 'passed': True},
+                                           'passed': False},
+                                'serial': {
+                                    'left_snap': '007257000334668',
+                                    'right_snap': '007257000334667'}},
+                            'passed': False},
+                        'missing': {'missing_keys': [], 'passed': True},
+                        'passed': False
+                    }
+                },
+                'passed': False},
+            'missing': {'missing_keys': [], 'passed': True}
+        }
+
+    def test_calculate_diff_on_dicts_exclude_subdict(self):
+        """Check if excluding sub-dicts works on a report type."""
+        report_type = "license"
+        properties = [  # "Logging Service" has "custom" sub-dict which will be skipped
+            "!custom",
+            "!DNS Security",    # other license types are skipped to reduce clutter
+            "!AutoFocus Device License",
+            "!Premium",
+            "!GlobalProtect Gateway",
+            "!Threat Prevention",
+            "!WildFire License",
+            "!PA-VM",
+            "!PAN-DB URL Filtering",
+        ]
+        result = SnapshotCompare.calculate_diff_on_dicts(snap1[report_type],
+                                                         snap2[report_type],
+                                                         properties)
+        assert result == {
+            'added': {'added_keys': [], 'passed': True},
+            'changed': {
+                'changed_raw': {
+                    'Logging Service': {'added': {'added_keys': [], 'passed': True},
+                                        'changed': {
+                                            'changed_raw': {
+                                                'serial': {
+                                                    'left_snap': '007257000334668',
+                                                    'right_snap': '007257000334667'
+                                                }
+                                            },
+                                            'passed': False},
+                                        'missing': {'missing_keys': [], 'passed': True},
+                                        'passed': False
+                                        }
+                }, 'passed': False},
+            'missing': {'missing_keys': [], 'passed': True}
+        }
+
+    def test_calculate_diff_on_dicts_compare_subdict(self):
+        """Check if only provided sub-dicts(keys) are compared on a report type."""
+        report_type = "license"
+        properties = [          # Logging Service has "custom" sub-dict
+            "custom"
+        ]
+        result = SnapshotCompare.calculate_diff_on_dicts(snap1[report_type],
+                                                         snap2[report_type],
+                                                         properties)
+        assert result == {
+            'added': {'added_keys': [], 'passed': True},
+            'changed': {
+                'changed_raw': {
+                    'Logging Service': {
+                        'added': {'added_keys': [], 'passed': True},
+                        'changed': {
+                            'changed_raw': {
+                                'custom': {'added': {'added_keys': [], 'passed': True},
+                                           'changed': {
+                                               'changed_raw': {
+                                                   '_Log_Storage_TB': {
+                                                       'left_snap': '7',
+                                                       'right_snap': '9'
+                                                   }
+                                               },
+                                               'passed': False},
+                                           'missing': {'missing_keys': [], 'passed': True},
+                                           'passed': False},
+                            }, 'passed': False},
+                        'missing': {'missing_keys': [], 'passed': True},
+                        'passed': False
+                    }
+                },
+                'passed': False},
+            'missing': {'missing_keys': [], 'passed': True}
+        }
+
+    def test_calculate_diff_on_dicts_no_nested_and(self):
+        """Check if sub-dicts are fully compared if properties have parent-child relantionship and child property is ignored."""
+        report_type = "license"
+        # Logging Service has "custom" sub-dict but since properities have parent-child relantionship,
+        # no "and" operation will be applied and all keys for "Logging Service" will be compared
+        properties = [
+            "custom", "Logging Service"
+        ]
+        result = SnapshotCompare.calculate_diff_on_dicts(snap1[report_type],
+                                                         snap2[report_type],
+                                                         properties)
+        assert result == {
+            'added': {'added_keys': [], 'passed': True},
+            'changed': {
+                'changed_raw': {
+                    'Logging Service': {
+                        'added': {'added_keys': [], 'passed': True},
+                        'changed': {
+                            'changed_raw': {
+                                'custom': {'added': {'added_keys': [], 'passed': True},
+                                           'changed': {
+                                               'changed_raw': {
+                                                   '_Log_Storage_TB': {
+                                                       'left_snap': '7',
+                                                       'right_snap': '9'
+                                                   }
+                                               },
+                                               'passed': False},
+                                           'missing': {'missing_keys': [], 'passed': True},
+                                           'passed': False},
+                                'serial': {
+                                    'left_snap': '007257000334668',
+                                    'right_snap': '007257000334667'}},
+                            'passed': False},
+                        'missing': {'missing_keys': [], 'passed': True},
+                        'passed': False
+                    }
+                },
+                'passed': False},
+            'missing': {'missing_keys': [], 'passed': True}
+        }
+
+    def test_calculate_diff_on_dicts_multi_exclusions(self):
+        """Check if multiple exlusions works on a report type."""
+        report_type = "license"
+        properties = [
+            "!custom",
+            "!serial"
+        ]
+        result = SnapshotCompare.calculate_diff_on_dicts(snap1[report_type],
+                                                         snap2[report_type],
+                                                         properties)
+        assert result == {
+            'added': {'added_keys': [], 'passed': True},
+            'changed': {'changed_raw': {}, 'passed': True},
+            'missing': {
+                'missing_keys': ['AutoFocus Device License'], 'passed': False
+            }
+        }
 
     # NOTE: Non-dictionary input is not handled in the code and not tested
     # if non supported input is passed it raises AttributeError since it doesnt have keys() method
@@ -367,9 +602,28 @@ class TestSnapshotCompare:
                             "changed_raw": {
                                 "ipsec_tun": {
                                     "added": {"added_keys": [], "passed": True},
-                                    "changed": {"changed_raw": {}, "passed": True},
+                                    "changed": {
+                                        "changed_raw": {
+                                            "mon": {
+                                                "left_snap": "on",
+                                                "right_snap": "off"
+                                            }
+                                        }, "passed": False},
                                     "missing": {"missing_keys": ["gwid"], "passed": False},
                                     "passed": False,
+                                },
+                                "priv_tun": {
+                                    "added": {"added_keys": [], "passed": True},
+                                    "changed": {
+                                        "changed_raw": {
+                                            "state": {
+                                                "left_snap": "active",
+                                                "right_snap": "init"
+                                            }
+                                        },
+                                        "passed": False},
+                                    "missing": {"missing_keys": [], "passed": True},
+                                    "passed": False
                                 }
                             },
                             "passed": False,
