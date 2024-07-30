@@ -95,8 +95,7 @@ class SnapshotCompare:
             For the elements specified as
 
             * `str` - the element value is the name of the report (state area),
-            * `dict` - the element contains the report name (state area) and the key value and report configuration as the
-                element value.
+            * `dict` - the element contains the report name (state area) as the key and report configuration as the element value.
 
         # Raises
 
@@ -293,16 +292,16 @@ class SnapshotCompare:
         Each comparison perspective contains the `passed` property that immediately informs if this comparison gave any results
         (`False`) or not (`True`).
 
-        `properties` can be defined for any level for nested dictionaries which implies:
+        `properties` can be defined for any level of nested dictionaries which implies:
 
         - Allow comparison of specific parent dictionaries.
         - Skip specific parent dictionaries.
-        - Allow comparison/exclusion of specific sub-dictionaries or attributes only.
-        - If given attributes have parent-child relationship then all attributes for a matching parent are compared.
+        - Allow comparison/exclusion of specific sub-dictionaries or keys only.
+        - If given keys have parent-child relationship then all keys for a matching parent are compared.
         Meaning it doesn’t do an \"AND\" operation on the given properities for nested dictionaries.
 
-        Also note that missing/added attributes in parent dictionaries are not reported for comparison when specific attributes
-        are requested to compare with the `properties` parameter.
+        Also note that missing/added keys in parent dictionaries are not reported for comparison when specific keys
+        are requested to be compared with the `properties` parameter.
 
         **Example**
 
@@ -438,6 +437,8 @@ class SnapshotCompare:
                 elif isinstance(left_side_to_compare[key], dict):
                     nested_keys_within_common_key = chain_unique_set(get_all_dict_keys(left_side_to_compare[key]),
                                                                      get_all_dict_keys(right_side_to_compare[key]))
+                    # Checking if we should further compare nested dicts - it doesnot work to check with is_element_included for
+                    # this case since nested dict key might not be included but nested keys might be subject to comparison
                     if ConfigParser.is_element_explicit_excluded(key, properties):
                         continue  # skip to the next key
 
