@@ -220,6 +220,18 @@
       "expired": "no",
       "base-license-name": "PA-VM",
       "authcode": null
+    },
+    "Logging Service": {
+      "feature": "Logging Service",
+      "description": "Device Logging Service",
+      "custom": {
+        "_Log_Storage_TB": "0"
+      },
+      "serial": "007257000334667",
+      "issued": "June 29, 2022",
+      "expires": "August 04, 2024",
+      "expired": "no",
+      "authcode": null
     }
   },
   "nics": {
