@@ -150,9 +150,9 @@ Introduces some initial verification logic:
 * if `requested_config` is `None` we immediately treat it as if `all`  was passed implicitly
     (see [`dialect`](/panos/docs/panos-upgrade-assurance/dialect)) - it's expanded to `valid_elements`
 * `_requested_config_element_names` is introduced as `requested_config` stripped of any element configurations.
+    Meaning top level keys of nested dictionaries in the `requested_config` are used as element names.
     Additionally, we do verification if all elements of this variable match `valid_elements`,
     if they do not, an exception is thrown by default.
-    `request_config` is checked at top level key in case of nested dictionaries within the list.
 * `_requested_all_not_elements` is set to `True` if all elements of `requested_config` are `not-element`s.
 
 __Parameters__
