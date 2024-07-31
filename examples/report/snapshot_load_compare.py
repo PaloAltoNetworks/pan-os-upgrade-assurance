@@ -14,7 +14,6 @@ def load_snap(fname: str) -> dict:
 if __name__ == "__main__":
     snapshots = {"fw1": load_snap("fw1.snapshot"), "fw2": load_snap("fw2.snapshot")}
 
-
     reports = [
         "all",
         {"ip_sec_tunnels": {"properties": ["state"], "count_change_threshold": 5}},

@@ -197,9 +197,9 @@ class ConfigParser:
         * if `requested_config` is `None` we immediately treat it as if `all`  was passed implicitly
             (see [`dialect`](/panos/docs/panos-upgrade-assurance/dialect)) - it's expanded to `valid_elements`
         * `_requested_config_element_names` is introduced as `requested_config` stripped of any element configurations.
+            Meaning top level keys of nested dictionaries in the `requested_config` are used as element names.
             Additionally, we do verification if all elements of this variable match `valid_elements`,
             if they do not, an exception is thrown by default.
-            `request_config` is checked at top level key in case of nested dictionaries within the list.
         * `_requested_all_not_elements` is set to `True` if all elements of `requested_config` are `not-element`s.
 
         # Parameters
@@ -480,30 +480,6 @@ def interpret_yes_no(boolstr: str) -> bool:
         raise exceptions.WrongDataTypeException(f"Cannot interpret following string as boolean: {boolstr}.")
 
     return True if boolstr == "yes" else False
-
-
-def get_all_dict_keys(nested_dict: dict) -> List:
-    """Get all keys for a nested dictionary in a recursive way.
-
-    NOTE: not used currently.
-
-    Returns all the keys for a nested dictionary combining the keys of each sub-dictionary in a resursive way.
-
-    # Parameters
-
-    nested_dict (dict): A `dict` object with some values holding nested dictionaries.
-
-    # Returns
-
-    list: All the keys of a nested dict combined as a list.
-
-    """
-    keys = []
-    for key, value in nested_dict.items():
-        keys.append(key)
-        if isinstance(value, dict):
-            keys.extend(get_all_dict_keys(value))
-    return keys
 
 
 def printer(report: dict, indent_level: int = 0) -> None:  # pragma: no cover - exclude from pytest coverage

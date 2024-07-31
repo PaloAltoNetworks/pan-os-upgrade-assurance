@@ -392,28 +392,6 @@ __Returns__
 
 `bool`: `True` for *yes*, `False` for *no*.
 
-### `get_all_dict_keys`
-
-```python
-def get_all_dict_keys(nested_dict: dict) -> List
-```
-
-Get all keys for a nested dictionary in a recursive way.
-
-NOTE: not used currently.
-
-Returns all the keys for a nested dictionary combining the keys of each sub-dictionary in a resursive way.
-
-__Parameters__
-
-
-- __nested_dict__ (`dict`): A `dict` object with some values holding nested dictionaries.
-
-__Returns__
-
-
-`list`: All the keys of a nested dict combined as a list.
-
 ### `printer`
 
 ```python
