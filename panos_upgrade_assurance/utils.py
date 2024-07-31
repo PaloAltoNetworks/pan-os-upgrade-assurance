@@ -181,7 +181,8 @@ class ConfigParser:
     _requested_all_not_elements (bool): Identifies if requested configurations consists of all `not-element`s.
 
     """
-    ConfigElement : TypeAlias = Union[str, dict]
+
+    ConfigElement: TypeAlias = Union[str, dict]
 
     def __init__(
         self,
@@ -199,7 +200,7 @@ class ConfigParser:
             Additionally, we do verification if all elements of this variable match `valid_elements`,
             if they do not, an exception is thrown by default.
             `request_config` is checked at top level key in case of nested dictionaries within the list.
-        * _requested_all_not_elements is set to `True` if all elements of `requested_config` are `not-element`s.
+        * `_requested_all_not_elements` is set to `True` if all elements of `requested_config` are `not-element`s.
 
         # Parameters
 
@@ -240,14 +241,15 @@ class ConfigParser:
         bool: `True` if all config elements are `not-element`s (exclusive) or config is empty, otherwise returns `False`.
 
         """
-        if all((ConfigParser._extract_element_name(config_element).startswith("!")
-                for config_element in config)):
+        if all((ConfigParser._extract_element_name(config_element).startswith("!") for config_element in config)):
             return True
 
         return False
 
     @staticmethod
-    def is_element_included(element_name: str, config: Union[Iterable[ConfigElement], None], all_not_elements_check: bool = True) -> bool:
+    def is_element_included(
+        element_name: str, config: Union[Iterable[ConfigElement], None], all_not_elements_check: bool = True
+    ) -> bool:
         """Method verifying if a given element name should be included according to the config.
 
         # Parameters
@@ -268,12 +270,12 @@ class ConfigParser:
             return True
 
         # TODO can we accomplish following 2 lines with a decorator perhaps? which is replicated in a few methods
-        config_with_opts = any(( isinstance(config_element, dict) for config_element in config ))
+        config_with_opts = any((isinstance(config_element, dict) for config_element in config))
         extracted_config = set(ConfigParser._iter_config_element_names(config)) if config_with_opts else config
 
         if ConfigParser.is_element_explicit_excluded(element_name, extracted_config):
             return False
-        elif ( element_name in extracted_config or "all" in extracted_config ):
+        elif element_name in extracted_config or "all" in extracted_config:
             return True
         elif all_not_elements_check and ConfigParser.is_all_not_elements(extracted_config):
             return True
@@ -297,10 +299,10 @@ class ConfigParser:
         bool: `True` if element is present as a `not-element`, otherwise `False`.
 
         """
-        if not config:      # if config is empty or None then it is not excluded
+        if not config:  # if config is empty or None then it is not excluded
             return False
 
-        config_with_opts = any(( isinstance(config_element, dict) for config_element in config ))
+        config_with_opts = any((isinstance(config_element, dict) for config_element in config))
         extracted_config = set(ConfigParser._iter_config_element_names(config)) if config_with_opts else config
 
         if f"!{element_name}" in extracted_config:  # if !element_name is in config
@@ -416,8 +418,14 @@ class ConfigParser:
         if element_name in self.requested_config:
             return element_name
         else:
-            return next((config_element for config_element in self.requested_config
-                         if isinstance(config_element, dict) and element_name in config_element), None)
+            return next(
+                (
+                    config_element
+                    for config_element in self.requested_config
+                    if isinstance(config_element, dict) and element_name in config_element
+                ),
+                None,
+            )
 
     def prepare_config(self) -> List[ConfigElement]:
         """Parse the input config and return a machine-usable configuration.
@@ -473,8 +481,11 @@ def interpret_yes_no(boolstr: str) -> bool:
 
     return True if boolstr == "yes" else False
 
+
 def get_all_dict_keys(nested_dict: dict) -> List:
     """Get all keys for a nested dictionary in a recursive way.
+
+    NOTE: not used currently.
 
     Returns all the keys for a nested dictionary combining the keys of each sub-dictionary in a resursive way.
 
@@ -493,6 +504,7 @@ def get_all_dict_keys(nested_dict: dict) -> List:
         if isinstance(value, dict):
             keys.extend(get_all_dict_keys(value))
     return keys
+
 
 def printer(report: dict, indent_level: int = 0) -> None:  # pragma: no cover - exclude from pytest coverage
     """Print reports in human friendly format.

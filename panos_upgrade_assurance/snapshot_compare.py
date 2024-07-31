@@ -1,7 +1,7 @@
 from typing import Optional, Union, List, Dict
-from panos_upgrade_assurance.utils import ConfigParser, SnapType, get_all_dict_keys
+from panos_upgrade_assurance.utils import ConfigParser, SnapType
 from panos_upgrade_assurance import exceptions
-from itertools import chain
+
 
 class SnapshotCompare:
     """Class comparing snapshots of Firewall Nodes.
@@ -406,8 +406,6 @@ class SnapshotCompare:
             changed=dict(passed=True, changed_raw={}),
         )
 
-        chain_unique_set = lambda set1, set2: set(chain(set1,set2))
-
         missing = left_side_to_compare.keys() - right_side_to_compare.keys()
         for key in missing:
             if ConfigParser.is_element_included(key, properties):
@@ -425,8 +423,11 @@ class SnapshotCompare:
         item_changed = False
         for key in common_keys:
             if right_side_to_compare[key] != left_side_to_compare[key]:
-                if (left_side_to_compare[key] is None or right_side_to_compare[key] is None
-                    or isinstance(left_side_to_compare[key], (str, int))):
+                if (
+                    left_side_to_compare[key] is None
+                    or right_side_to_compare[key] is None
+                    or isinstance(left_side_to_compare[key], (str, int))
+                ):
                     if ConfigParser.is_element_included(key, properties):
                         result["changed"]["changed_raw"][key] = dict(
                             left_snap=left_side_to_compare[key],
@@ -435,8 +436,6 @@ class SnapshotCompare:
                         item_changed = True
 
                 elif isinstance(left_side_to_compare[key], dict):
-                    nested_keys_within_common_key = chain_unique_set(get_all_dict_keys(left_side_to_compare[key]),
-                                                                     get_all_dict_keys(right_side_to_compare[key]))
                     # Checking if we should further compare nested dicts - it doesnot work to check with is_element_included for
                     # this case since nested dict key might not be included but nested keys might be subject to comparison
                     if ConfigParser.is_element_explicit_excluded(key, properties):

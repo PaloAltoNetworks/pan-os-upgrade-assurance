@@ -35,7 +35,7 @@ snap1 = {
             "mon": "on",
             "owner": "1",
             "id": "3",
-        }
+        },
     },
     "routes": {
         "default_0.0.0.0/0_ethernet1/3_10.26.129.129": {
@@ -291,9 +291,7 @@ snap1 = {
         "Logging Service": {
             "feature": "Logging Service",
             "description": "Device Logging Service",
-            "custom": {
-                "_Log_Storage_TB": "7"
-            },
+            "custom": {"_Log_Storage_TB": "7"},
             "serial": "007257000334668",
             "issued": "June 29, 2022",
             "expires": "August 04, 2024",
@@ -329,7 +327,7 @@ snap2 = {
             "mon": "on",
             "owner": "1",
             "id": "3",
-        }
+        },
     },
     "routes": {
         "default_0.0.0.0/0_ethernet1/3_10.26.129.129": {
@@ -567,9 +565,7 @@ snap2 = {
         "Logging Service": {
             "feature": "Logging Service",
             "description": "Device Logging Service",
-            "custom": {
-                "_Log_Storage_TB": "9"
-            },
+            "custom": {"_Log_Storage_TB": "9"},
             "serial": "007257000334667",
             "issued": "June 29, 2022",
             "expires": "August 04, 2024",
