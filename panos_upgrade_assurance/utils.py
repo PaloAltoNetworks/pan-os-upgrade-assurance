@@ -168,6 +168,9 @@ class ConfigParser:
     There are no hardcoded items against which the configuration is checked. This class is used in many places in this package
     and it uses a specific [`dialect`](/panos/docs/panos-upgrade-assurance/dialect).
 
+    `ConfigElement` (`str`, `dict`): Type alias for a configuration element in `requested_config` which is either a string or a
+        dictionary with a single key. This alias is being used over the `ConfigParser` class to increase clarification.
+
     :::note
     Configuration elements beginning with an exclamation mark (!) is referred to as `not-element`s in this dialect and it should
     be considered such in any place documented in the `ConfigParser` class. Please refer to the `dialect` documentation for
@@ -411,8 +414,8 @@ class ConfigParser:
 
         # Returns
 
-        ConfigElement: str - if element is provided as string in the requested configuration.
-            dict - if element is provided as dict with optional configuration in the requested configuration.
+        ConfigElement: str if element is provided as string or dict if element is provided as dict with optional configuration in
+            the requested configuration.
 
         """
         if element_name in self.requested_config:

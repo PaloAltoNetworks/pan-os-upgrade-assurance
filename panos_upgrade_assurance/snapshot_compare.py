@@ -263,7 +263,7 @@ class SnapshotCompare:
 
         The keys to process here can be:
 
-        - 'default_0.0.0.0/0_ethernet1/3_10.26.129.129',
+        - `default_0.0.0.0/0_ethernet1/3_10.26.129.129`,
         - `virtual-router`,
         - `destination`,
         - `nexthop`,
