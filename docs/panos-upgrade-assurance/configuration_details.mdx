@@ -1154,7 +1154,7 @@ Runs comparison of ARP tables snapshots.
 
 parameter | description
 --- | ---
-`properties` | (optional) a set of properties to skip when comparing two ARP table entries, all properties are checked when this parameter is skipped
+`properties` | (optional) a set of properties to skip or include when comparing two ARP table entries, all properties are checked when this parameter is skipped
 `count_change_threshold` | (optional) maximum difference percentage of changed entries in ARP table in both snapshots, skipped when this property is not specified
 
 **Sample configuration**
@@ -1217,12 +1217,12 @@ Compares configuration and the state of IPSec tunnels.
 
 parameter | description
 --- | ---
-`properties` | (optional) a set of properties to skip when comparing two IPSec tunnels, all properties are checked when this parameter is skipped
+`properties` | (optional) a set of properties to skip or include when comparing two IPSec tunnels, all properties are checked when this parameter is skipped
 `count_change_threshold` | (optional) maximum difference percentage of changed entries in IPSec tunnels in both snapshots, skipped when this property is not specified
 
 **Sample configuration**
 
-The following configuration compares the state of IPSec tunnels as
+The following configuration compares only the state of IPSec tunnels as
 captured in snapshots.
 
 This report produces the standardized dictionary.
@@ -1270,7 +1270,7 @@ Compares installed licenses. This report does not only check if we have the same
 
 parameter | description
 --- | ---
-`properties` | (optional) a set of properties to skip when comparing two licenses, all properties are checked when this parameter is skipped
+`properties` | (optional) a set of properties to skip or include when comparing two licenses, all properties are checked when this parameter is skipped
 `count_change_threshold` | (optional) maximum difference percentage of changed licenses in both snapshots, skipped when this property is not specified
 
 **Sample configuration**
@@ -1377,7 +1377,7 @@ Provides a report on differences between Route Table entries. It includes:
 
 parameter | description
 --- | ---
-`properties` | (optional) a set of properties to skip when comparing two routes, all properties are checked when this parameter is skipped
+`properties` | (optional) a set of properties to skip or include when comparing two routes, all properties are checked when this parameter is skipped
 `count_change_threshold` | (optional) maximum difference percentage of changed entries routes in both snapshots, skipped when this property is not specified
 
 **Sample configuration**
@@ -1433,7 +1433,7 @@ Compares configuration and the status of BGP peers.
 
 parameter | description
 --- | ---
-`properties` | (optional) a set of properties to skip when comparing two BGP peers, all properties are checked when this parameter is skipped
+`properties` | (optional) a set of properties to skip or include when comparing two BGP peers, all properties are checked when this parameter is skipped
 `count_change_threshold` | (optional) maximum difference percentage of changed entries in BGP peers in both snapshots, skipped when this property is not specified
 
 **Sample configuration**
@@ -1488,7 +1488,7 @@ Provides a report on differences between FIB Table entries. It includes:
 
 parameter | description
 --- | ---
-`properties` | (optional) a set of properties to skip when comparing two fib entries, all properties are checked when this parameter is skipped
+`properties` | (optional) a set of properties to skip or include when comparing two fib entries, all properties are checked when this parameter is skipped
 `count_change_threshold` | (optional) maximum difference percentage of changed entries for fib routes in both snapshots, skipped when this property is not specified
 
 **Sample configuration**

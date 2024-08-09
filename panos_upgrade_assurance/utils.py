@@ -1,6 +1,8 @@
+from __future__ import annotations
 from dataclasses import dataclass
 from copy import deepcopy
-from typing import Optional, Union, List, Iterable
+from typing import Optional, Union, List, Iterable, Iterator
+from typing_extensions import TypeAlias
 from enum import Enum
 from panos_upgrade_assurance import exceptions
 
@@ -166,17 +168,29 @@ class ConfigParser:
     There are no hardcoded items against which the configuration is checked. This class is used in many places in this package
     and it uses a specific [`dialect`](/panos/docs/panos-upgrade-assurance/dialect).
 
+    `ConfigElement` (`str`, `dict`): Type alias for a configuration element in `requested_config` which is either a string or a
+        dictionary with a single key. This alias is being used over the `ConfigParser` class to increase clarification.
+
+    :::note
+    Configuration elements beginning with an exclamation mark (!) is referred to as `not-element`s in this dialect and it should
+    be considered such in any place documented in the `ConfigParser` class. Please refer to the `dialect` documentation for
+    details.
+    :::
+
     # Attributes
 
-    _requested_config_names (set): Contains only element names of the requested configuration. When no requested configuration is
-        passed (implicit `'all'`), this is equal to `self.valid_elements`.
+    _requested_config_element_names (set): Contains only element names of the requested configuration. When no requested
+        configuration is passed, this is equal to `self.valid_elements` which is like an implicit `'all'`.
+    _requested_all_not_elements (bool): Identifies if requested configurations consists of all `not-element`s.
 
     """
+
+    ConfigElement: TypeAlias = Union[str, dict]
 
     def __init__(
         self,
         valid_elements: Iterable,
-        requested_config: Optional[List[Union[str, dict]]] = None,
+        requested_config: Optional[List[ConfigElement]] = None,
     ):
         """ConfigParser constructor.
 
@@ -185,12 +199,15 @@ class ConfigParser:
         * `valid_elements` is converted to `set` - this way we get rid of all duplicates,
         * if `requested_config` is `None` we immediately treat it as if `all`  was passed implicitly
             (see [`dialect`](/panos/docs/panos-upgrade-assurance/dialect)) - it's expanded to `valid_elements`
-        * `_requested_config_names` is introduced as `requested_config` stripped of any element configurations. Additionally, we
-            do verification if elements of this variable match `valid_elements`. An exception is thrown if not.
+        * `_requested_config_element_names` is introduced as `requested_config` stripped of any element configurations.
+            Meaning top level keys of nested dictionaries in the `requested_config` are used as element names.
+            Additionally, we do verification if all elements of this variable match `valid_elements`,
+            if they do not, an exception is thrown by default.
+        * `_requested_all_not_elements` is set to `True` if all elements of `requested_config` are `not-element`s.
 
         # Parameters
 
-        valid_elements (iterable): Valid elements against which we check the requested config.
+        valid_elements (Iterable): Valid elements against which we check the requested config.
         requested_config (list, optional): (defaults to `None`) A list of requested configuration items with an optional
             configuration.
 
@@ -203,39 +220,101 @@ class ConfigParser:
 
         if requested_config:  # if not None or not empty list
             self.requested_config = deepcopy(requested_config)
-            self._requested_config_names = set(
-                [ConfigParser._extract_element_name(config_keyword) for config_keyword in self.requested_config]
-            )
-            for config_name in self._requested_config_names:
-                if not self._is_element_included(element=config_name):
-                    raise exceptions.UnknownParameterException(f"Unknown configuration parameter passed: {config_name}.")
+            self._requested_config_element_names = set(self._iter_config_element_names(self.requested_config))
+            self._requested_all_not_elements = self.is_all_not_elements(self._requested_config_element_names)
+
+            for element_name in self._requested_config_element_names:
+                if not self._is_valid_element_name(element_name):
+                    raise exceptions.UnknownParameterException(f"Unknown configuration parameter passed: {element_name}.")
         else:
-            self._requested_config_names = set(valid_elements)
+            self._requested_config_element_names = set(valid_elements)
             self.requested_config = list(valid_elements)  # Meaning 'all' valid tests
+            self._requested_all_not_elements = False
 
-    def _is_element_included(self, element: str) -> bool:
-        """Method verifying if a config element is a correct (supported) value.
-
-        This method can also handle `not-elements` (see [`dialect`](/panos/docs/panos-upgrade-assurance/dialect)).
+    @staticmethod
+    def is_all_not_elements(config: Iterable[ConfigElement]) -> bool:
+        """Method to check if all config elements are `not-element`s (all exclusive).
 
         # Parameters
 
-        element (str): The config element to verify. This can be a `not-element`. This parameter is verified against
-            `self.valid_elements` `set`. Key word `'all'` is also accepted.
+        config (Iterable): List of config elements.
 
         # Returns
-        bool: `True` if the value is correct, `False` otherwise.
+
+        bool: `True` if all config elements are `not-element`s (exclusive) or config is empty, otherwise returns `False`.
 
         """
-        if element in self.valid_elements or (element.startswith("!") and element[1:] in self.valid_elements):
+        if all((ConfigParser._extract_element_name(config_element).startswith("!") for config_element in config)):
             return True
-        elif element == "all" and "all" in self.requested_config:
-            return True
-        else:
-            return False
+
+        return False
 
     @staticmethod
-    def _extract_element_name(config: Union[str, dict]) -> str:
+    def is_element_included(
+        element_name: str, config: Union[Iterable[ConfigElement], None], all_not_elements_check: bool = True
+    ) -> bool:
+        """Method verifying if a given element name should be included according to the config.
+
+        # Parameters
+
+        element_name (str): Element name to check if it's included in the provided `config`.
+        config (Iterable): Config to check against.
+        all_not_elements_check (bool, optional): (defaults to `True`) Accept element as included if all the `config` elements are
+            `not-element`s; otherwise it checks if the element is explicitly included without making an
+            [`is_all_not_elements()`](#configparseris_all_not_elements) method call.
+
+        # Returns
+
+        bool: `True` if element name is included or if all config elements are `not-element`s depending on the
+            `all_not_elements_check` parameter.
+
+        """
+        if not config:  # if config list is None or empty list it should be included
+            return True
+
+        # TODO can we accomplish following 2 lines with a decorator perhaps? which is replicated in a few methods
+        config_with_opts = any((isinstance(config_element, dict) for config_element in config))
+        extracted_config = set(ConfigParser._iter_config_element_names(config)) if config_with_opts else config
+
+        if ConfigParser.is_element_explicit_excluded(element_name, extracted_config):
+            return False
+        elif element_name in extracted_config or "all" in extracted_config:
+            return True
+        elif all_not_elements_check and ConfigParser.is_all_not_elements(extracted_config):
+            return True
+
+        return False
+
+    @staticmethod
+    def is_element_explicit_excluded(element_name: str, config: Union[Iterable[ConfigElement], None]) -> bool:
+        """Method verifying if a given element should be excluded according to the config.
+
+        Explicit excluded means the element is present as a `not-element` in the requested config, for example \"ntp_sync\" is
+        excluded explicitly in the following config `["!ntp_sync", "candidate_config"]`.
+
+        # Parameters
+
+        element_name (str): Element name to check if it's present as a `not-element` in the provided `config`.
+        config (Iterable): Config to check against.
+
+        # Returns
+
+        bool: `True` if element is present as a `not-element`, otherwise `False`.
+
+        """
+        if not config:  # if config is empty or None then it is not excluded
+            return False
+
+        config_with_opts = any((isinstance(config_element, dict) for config_element in config))
+        extracted_config = set(ConfigParser._iter_config_element_names(config)) if config_with_opts else config
+
+        if f"!{element_name}" in extracted_config:  # if !element_name is in config
+            return True
+
+        return False
+
+    @staticmethod
+    def _extract_element_name(element: ConfigElement) -> str:
         """Method that extracts the name from a config element.
 
         If a config element is a string, the actual config element is returned. For elements of a dictionary type, the
@@ -243,22 +322,22 @@ class ConfigParser:
 
         # Parameters
 
-        config (str, dict): A config element to provide a name for.
+        element (ConfigElement): A config element to provide a name for.
 
         # Raises
 
-        WrongDataTypeException: Thrown when config does not meet requirements.
+        WrongDataTypeException: Thrown when element does not meet requirements.
 
         # Returns
 
         str: The config element name.
 
         """
-        if isinstance(config, str):
-            return config
-        elif isinstance(config, dict):
-            if len(config) == 1:
-                return list(config.keys())[0]
+        if isinstance(element, str):
+            return element
+        elif isinstance(element, dict):
+            if len(element) == 1:
+                return list(element.keys())[0]
             else:
                 raise exceptions.WrongDataTypeException(
                     "Dict provided as config definition has incorrect format, it is supposed to have only one key {key:[]}"
@@ -266,19 +345,92 @@ class ConfigParser:
         else:
             raise exceptions.WrongDataTypeException("Config definition is neither string or dict")
 
-    def _expand_all(self) -> None:
-        """Expand key word `'all'` to  `self.valid_elements`.
+    @staticmethod
+    def _iter_config_element_names(config: Iterable[ConfigElement]) -> Iterator[str]:
+        """Generator for extracted config element names.
 
-        During expansion, elements from `self.valid_elements` which are already available in `self.requested_config` are skipped.
-        This way we do not introduce duplicates for elements that were provided explicitly.
+        This method provides a convenient way to iterate over configuration items with their config element names extracted by
+        [`_extract_element_name()`](#configparser_extract_element_name) method.
 
-        This method directly operates on `self.requested_config`.
+        # Parameters
+
+        config (Iterable): Iterable config items as str or dict.
+
+        # Returns
+
+        Iterator: For config element names extracted by [`ConfigParser._extract_element_name()`](#configparser_extract_element_name)
+
         """
-        pure_names = set([(name[1:] if name.startswith("!") else name) for name in self._requested_config_names if name != "all"])
-        self.requested_config.extend(list(self.valid_elements - pure_names))
-        self.requested_config.remove("all")
+        for config_element in config:
+            yield ConfigParser._extract_element_name(config_element)
 
-    def prepare_config(self) -> List[Union[str, dict]]:
+    def _strip_element_name(self, element_name: str) -> str:
+        """Get element name with exclamation mark removed if so.
+
+        Returns element name removing exclamation mark for a `not-element` config.
+
+        # Parameters
+
+        element_name (str): Element name.
+
+        # Returns
+
+        str: Element name with exclamation mark stripped of from the beginning.
+
+        """
+        return element_name[1:] if element_name.startswith("!") else element_name
+
+    def _is_valid_element_name(self, element_name: str) -> bool:
+        """Method verifying if a config element name is a correct (supported) value.
+
+        This method can also handle `not-element`s (see [`dialect`](/panos/docs/panos-upgrade-assurance/dialect)).
+
+        # Parameters
+
+        element_name (str): The config element name to verify. This can be a `not-element` as well. This parameter is verified
+             against `self.valid_elements` set. Key word `'all'` is also accepted.
+
+        # Returns
+
+        bool: `True` if the value is correct, `False` otherwise.
+
+        """
+        if self._strip_element_name(element_name) in self.valid_elements:
+            return True
+        elif element_name == "all" and "all" in self.requested_config:
+            return True
+        else:
+            return False
+
+    def get_config_element_by_name(self, element_name: str) -> Union[ConfigElement, None]:
+        """Get configuration element from requested configuration for the provided config element name.
+
+        This method returns config element as str or dict from `self.requested_config` for the provided config element name.
+        It does not support returning `not-element` of a given config element.
+
+        # Parameters
+
+        element_name (str): Element name.
+
+        # Returns
+
+        ConfigElement: str if element is provided as string or dict if element is provided as dict with optional configuration in
+            the requested configuration.
+
+        """
+        if element_name in self.requested_config:
+            return element_name
+        else:
+            return next(
+                (
+                    config_element
+                    for config_element in self.requested_config
+                    if isinstance(config_element, dict) and element_name in config_element
+                ),
+                None,
+            )
+
+    def prepare_config(self) -> List[ConfigElement]:
         """Parse the input config and return a machine-usable configuration.
 
         The parsed configuration retains element types. This means that an element of a dictionary type will remain a dictionary
@@ -287,20 +439,26 @@ class ConfigParser:
         This method handles most of the [`dialect`](/panos/docs/panos-upgrade-assurance/dialect)'s logic.
 
         # Returns
-        list: The parsed configuration.
+
+        List[ConfigElement]: The parsed configuration.
 
         """
-        if all((config_name.startswith("!") for config_name in self._requested_config_names)):
-            self.requested_config.insert(0, "all")
-
-        if "all" in self.requested_config:
-            self._expand_all()
-
         final_configs = []
 
-        for config_element in self.requested_config:
-            if not ConfigParser._extract_element_name(config_element).startswith("!"):
-                final_configs.append(config_element)
+        for valid_element in self.valid_elements:
+            if self.is_element_explicit_excluded(valid_element, self._requested_config_element_names):
+                continue
+            elif self._requested_all_not_elements:
+                final_configs.append(valid_element)
+            elif self.is_element_included(valid_element, self._requested_config_element_names, all_not_elements_check=False):
+                # get element from original requested_config (via valid_element) and put it to final config
+                config_element = self.get_config_element_by_name(valid_element)
+                if config_element is not None:
+                    final_configs.append(config_element)
+                elif "all" in self.requested_config:
+                    final_configs.append(valid_element)
+            else:
+                continue  # donot add element if element is not included while not all exclusive
 
         return final_configs
 

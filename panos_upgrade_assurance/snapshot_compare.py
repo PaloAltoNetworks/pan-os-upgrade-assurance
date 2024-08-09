@@ -95,8 +95,7 @@ class SnapshotCompare:
             For the elements specified as
 
             * `str` - the element value is the name of the report (state area),
-            * `dict` - the element contains the report name (state area) and the key value and report configuration as the
-                element value.
+            * `dict` - the element contains the report name (state area) as the key and report configuration as the element value.
 
         # Raises
 
@@ -239,10 +238,10 @@ class SnapshotCompare:
     ) -> Dict[str, dict]:
         """The static method to calculate a difference between two dictionaries.
 
-        By default dictionaries are compared by going down all nested levels, to the point where key-value pairs are just strings
-        or numbers. It is possible to configure which keys from these pairs should be compared (by default we compare all
-        available keys). This is done using the `properties` parameter. It's a list of the bottom most level keys. For example,
-        when comparing route tables snapshots are formatted like:
+        By default dictionaries are compared by going down all nested levels. It is possible to configure which keys on each
+        level should be compared (by default we compare all available keys). This is done using the `properties` parameter.
+        It's a list of keys that can be compared or skipped on each level. For example, when comparing route tables snapshots are
+        formatted like:
 
         ```python showLineNumbers
         {
@@ -262,8 +261,9 @@ class SnapshotCompare:
         }
         ```
 
-        The bottom most level keys are:
+        The keys to process here can be:
 
+        - `default_0.0.0.0/0_ethernet1/3_10.26.129.129`,
         - `virtual-router`,
         - `destination`,
         - `nexthop`,
@@ -286,11 +286,22 @@ class SnapshotCompare:
         represented under the `changed` key in the results.
 
         This is a **recursive** method. When calculating changed values, if a value for the key is `dict`, we run the method
-        again on that dictionary - we go down one level in the nested structure. We do that to a point where the value is of the
-        `str` type. Therefore, when the final comparison results are presented, the `changed` key usually contains a nested
-        results structure. This means it contains a dictionary with the `missing`, `added`, and `changed` keys.
+        again on that dictionary - we go down one level in the nested structure. We do that to a point where the value is one of
+        `str`, `int` type or None. Therefore, when the final comparison results are presented, the `changed` key usually contains
+        a nested results structure. This means it contains a dictionary with the `missing`, `added`, and `changed` keys.
         Each comparison perspective contains the `passed` property that immediately informs if this comparison gave any results
         (`False`) or not (`True`).
+
+        `properties` can be defined for any level of nested dictionaries which implies:
+
+        - Allow comparison of specific parent dictionaries.
+        - Skip specific parent dictionaries.
+        - Allow comparison/exclusion of specific sub-dictionaries or keys only.
+        - If given keys have parent-child relationship then all keys for a matching parent are compared.
+        Meaning it doesn’t do an \"AND\" operation on the given properities for nested dictionaries.
+
+        Also note that missing/added keys in parent dictionaries are not reported for comparison when specific keys
+        are requested to be compared with the `properties` parameter.
 
         **Example**
 
@@ -396,50 +407,60 @@ class SnapshotCompare:
         )
 
         missing = left_side_to_compare.keys() - right_side_to_compare.keys()
-        if missing:
-            result["missing"]["passed"] = False
-            for key in missing:
+        for key in missing:
+            if ConfigParser.is_element_included(key, properties):
                 result["missing"]["missing_keys"].append(key)
+                result["missing"]["passed"] = False
 
         added = right_side_to_compare.keys() - left_side_to_compare.keys()
-        if added:
-            result["added"]["passed"] = False
-            for key in added:
+        for key in added:
+            if ConfigParser.is_element_included(key, properties):
                 result["added"]["added_keys"].append(key)
+                result["added"]["passed"] = False
 
         common_keys = left_side_to_compare.keys() & right_side_to_compare.keys()
-        if common_keys:
-            next_level_value = left_side_to_compare[next(iter(common_keys))]
-            at_lowest_level = True if not isinstance(next_level_value, dict) else False
-            keys_to_check = (
-                ConfigParser(valid_elements=set(common_keys), requested_config=properties).prepare_config()
-                if at_lowest_level
-                else common_keys
-            )
 
-            item_changed = False
-            for key in keys_to_check:
-                if right_side_to_compare[key] != left_side_to_compare[key]:
-                    if isinstance(left_side_to_compare[key], (str, int)):
+        item_changed = False
+        for key in common_keys:
+            if right_side_to_compare[key] != left_side_to_compare[key]:
+                if (
+                    left_side_to_compare[key] is None
+                    or right_side_to_compare[key] is None
+                    or isinstance(left_side_to_compare[key], (str, int))
+                ):
+                    if ConfigParser.is_element_included(key, properties):
                         result["changed"]["changed_raw"][key] = dict(
                             left_snap=left_side_to_compare[key],
                             right_snap=right_side_to_compare[key],
                         )
                         item_changed = True
-                    elif isinstance(left_side_to_compare[key], dict):
+
+                elif isinstance(left_side_to_compare[key], dict):
+                    # Checking if we should further compare nested dicts - it doesnot work to check with is_element_included for
+                    # this case since nested dict key might not be included but nested keys might be subject to comparison
+                    if ConfigParser.is_element_explicit_excluded(key, properties):
+                        continue  # skip to the next key
+
+                    if properties and key in properties:
+                        # call without properties - do not allow multi level (combined with parent) filtering..
+                        nested_results = SnapshotCompare.calculate_diff_on_dicts(
+                            left_side_to_compare=left_side_to_compare[key],
+                            right_side_to_compare=right_side_to_compare[key],
+                        )
+                    else:
                         nested_results = SnapshotCompare.calculate_diff_on_dicts(
                             left_side_to_compare=left_side_to_compare[key],
                             right_side_to_compare=right_side_to_compare[key],
                             properties=properties,
                         )
 
-                        SnapshotCompare.calculate_passed(nested_results)
-                        if not nested_results["passed"]:
-                            result["changed"]["changed_raw"][key] = nested_results
-                            item_changed = True
-                    else:
-                        raise exceptions.WrongDataTypeException(f"Unknown value format for key {key}.")
-                result["changed"]["passed"] = not item_changed
+                    SnapshotCompare.calculate_passed(nested_results)
+                    if not nested_results["passed"]:
+                        result["changed"]["changed_raw"][key] = nested_results
+                        item_changed = True
+                else:
+                    raise exceptions.WrongDataTypeException(f"Unknown value format for key {key}.")
+            result["changed"]["passed"] = not item_changed
 
         return result
 
