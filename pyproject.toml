@@ -24,7 +24,7 @@ pan-python = "^0.17"
 xmltodict = "^0.12"
 pyopenssl = "^23.2"
 packaging = ">=22.0"
-typing-extensions = ">=4.12.2"
+typing-extensions = "4.6.3"
 
 [tool.poetry.group.dev.dependencies]
 pydoc-markdown = "^4.6"
@@ -35,6 +35,8 @@ flake8-pyproject = "^1.2"
 pytest = "^7.2.1"
 pytest-cov = "^4.0.0"
 deepdiff = "^6.3.0"
+databind-core = "4.4.2"
+databind-json = "4.4.2"
 
 [build-system]
 requires = ["poetry-core"]
