@@ -24,6 +24,7 @@ pan-python = "^0.17"
 xmltodict = "^0.12"
 pyopenssl = "^23.2"
 packaging = ">=22.0"
+typing-extensions = ">=4.12.2"
 
 [tool.poetry.group.dev.dependencies]
 pydoc-markdown = "^4.6"
