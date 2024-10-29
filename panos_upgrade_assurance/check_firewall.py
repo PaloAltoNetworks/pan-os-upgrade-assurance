@@ -593,12 +593,17 @@ class CheckFirewall:
         result.reason = "Entry not found in ARP table."
         return result
 
-    def check_ipsec_tunnel_status(self, tunnel_name: Optional[str] = None) -> CheckResult:
+    def check_ipsec_tunnel_status(
+        self, tunnel_name: Optional[str] = None, proxy_ids: Optional[List[str]] = None, require_all_active: Optional[bool] = False
+    ) -> CheckResult:
         """Check if a given IPSec tunnel is in active state.
 
         # Parameters
 
         tunnel_name (str, optional): (defaults to `None`) Name of the searched IPSec tunnel.
+        proxy_ids (list(str), optional): (defaults to `None`) ProxyID names to check. All ProxyIDs are checked if None provided.
+        require_all_active (bool, optional): (defaults to `False`) If set, all ProxyIDs should be in `active` state. States are
+            checked only within `proxy_ids` if provided.
 
         # Returns
 
@@ -630,6 +635,8 @@ class CheckFirewall:
             result.status = CheckStatus.ERROR
             return result
 
+        ipsec_proxyids = []  # IPSec ProxyIDs that exist
+
         for name in tunnels["IPSec"]:
             data = tunnels["IPSec"][name]
             if name == tunnel_name:
@@ -638,8 +645,41 @@ class CheckFirewall:
                 else:
                     result.reason = f"Tunnel {tunnel_name} in state: {data['state']}."
                 return result
+            elif name.startswith(f"{tunnel_name}:"):
+                ipsec_proxyids.append(name.split(":")[-1])
+        else:
+            if not ipsec_proxyids:  # ipsec tunnel not found with or without proxyids
+                result.reason = f"Tunnel {tunnel_name} not found."
+                return result
 
-        result.reason = f"Tunnel {tunnel_name} not found."
+        proxyids_to_check = []  # IPSec ProxyIDs to check
+        ipsec_proxyids_active = 0  # number of active ProxyIDs within proxyids_to_check
+
+        if proxy_ids:
+            if set(proxy_ids).issubset(ipsec_proxyids):
+                proxyids_to_check = proxy_ids
+            else:
+                result.reason = f"Tunnel {tunnel_name} has missing ProxyIDs in {proxy_ids}."
+                return result
+        else:
+            proxyids_to_check = ipsec_proxyids
+
+        for proxy_id in proxyids_to_check:
+            data = tunnels["IPSec"][f"{tunnel_name}:{proxy_id}"]
+            if data["state"] == "active":
+                ipsec_proxyids_active += 1
+            elif require_all_active:  # state not active but we require all active
+                result.reason = f"Tunnel:ProxyID {tunnel_name}:{proxy_id} in state: {data['state']}."
+                return result
+
+        if require_all_active:
+            if proxyids_to_check and (len(proxyids_to_check) == ipsec_proxyids_active):
+                result.status = CheckStatus.SUCCESS
+        else:
+            if ipsec_proxyids_active >= 1:
+                result.status = CheckStatus.SUCCESS
+            elif ipsec_proxyids_active == 0:
+                result.reason = f"No active state for tunnel {tunnel_name} in ProxyIDs {proxyids_to_check}."
 
         return result
 

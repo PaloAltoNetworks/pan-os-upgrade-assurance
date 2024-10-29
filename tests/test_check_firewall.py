@@ -513,6 +513,171 @@ class TestCheckFirewall:
             reason="Tunnel NotMyTunnel not found."
         )
 
+    def test_ipsec_tunnel_status_proxyids_not_found(self, check_firewall_mock):
+        """tunnel with proxyids - proxyids given but not found"""
+        check_firewall_mock._node.get_tunnels.return_value = {
+            "IPSec": {
+                "east1-vpn:ProxyID1": {"state": "active"},
+                "east1-vpn:ProxyID2": {"state": "active"},
+                "central1-vpn:ProxyID1": {"state": "init"},
+            }
+        }
+        assert check_firewall_mock.check_ipsec_tunnel_status(
+            tunnel_name="east1-vpn", proxy_ids=["ProxyID1", "ProxyID3"]
+        ) == CheckResult(reason="Tunnel east1-vpn has missing ProxyIDs in ['ProxyID1', 'ProxyID3'].")
+
+    @pytest.mark.parametrize(
+        "require_all_active, expected_status",
+        [
+            (True, CheckStatus.SUCCESS),
+            (False, CheckStatus.SUCCESS),
+        ],
+    )
+    def test_ipsec_tunnel_status_proxyids_all_active(self, require_all_active, expected_status, check_firewall_mock):
+        """tunnel with proxyids - proxyids given and all active
+        Should return success whether require_all_active is True or False.
+        """
+        check_firewall_mock._node.get_tunnels.return_value = {
+            "IPSec": {
+                "east1-vpn:ProxyID1": {"state": "active"},
+                "east1-vpn:ProxyID2": {"state": "active"},
+                "east1-vpn:ProxyID3": {"state": "active"},
+                "central1-vpn:ProxyID1": {"state": "init"},
+            }
+        }
+        assert check_firewall_mock.check_ipsec_tunnel_status(
+            tunnel_name="east1-vpn", proxy_ids=["ProxyID1", "ProxyID2", "ProxyID3"], require_all_active=require_all_active
+        ) == CheckResult(expected_status)
+
+    @pytest.mark.parametrize(
+        "require_all_active, expected_status, reason",
+        [
+            (True, CheckStatus.FAIL, "Tunnel:ProxyID east1-vpn:ProxyID3 in state: init."),
+            (False, CheckStatus.SUCCESS, ""),
+        ],
+    )
+    def test_ipsec_tunnel_status_proxyids_some_active(self, require_all_active, expected_status, reason, check_firewall_mock):
+        """tunnel with proxyids - proxyids given and some active
+        Should return fail by default. Success if require_all_active is False.
+        """
+        check_firewall_mock._node.get_tunnels.return_value = {
+            "IPSec": {
+                "east1-vpn:ProxyID1": {"state": "active"},
+                "east1-vpn:ProxyID2": {"state": "active"},
+                "east1-vpn:ProxyID3": {"state": "init"},
+                "central1-vpn:ProxyID1": {"state": "init"},
+            }
+        }
+        assert check_firewall_mock.check_ipsec_tunnel_status(
+            tunnel_name="east1-vpn", proxy_ids=["ProxyID1", "ProxyID2", "ProxyID3"], require_all_active=require_all_active
+        ) == CheckResult(expected_status, reason=reason)
+
+    @pytest.mark.parametrize(
+        "require_all_active, expected_status, reason",
+        [
+            (True, CheckStatus.FAIL, "Tunnel:ProxyID east1-vpn:ProxyID1 in state: init."),
+            (False, CheckStatus.FAIL, "No active state for tunnel east1-vpn in ProxyIDs ['ProxyID1', 'ProxyID2', 'ProxyID3']."),
+        ],
+    )
+    def test_ipsec_tunnel_status_proxyids_none_active(self, require_all_active, expected_status, reason, check_firewall_mock):
+        """tunnel with proxyids - proxyids given and all not active
+        Should return fail whether require_all_active is True or False.
+        """
+        check_firewall_mock._node.get_tunnels.return_value = {
+            "IPSec": {
+                "east1-vpn:ProxyID1": {"state": "init"},
+                "east1-vpn:ProxyID2": {"state": "init"},
+                "east1-vpn:ProxyID3": {"state": "init"},
+                "central1-vpn:ProxyID1": {"state": "active"},
+            }
+        }
+        assert check_firewall_mock.check_ipsec_tunnel_status(
+            tunnel_name="east1-vpn", proxy_ids=["ProxyID1", "ProxyID2", "ProxyID3"], require_all_active=require_all_active
+        ) == CheckResult(expected_status, reason=reason)
+
+    @pytest.mark.parametrize(
+        "require_all_active, expected_status",
+        [
+            (True, CheckStatus.SUCCESS),
+            (False, CheckStatus.SUCCESS),
+        ],
+    )
+    def test_ipsec_tunnel_status_none_proxyids_all_active(self, require_all_active, expected_status, check_firewall_mock):
+        """tunnel with proxyids - proxyids not given and all active"""
+        check_firewall_mock._node.get_tunnels.return_value = {
+            "IPSec": {
+                "east1-vpn:ProxyID1": {"state": "active"},
+                "east1-vpn:ProxyID2": {"state": "active"},
+                "east1-vpn:ProxyID3": {"state": "active"},
+                "central1-vpn:ProxyID1": {"state": "init"},
+            }
+        }
+        assert check_firewall_mock.check_ipsec_tunnel_status(
+            tunnel_name="east1-vpn", require_all_active=require_all_active
+        ) == CheckResult(expected_status)
+
+        assert check_firewall_mock.check_ipsec_tunnel_status(
+            tunnel_name="east1-vpn", proxy_ids=[], require_all_active=require_all_active
+        ) == CheckResult(expected_status)
+
+    @pytest.mark.parametrize(
+        "require_all_active, expected_status, reason",
+        [
+            (True, CheckStatus.FAIL, "Tunnel:ProxyID east1-vpn:ProxyID2 in state: init."),
+            (False, CheckStatus.SUCCESS, ""),
+        ],
+    )
+    def test_ipsec_tunnel_status_none_proxyids_some_active(
+        self, require_all_active, expected_status, reason, check_firewall_mock
+    ):
+        """tunnel with proxyids - proxyids not given and some active
+        Should return fail by default. Success if require_all_active is False.
+        """
+        check_firewall_mock._node.get_tunnels.return_value = {
+            "IPSec": {
+                "east1-vpn:ProxyID1": {"state": "active"},
+                "east1-vpn:ProxyID2": {"state": "init"},
+                "east1-vpn:ProxyID3": {"state": "active"},
+                "central1-vpn:ProxyID1": {"state": "init"},
+            }
+        }
+        assert check_firewall_mock.check_ipsec_tunnel_status(
+            tunnel_name="east1-vpn", require_all_active=require_all_active
+        ) == CheckResult(expected_status, reason=reason)
+
+        assert check_firewall_mock.check_ipsec_tunnel_status(
+            tunnel_name="east1-vpn", proxy_ids=[], require_all_active=require_all_active
+        ) == CheckResult(expected_status, reason=reason)
+
+    @pytest.mark.parametrize(
+        "require_all_active, expected_status, reason",
+        [
+            (True, CheckStatus.FAIL, "Tunnel:ProxyID east1-vpn:ProxyID1 in state: init."),
+            (False, CheckStatus.FAIL, "No active state for tunnel east1-vpn in ProxyIDs ['ProxyID1', 'ProxyID2', 'ProxyID3']."),
+        ],
+    )
+    def test_ipsec_tunnel_status_none_proxyids_none_active(
+        self, require_all_active, expected_status, reason, check_firewall_mock
+    ):
+        """tunnel with proxyids - proxyids not given and not active
+        Should return fail whether require_all_active is True or False.
+        """
+        check_firewall_mock._node.get_tunnels.return_value = {
+            "IPSec": {
+                "east1-vpn:ProxyID1": {"state": "init"},
+                "east1-vpn:ProxyID2": {"state": "init"},
+                "east1-vpn:ProxyID3": {"state": "init"},
+                "central1-vpn:ProxyID1": {"state": "active"},
+            }
+        }
+        assert check_firewall_mock.check_ipsec_tunnel_status(
+            tunnel_name="east1-vpn", require_all_active=require_all_active
+        ) == CheckResult(expected_status, reason=reason)
+
+        assert check_firewall_mock.check_ipsec_tunnel_status(
+            tunnel_name="east1-vpn", proxy_ids=[], require_all_active=require_all_active
+        ) == CheckResult(expected_status, reason=reason)
+
     def test_check_free_disk_space_ok(self, check_firewall_mock):
         check_firewall_mock._node.get_disk_utilization.return_value = {"/opt/panrepo": 50000}
 
