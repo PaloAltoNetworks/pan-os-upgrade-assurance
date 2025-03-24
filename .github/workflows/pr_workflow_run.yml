@@ -52,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: post coverage comment
-        uses: py-cov-action/python-coverage-comment-action@v3
+        uses: py-cov-action/python-coverage-comment-action@57fcc5cd0dc3e5e78df0d7acd857dd1eed0378c1 # v3
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_PR_RUN_ID: ${{ github.event.workflow_run.id }}
@@ -63,13 +63,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout pan.dev
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           repository: PaloAltoNetworks/pan.dev
           token: ${{ secrets.CLSC_PAT }}
 
       - name: download documentation artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
         with:
           name: documentation
           path: products/panos/docs
@@ -85,7 +85,7 @@ jobs:
 
       - name: create a PR to upstream pan.dev
         id: pr
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@4e1beaa7521e8b457b572c090b25bd3db56bf1c5 # v5
         with:
           token: ${{ secrets.CLSC_PAT }}
           delete-branch: true
@@ -103,7 +103,7 @@ jobs:
             New feature (non-breaking change which adds functionality)
 
       - name: find if we have a comment
-        uses: peter-evans/find-comment@v2
+        uses: peter-evans/find-comment@a54c31d7fa095754bfef525c0c8e5e5674c4b4b1 # v2
         id: find
         with:
           issue-number: ${{ needs.pr_status.outputs.pr_number }}
@@ -112,7 +112,7 @@ jobs:
 
       - name: comment back on the original PR
         if: steps.find.outputs.comment-id == '' &&  steps.pr.outputs.pull-request-url != ''
-        uses: peter-evans/create-or-update-comment@v3
+        uses: peter-evans/create-or-update-comment@23ff15729ef2fc348714a3bb66d2f655ca9066f2 # v3
         with:
           issue-number: ${{ needs.pr_status.outputs.pr_number }}
           repository: ${{ github.repository }}

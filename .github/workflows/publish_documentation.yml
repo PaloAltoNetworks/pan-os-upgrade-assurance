@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: cleanup old PRs
-        uses: actions/github-script@v6
+        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6
         with:
           result-encoding: string
           github-token: ${{ secrets.CLSC_PAT }}
@@ -57,7 +57,7 @@ jobs:
         working-directory: docs
         run: tar --exclude .DS_Store --exclude sidebars.js -cvf documentation.tar *
       - name: upload the documentation artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3
         with:
           name: documentation
           path: docs/documentation.tar
@@ -73,13 +73,13 @@ jobs:
       pull-requests: write
     steps:
       - name: checkout pan.dev
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           repository: PaloAltoNetworks/pan.dev
           token: ${{ secrets.CLSC_PAT }}
 
       - name: download documentation artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3
         with:
           name: documentation
           path: products/panos/docs
@@ -93,7 +93,7 @@ jobs:
 
       - name: create a PR to upstream pan.dev
         id: pr
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@4e1beaa7521e8b457b572c090b25bd3db56bf1c5 # v5
         with:
           token: ${{ secrets.CLSC_PAT }}
           delete-branch: true

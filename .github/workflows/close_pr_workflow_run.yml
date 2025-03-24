@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: download PR artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
         with:
           name: pr
           path: pr
@@ -39,7 +39,7 @@ jobs:
           echo "pr_number=$(cat NR)" >> "$GITHUB_OUTPUT"
           echo "pr_head_ref=$(cat HEAD_REF)" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/github-script@v6
+      - uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6
         with:
           result-encoding: string
           github-token: ${{ secrets.CLSC_PAT }}

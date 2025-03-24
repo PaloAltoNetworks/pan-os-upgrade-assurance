@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - name: pack the documentation
         working-directory: docs
         run: tar --exclude .DS_Store --exclude sidebars.js -cvf documentation.tar *
@@ -83,7 +83,7 @@ jobs:
           mkdir -p ./pr
           echo ${{ github.event.number }} > ./pr/NR
           echo ${{ github.event.pull_request.head.ref }} > ./pr/HEAD_REF
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pr
           path: pr/
