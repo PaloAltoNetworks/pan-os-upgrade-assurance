@@ -52,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - name: pack the documentation
         working-directory: docs
         run: tar --exclude .DS_Store --exclude sidebars.js -cvf documentation.tar *
