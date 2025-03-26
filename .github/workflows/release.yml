@@ -26,7 +26,7 @@ jobs:
 
       - name: Check if new version will be produced
         id: rc
-        uses: cycjimmy/semantic-release-action@v4
+        uses: cycjimmy/semantic-release-action@0a51e81a6baff2acad3ee88f4121c589c73d0f0e # v4
         with:
           dry_run: true
           semantic_version: 19.0
@@ -85,7 +85,7 @@ jobs:
       tag: ${{ steps.release.outputs.new_release_git_tag }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
       - name: Install Python
         uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 # v4
@@ -107,7 +107,7 @@ jobs:
 
       - name: Create release and publish to GitHub
         id: release
-        uses: cycjimmy/semantic-release-action@v4
+        uses: cycjimmy/semantic-release-action@0a51e81a6baff2acad3ee88f4121c589c73d0f0e # v4
         with:
           semantic_version: 19.0
           extra_plugins: |
