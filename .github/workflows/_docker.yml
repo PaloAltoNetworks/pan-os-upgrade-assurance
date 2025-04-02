@@ -41,6 +41,8 @@ jobs:
 
       - name: install Poetry
         uses: Gr1N/setup-poetry@15821dc8a61bc630db542ae4baf6a7c19a994844 # v8
+        with:
+          poetry-version: "1.8.5"
 
       - name: get the tag name for new image
         id: tag
