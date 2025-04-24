@@ -40,8 +40,10 @@ jobs:
           poetry-version: "1.8.5"
 
       - name: Create Poetry venv
+        env:
+          PYTHON_VERSION: '${{ inputs.python_version }}'
         run: |
-          poetry env use ${{ inputs.python_version }}
+          poetry env use $PYTHON_VERSION
           poetry install
 
       - name: Run unit tests and coverage

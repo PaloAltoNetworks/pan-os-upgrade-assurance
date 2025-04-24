@@ -79,10 +79,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: save PR details
+        env:
+          EVENT_NUMBER: '${{ github.event.number }}'
+          PR_REF: '${{ github.event.pull_request.head.ref }}'
         run: |
           mkdir -p ./pr
-          echo ${{ github.event.number }} > ./pr/NR
-          echo ${{ github.event.pull_request.head.ref }} > ./pr/HEAD_REF
+          echo $EVENT_NUMBER > ./pr/NR
+          echo $PR_REF > ./pr/HEAD_REF
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pr

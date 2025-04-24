@@ -32,8 +32,10 @@ jobs:
           poetry-version: "1.8.5"
 
       - name: Create Poetry venv 
+        env:
+          PY_VERSION: '${{ needs.pyversion.outputs.pyversion }}'
         run: |
-          poetry env use ${{ needs.pyversion.outputs.pyversion }}
+          poetry env use $PY_VERSION
       
       - name: Publish to PyPI
         env:
