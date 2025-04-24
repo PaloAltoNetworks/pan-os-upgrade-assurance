@@ -50,8 +50,10 @@ jobs:
           echo "version_tag=$(poetry version -s)" >> $GITHUB_OUTPUT
 
       - name: build and prepare package for containerization
+        env:
+          PYTHON_VERSION: '${{ inputs.python_version }}'
         run: |
-          poetry env use ${{ inputs.python_version }}
+          poetry env use $PYTHON_VERSION
           poetry lock
           poetry build
           poetry export --without-hashes --format=requirements.txt > requirements.txt
