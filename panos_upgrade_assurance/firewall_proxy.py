@@ -1338,6 +1338,10 @@ class FirewallProxy:
 
         The actual API command is `show jobs all`.
 
+        :::caution
+        Job entries without a jod id is not returned in response. This is usually a 'Failed-Job' type of jobs.
+        :::
+
         # Returns
 
         dict: All jobs found on the device, indexed by the ID of a job.
@@ -1400,13 +1404,16 @@ class FirewallProxy:
         job_results = jobs.get("job") if isinstance(jobs, dict) else None
         if isinstance(job_results, list):
             for job in job_results:
-                jid = job["id"]
+                jid = job.get("id")
+                if jid is None:
+                    continue
                 job.pop("id")
                 results[jid] = job
         elif isinstance(job_results, dict):  # single job entry - FW just started up
-            jid = job_results["id"]
-            job_results.pop("id")
-            results[jid] = job_results
+            jid = job_results.get("id")
+            if jid is not None:
+                job_results.pop("id")
+                results[jid] = job_results
 
         return results
 
