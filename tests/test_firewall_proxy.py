@@ -1,4 +1,3 @@
-from collections import OrderedDict
 import pytest
 from unittest.mock import MagicMock
 from panos.firewall import Firewall
@@ -1942,44 +1941,40 @@ class TestFirewallProxy:
         ]
 
         assert fw_proxy_mock.get_redistribution_status() == {
-            "agents": OrderedDict(
-                [
-                    ("@name", "FW3367"),
-                    ("vsys", "vsys1"),
-                    ("vsys_hub", "no"),
-                    ("host", "1.1.1.1"),
-                    ("peer-address", "1.1.1.1"),
-                    ("port", "5007"),
-                    ("state", "conn:idle"),
-                    ("status-msg", "-"),
-                    ("version", "0x6"),
-                    ("last-heard-time", "1701651677"),
-                    ("job-id", "0"),
-                    ("num_sent_msgs", "0"),
-                    ("num_recv_msgs", "0"),
-                ]
-            ),
+            "agents": [
+                {
+                    "@name": "FW3367",
+                    "vsys": "vsys1",
+                    "vsys_hub": "no",
+                    "host": "1.1.1.1",
+                    "peer-address": "1.1.1.1",
+                    "port": "5007",
+                    "state": "conn:idle",
+                    "status-msg": "-",
+                    "version": "0x6",
+                    "last-heard-time": "1701651677",
+                    "job-id": "0",
+                    "num_sent_msgs": "0",
+                    "num_recv_msgs": "0",
+                }
+            ],
             "clients": [
-                OrderedDict(
-                    [
-                        ("host", "1.1.1.1"),
-                        ("port", "34518"),
-                        ("vsys", "vsys1"),
-                        ("version", "6"),
-                        ("status", "idle"),
-                        ("redistribution", "I"),
-                    ]
-                ),
-                OrderedDict(
-                    [
-                        ("host", "1.1.1.2"),
-                        ("port", "34518"),
-                        ("vsys", "vsys1"),
-                        ("version", "6"),
-                        ("status", "idle"),
-                        ("redistribution", "I"),
-                    ]
-                ),
+                {
+                    "host": "1.1.1.1",
+                    "port": "34518",
+                    "vsys": "vsys1",
+                    "version": "6",
+                    "status": "idle",
+                    "redistribution": "I",
+                },
+                {
+                    "host": "1.1.1.2",
+                    "port": "34518",
+                    "vsys": "vsys1",
+                    "version": "6",
+                    "status": "idle",
+                    "redistribution": "I",
+                },
             ],
         }
 
