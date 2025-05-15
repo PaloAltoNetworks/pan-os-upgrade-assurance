@@ -488,8 +488,6 @@ def interpret_yes_no(boolstr: str) -> bool:
 def printer(report: dict, indent_level: int = 0) -> None:  # pragma: no cover - exclude from pytest coverage
     """Print reports in human friendly format.
 
-    Some desc to trigger doc update CI..
-
     # Parameters
 
     report (dict): Dict with reports from tests.
