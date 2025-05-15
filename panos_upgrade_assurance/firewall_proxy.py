@@ -121,7 +121,7 @@ class FirewallProxy:
             raise exceptions.MalformedResponseException(f"No result field returned for: {cmd}")
 
         if not return_xml:
-            resp_result = XMLParse(ET.tostring(resp_result, encoding="utf8", method="xml"))["result"]
+            resp_result = XMLParse(ET.tostring(resp_result, encoding="utf8", method="xml"), dict_constructor=dict)["result"]
 
         return resp_result
 
