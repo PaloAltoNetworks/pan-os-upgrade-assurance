@@ -12,6 +12,10 @@ on:
         type: string
         required: true
 
+env:
+  PYTHON_VERSION: "3.8.16"      # TODO fixed python version until we find a replacement for pydoc-markdown
+  # PYTHON_VERSION: ${{ inputs.python_version }}
+
 jobs:
 
   documentation:
@@ -24,28 +28,36 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@b64ffcaf5b410884ad320a9cfac8866006a109aa # v4
         with:
-          python-version: ${{ inputs.python_version }}
+          python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install Poetry
-        uses: Gr1N/setup-poetry@15821dc8a61bc630db542ae4baf6a7c19a994844 # v8
-        with:
-          poetry-version: "1.8.5"
+      # - name: Install Poetry
+      #   uses: Gr1N/setup-poetry@15821dc8a61bc630db542ae4baf6a7c19a994844 # v8
+      #   with:
+      #     poetry-version: "1.8.5"
 
-      - name: Create Poetry venv
-        env:
-          PYTHON_VERSION: '${{ inputs.python_version }}'
-        run: | 
-          poetry env use $PYTHON_VERSION
-          poetry install
+      # - name: Create Poetry venv
+      #   run: | 
+      #     poetry env use $PYTHON_VERSION
+      #     poetry install
+
+      # - name: Generate API docs
+      #   run: poetry run make documentation
+
+      - name: Install documentation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-docs.txt
 
       - name: Generate API docs
-        run: poetry run make documentation
+        run: make documentation
 
       - name: Check if documentation needs updating
         run: |
           if [ "$(git status --porcelain)" ]; then 
             git status
+            echo "Documentation changes detected. Please update the documentation and commit the changes."
             exit 1
           else
+            echo "No documentation changes detected."
             exit 0
           fi

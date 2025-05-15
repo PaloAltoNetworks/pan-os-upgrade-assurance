@@ -1,6 +1,11 @@
 name: Discover minimum Python version
 description: Discover the lowest supported Python version based on pyptoject.toml file
 
+inputs:
+  working-directory:
+    required: false
+    default: "./"
+
 outputs:
   pyversion:
     description: Lowest supported python version
@@ -14,12 +19,13 @@ runs:
       shell: bash
       run: |
         # try to extract the 'python = "xxx"' string from TOML file
-        # this script will fail in following situations:
-        #  - the file is not there
-        #  - the string is not there, so no pattern for Python is provided
-        #  - version is not readable - this is handled by '/python/q1' SED command,
-        #    when the regex does not match SED won't do anything and it will return the
-        #    full string, this command looks for 'python' and returns exit code 1 if it finds one
+        CONSTRAINT=$(grep -E '^python\s*=' pyproject.toml | cut -d= -f2- | tr -d ' "')
 
-        PYVER=$(grep '^[Pp]ython ' pyproject.toml | sed -E 's/python += +\"\^?([0-9]\.[0-9]+)(\.[0-9]+)?\"/\1/; /python/q1')
-        echo "pyver=$PYVER" >> $GITHUB_OUTPUT
+        if [[ $CONSTRAINT =~ (>=|\^|~)([0-9]+\.[0-9]+) ]]; then
+            # echo "Operator: ${BASH_REMATCH[1]}"
+            echo "pyver=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
+        else
+            echo "No valid Python version found."
+            return 1
+        fi
+      working-directory: ${{ inputs.working-directory }}
