@@ -4,7 +4,7 @@ lint:
 
 .phony: security
 security:
-	bandit -c pyproject.toml -r .
+	bandit -c pyproject.toml -r panos_upgrade_assurance tests
 
 .phony: format_check
 format_check:
@@ -37,7 +37,7 @@ check_line_length:
 	done
 
 .phony: all
-all: lint format security test_coverage documentation
+all: lint format security test_coverage
 
 .phony: sca
 sca: format lint security

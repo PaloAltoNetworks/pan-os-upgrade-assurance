@@ -18,25 +18,20 @@ classifiers = [
 "Bug Tracker" = "https://github.com/PaloAltoNetworks/pan-os-upgrade-assurance/issues"
 
 [tool.poetry.dependencies]
-python = "^3.8"
-pan-os-python = "^1.8"
-pan-python = "^0.17"
-xmltodict = "^0.12"
-pyopenssl = "^23.2"
+python = ">=3.8"
+pan-os-python = ">=1.8,<2.0"
+xmltodict = ">=0.12.0,<0.15.0"
+pyopenssl = ">=23.2,<24.0"
 packaging = ">=22.0"
-typing-extensions = "4.6.3"
 
 [tool.poetry.group.dev.dependencies]
-pydoc-markdown = "^4.6"
-flake8 = "^5"
-black = "23.11"
-bandit = "^1.7"
-flake8-pyproject = "^1.2"
-pytest = "^7.2.1"
-pytest-cov = "^4.0.0"
-deepdiff = "^6.3.0"
-databind-core = "4.4.2"
-databind-json = "4.4.2"
+flake8 = ">=5"
+black = ">=23.11"
+bandit = ">=1.7"
+flake8-pyproject = ">=1.2"
+pytest = ">=7.2.1"
+pytest-cov = ">=4.0.0"
+deepdiff = ">=6.3.0"
 
 [build-system]
 requires = ["poetry-core"]
