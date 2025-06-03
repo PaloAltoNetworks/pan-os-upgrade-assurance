@@ -86,6 +86,7 @@ class CheckFirewall:
             SnapType.SESSION_STATS: self._node.get_session_stats,
             SnapType.IPSEC_TUNNELS: self.get_ip_sec_tunnels,
             SnapType.FIB_ROUTES: self._node.get_fib,
+            SnapType.GLOBAL_JUMBO_FRAME: self.get_global_jumbo_frame,
         }
 
         self._check_method_mapping = {
@@ -104,6 +105,7 @@ class CheckFirewall:
             CheckType.CERTS: self.check_ssl_cert_requirements,
             CheckType.UPDATES: self.check_scheduled_updates,
             CheckType.JOBS: self.check_non_finished_jobs,
+            CheckType.GLOBAL_JUMBO_FRAME: self.check_global_jumbo_frame,
         }
 
         self._health_check_method_mapping = {
@@ -1120,6 +1122,41 @@ class CheckFirewall:
             result.reason = "No jobs found on device. This is unusual, please investigate."
             return result
 
+    def check_global_jumbo_frame(self, mode: bool = None) -> CheckResult:
+        """Check if the global jumbo frame configuration matches the desired mode.
+
+        # Parameters
+
+        mode (bool): The desired mode of the global jumbo frame configuration.
+
+        # Returns
+
+        CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking \
+            value of:
+
+        * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when the global jumbo frame \
+            mode matches the desired mode.
+        * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when the current global jumbo \
+            frame and the desired modes differ.
+        * [`CheckStatus.SKIPPED`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when `mode` is not
+            provided.
+
+        """
+        result = CheckResult()
+
+        if mode is None:
+            result.reason = "Missing desired mode for global jumbo frame."
+            result.status = CheckStatus.SKIPPED
+            return result
+
+        current_mode = self._node.is_global_jumbo_frame_set()
+
+        if current_mode == mode:
+            result.status = CheckStatus.SUCCESS
+        else:
+            result.reason = f"Global jumbo frame is {'enabled' if current_mode else 'disabled'}, but desired mode is {'enabled' if mode else 'disabled'}."
+        return result
+
     def get_content_db_version(self) -> Dict[str, str]:
         """Get Content DB version.
 
@@ -1164,6 +1201,22 @@ class CheckFirewall:
 
         """
         return self._node.get_tunnels().get("IPSec", {})
+
+    def get_global_jumbo_frame(self) -> Dict[str, bool]:
+        """Get whether global jumbo frame configuration is set or not.
+
+        # Returns
+
+        dict: The global jumbo frame configuration.
+
+        ```python showLineNumbers title="Example"
+        {
+            'mode': True
+        }
+        ```
+
+        """
+        return {"mode": self._node.is_global_jumbo_frame_set()}
 
     def run_readiness_checks(
         self,
@@ -1294,6 +1347,7 @@ class CheckFirewall:
             check_result = self._health_check_method_mapping[check_type](
                 **check_config
             )  # (**) would pass dict config values as separate parameters to method.
+
             result[check_type] = str(check_result) if report_style else {"state": bool(check_result), "reason": str(check_result)}
 
         return result

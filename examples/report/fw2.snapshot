@@ -1,4 +1,7 @@
 {
+  "global_jumbo_frame": {
+    "mode": false
+  },
   "ip_sec_tunnels": {
     "ipsec_tun": {
       "peerip": "10.26.129.5",

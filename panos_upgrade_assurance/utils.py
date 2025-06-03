@@ -32,6 +32,7 @@ class CheckType:
     CERTS = "certificates_requirements"
     UPDATES = "dynamic_updates"
     JOBS = "jobs"
+    GLOBAL_JUMBO_FRAME = "global_jumbo_frame"
 
 
 class SnapType:
@@ -53,6 +54,7 @@ class SnapType:
     SESSION_STATS = "session_stats"
     IPSEC_TUNNELS = "ip_sec_tunnels"
     FIB_ROUTES = "fib_routes"
+    GLOBAL_JUMBO_FRAME = "global_jumbo_frame"
 
 
 class HealthType:
@@ -464,25 +466,25 @@ class ConfigParser:
 
 
 def interpret_yes_no(boolstr: str) -> bool:
-    """Interpret `yes`/`no` as booleans.
+    """Interpret `yes`/`no` and `on`/`off` as booleans.
 
     # Parameters
 
-    boolstr (str): `yes` or `no`, a typical device response for simple boolean-like queries.
+    boolstr (str): `yes`, `no`, `on` or `off`, a typical device response for simple boolean-like queries.
 
     # Raises
 
-    WrongDataTypeException: An exception is raised when `boolstr` is neither `yes` or `no`.
+    WrongDataTypeException: An exception is raised when `boolstr` is neither `yes`, `no`, `on` or `off`.
 
     # Returns
 
-    bool: `True` for *yes*, `False` for *no*.
+    bool: `True` for *yes* / *on*, `False` otherwise.
 
     """
-    if boolstr not in ["yes", "no"]:
+    if boolstr not in ["yes", "no", "on", "off"]:
         raise exceptions.WrongDataTypeException(f"Cannot interpret following string as boolean: {boolstr}.")
 
-    return True if boolstr == "yes" else False
+    return True if boolstr in ["yes", "on"] else False
 
 
 def printer(report: dict, indent_level: int = 0) -> None:  # pragma: no cover - exclude from pytest coverage

@@ -242,6 +242,28 @@ class TestFirewallProxy:
         expected = "Panorama configuration block does not have typical structure: <some line : to break code>."
         assert expected in str(exc_info.value)
 
+    def test_is_global_jumbo_frame_set_on(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>on</result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.is_global_jumbo_frame_set()  # == True
+
+    def test_is_global_jumbo_frame_set_off(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>off</result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert not fw_proxy_mock.is_global_jumbo_frame_set()  # == False
+
     def test_get_ha_configuration(self, fw_proxy_mock):
         xml_text = """<response status='success'><result>
         {'enabled': 'yes'}

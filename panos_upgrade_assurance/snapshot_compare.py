@@ -67,6 +67,7 @@ class SnapshotCompare:
             SnapType.SESSION_STATS: self.get_count_change_percentage,
             SnapType.IPSEC_TUNNELS: self.get_diff_and_threshold,
             SnapType.FIB_ROUTES: self.get_diff_and_threshold,
+            SnapType.GLOBAL_JUMBO_FRAME: self.get_diff_and_threshold,
         }
 
     def compare_snapshots(self, reports: Optional[List[Union[dict, str]]] = None) -> Dict[str, dict]:

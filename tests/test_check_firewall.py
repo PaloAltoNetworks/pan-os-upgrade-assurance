@@ -746,6 +746,13 @@ class TestCheckFirewall:
 
         check_firewall_mock.get_ip_sec_tunnels() == {"MyTunnel": {"name": "tunnel_name"}}
 
+    @pytest.mark.parametrize("global_jumbo_frame", [True, False])
+    def test_get_global_jumbo_frame(self, global_jumbo_frame, check_firewall_mock):
+        check_firewall_mock._node.is_global_jumbo_frame_set.return_value = global_jumbo_frame
+        result = check_firewall_mock.get_global_jumbo_frame()
+
+        assert result == {"mode": global_jumbo_frame}
+
     def test_check_active_support_license_not_licensed(self, check_firewall_mock):
         check_firewall_mock._node.get_licenses.side_effect = DeviceNotLicensedException
 
@@ -1271,6 +1278,22 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         check_firewall_mock._node.get_jobs = lambda: {}
         result = CheckResult(status=CheckStatus.SKIPPED, reason="No jobs found on device. This is unusual, please investigate.")
         assert check_firewall_mock.check_non_finished_jobs() == result
+
+    @pytest.mark.parametrize(
+        "current_mode, desired_mode, expected_status, expected_reason",
+        [
+            (True, True, CheckStatus.SUCCESS, ""),
+            (False, False, CheckStatus.SUCCESS, ""),
+            (True, False, CheckStatus.FAIL, "Global jumbo frame is enabled, but desired mode is disabled."),
+            (False, True, CheckStatus.FAIL, "Global jumbo frame is disabled, but desired mode is enabled."),
+            (True, None, CheckStatus.SKIPPED, "Missing desired mode for global jumbo frame."),
+            (False, None, CheckStatus.SKIPPED, "Missing desired mode for global jumbo frame."),
+        ],
+    )
+    def test_check_global_jumbo_frame(self, current_mode, desired_mode, expected_status, expected_reason, check_firewall_mock):
+        check_firewall_mock._node.is_global_jumbo_frame_set.return_value = current_mode
+        result = check_firewall_mock.check_global_jumbo_frame(mode=desired_mode)
+        assert CheckResult(status=expected_status, reason=expected_reason) == result
 
     def test_run_readiness_checks(self, check_firewall_mock):
         check_firewall_mock._check_method_mapping = {
