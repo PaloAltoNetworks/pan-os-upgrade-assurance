@@ -32,6 +32,7 @@ if __name__ == "__main__":
                 ]
             }
         },
+        "global_jumbo_frame",
     ]
 
     compare = SnapshotCompare(

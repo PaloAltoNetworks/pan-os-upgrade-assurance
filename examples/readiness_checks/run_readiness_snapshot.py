@@ -89,6 +89,7 @@ if __name__ == "__main__":
         "content_version",
         "session_stats",
         "ip_sec_tunnels",
+        "global_jumbo_frame",
     ]
 
     snap = check_node.run_snapshots(snapshots_config=areas)

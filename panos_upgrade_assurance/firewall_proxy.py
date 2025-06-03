@@ -263,6 +263,19 @@ class FirewallProxy:
                 f"Panorama configuration block does not have typical structure: <{pan_status}>."
             )
 
+    def is_global_jumbo_frame_set(self) -> bool:
+        """Get the global jumbo frame configuration.
+
+        The actual API command is `show system setting jumbo-frame`.
+
+        # Returns
+
+        bool: `True` when global jumbo frame configuration is on, `False` otherwise.
+
+        """
+        response = self.op_parser(cmd="show system setting jumbo-frame")
+        return interpret_yes_no(response.strip())
+
     def get_ha_configuration(self) -> dict:
         """Get high-availability configuration status.
 

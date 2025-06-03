@@ -113,6 +113,7 @@ if __name__ == "__main__":
         },
         {"arp_entry_exist": {"ip": "10.0.1.1"}},
         {"ip_sec_tunnel_status": {"tunnel_name": "ipsec_tun"}},
+        {"global_jumbo_frame": {"mode": True}},
     ]
 
     check_readiness = check_node.run_readiness_checks(
