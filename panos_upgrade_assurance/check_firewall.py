@@ -106,6 +106,7 @@ class CheckFirewall:
             CheckType.UPDATES: self.check_scheduled_updates,
             CheckType.JOBS: self.check_non_finished_jobs,
             CheckType.GLOBAL_JUMBO_FRAME: self.check_global_jumbo_frame,
+            CheckType.SYSTEM_ENVIRONMENTALS: self.check_system_environmentals,
         }
 
         self._health_check_method_mapping = {
@@ -1154,6 +1155,67 @@ class CheckFirewall:
             result.status = CheckStatus.SUCCESS
         else:
             result.reason = f"Global jumbo frame is {'enabled' if current_mode else 'disabled'}, but desired mode is {'enabled' if mode else 'disabled'}."
+        return result
+
+    def check_system_environmentals(self, components: Optional[List[str]] = None) -> CheckResult:
+        """Check system environmentals for alarms.
+
+        # Parameters
+
+        components (list(str), optional): (defaults to None) List of components to check for alarms.
+            If None, all components are checked. Valid components are: 'thermal', 'fantray', 'fan', 'power', 'power-supply'.
+
+        # Returns
+
+        CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking \
+            value of:
+
+        * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) if no alarms are found in the
+            specified components.
+        * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) if any alarm is found in specified
+            components.
+        * [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when invalid components are
+            specified or device did not return environmentals.
+
+        """
+        result = CheckResult()
+
+        # all possible components
+        all_components = ["thermal", "fantray", "fan", "power", "power-supply"]
+
+        if components:
+            # Validate provided components
+            invalid_components = set(components) - set(all_components)
+            if invalid_components:
+                result.status = CheckStatus.ERROR
+                result.reason = f"Invalid components provided: {', '.join(invalid_components)}"
+                return result
+        else:
+            components = all_components
+
+        environmentals = self._node.get_system_environmentals()
+        if not environmentals:
+            result.reason = "Device did not return environmentals, likely a VM."
+            result.status = CheckStatus.ERROR
+            return result
+
+        failed_components = []
+
+        for component in components:
+            if component in environmentals:
+                for slot in environmentals[component].values():
+                    for entry in slot["entry"] if isinstance(slot["entry"], list) else [slot["entry"]]:
+                        if entry["alarm"] == "True":
+                            failed_components.append(component)
+                            break
+                    if component in failed_components:
+                        break
+
+        if failed_components:
+            result.reason = f"Alarms detected in the following components: {', '.join(failed_components)}"
+        else:
+            result.status = CheckStatus.SUCCESS
+
         return result
 
     def get_content_db_version(self) -> Dict[str, str]:

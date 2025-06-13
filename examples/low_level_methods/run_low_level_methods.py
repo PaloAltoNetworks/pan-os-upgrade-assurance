@@ -124,5 +124,6 @@ if __name__ == "__main__":
 
     print(f"\n  jobs: {firewall.get_jobs()}")
 
+    print(f"\n  system environmentals: {firewall.get_system_environmentals()}")
 
     print()

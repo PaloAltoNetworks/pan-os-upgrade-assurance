@@ -1295,6 +1295,58 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         result = check_firewall_mock.check_global_jumbo_frame(mode=desired_mode)
         assert CheckResult(status=expected_status, reason=expected_reason) == result
 
+    def test_check_system_environmentals_success(self, check_firewall_mock):
+        check_firewall_mock._node.get_system_environmentals.return_value = {
+            "thermal": {"Slot0": {"entry": {"alarm": "False"}}},
+            "fantray": {"Slot1": {"entry": {"alarm": "False"}}},
+            "fan": {"Slot1": {"entry": {"alarm": "False"}}},
+            "power": {"Slot1": {"entry": {"alarm": "False"}}},
+            "power-supply": {"Slot1": {"entry": {"alarm": "False"}}},
+        }
+
+        result = check_firewall_mock.check_system_environmentals()
+        assert result.status == CheckStatus.SUCCESS
+
+    def test_check_system_environmentals_with_alarm(self, check_firewall_mock):
+        check_firewall_mock._node.get_system_environmentals.return_value = {
+            "thermal": {"Slot0": {"entry": {"alarm": "False"}}},
+            "fantray": {"Slot1": {"entry": {"alarm": "False"}}},
+            "fan": {"Slot1": {"entry": {"alarm": "False"}}},
+            "power": {"Slot1": {"entry": {"alarm": "True"}}},
+            "power-supply": {"Slot1": {"entry": {"alarm": "False"}}},
+        }
+
+        result = check_firewall_mock.check_system_environmentals()
+        assert result.status == CheckStatus.FAIL
+        assert "power" in result.reason
+
+    def test_check_system_environmentals_specific_components(self, check_firewall_mock):
+        check_firewall_mock._node.get_system_environmentals.return_value = {
+            "thermal": {"Slot0": {"entry": {"alarm": "False"}}},
+            "fantray": {"Slot1": {"entry": {"alarm": "False"}}},
+            "fan": {"Slot1": {"entry": {"alarm": "True"}}},
+            "power": {"Slot1": {"entry": {"alarm": "False"}}},
+            "power-supply": {"Slot1": {"entry": {"alarm": "True"}}},
+        }
+
+        result = check_firewall_mock.check_system_environmentals(components=["thermal", "power"])
+        assert result.status == CheckStatus.SUCCESS
+
+        result = check_firewall_mock.check_system_environmentals(components=["fan", "power-supply"])
+        assert result.status == CheckStatus.FAIL
+        assert "fan" in result.reason and "power-supply" in result.reason
+
+    def test_check_system_environmentals_invalid_component(self, check_firewall_mock):
+        result = check_firewall_mock.check_system_environmentals(components=["invalid-component"])
+        assert result.status == CheckStatus.ERROR
+        assert "Invalid components provided" in result.reason
+
+    def test_check_system_environmentals_no_data(self, check_firewall_mock):
+        check_firewall_mock._node.get_system_environmentals.return_value = {}
+        result = check_firewall_mock.check_system_environmentals()
+        assert result.status == CheckStatus.ERROR
+        assert "Device did not return environmentals" in result.reason
+
     def test_run_readiness_checks(self, check_firewall_mock):
         check_firewall_mock._check_method_mapping = {
             "check1": MagicMock(return_value=True),
