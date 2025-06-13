@@ -1635,7 +1635,7 @@ class FirewallProxy:
         # Returns
 
         dict: System environmental data including thermal, fantray, fan, power, and power-supply information.
-            Sample output has been shortened for the sake of clarity.
+            Sample output has been shortened for the sake of simplicity.
 
         ```python showLineNumbers title="Sample output"
         {'fan': {'Slot1': {'entry': [{'RPMs': '3435',

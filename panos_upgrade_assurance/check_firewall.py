@@ -1163,7 +1163,7 @@ class CheckFirewall:
         # Parameters
 
         components (list(str), optional): (defaults to None) List of components to check for alarms.
-            If None, all components are checked. Valid components are: 'thermal', 'fantray', 'fan', 'power', 'power-supply'.
+            If None, all components are checked. Valid components are 'thermal', 'fantray', 'fan', 'power', 'power-supply'.
 
         # Returns
 
