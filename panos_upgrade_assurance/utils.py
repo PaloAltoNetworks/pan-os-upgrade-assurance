@@ -33,6 +33,7 @@ class CheckType:
     UPDATES = "dynamic_updates"
     JOBS = "jobs"
     GLOBAL_JUMBO_FRAME = "global_jumbo_frame"
+    SYSTEM_ENVIRONMENTALS = "environmentals"
 
 
 class SnapType:

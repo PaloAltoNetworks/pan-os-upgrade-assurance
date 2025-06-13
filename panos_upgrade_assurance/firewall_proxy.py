@@ -1626,3 +1626,82 @@ class FirewallProxy:
         )
 
         return rebooted_time
+
+    def get_system_environmentals(self) -> dict:
+        """Get system environmental data.
+
+        The actual API command is `show system environmentals`.
+
+        # Returns
+
+        dict: System environmental data including thermal, fantray, fan, power, and power-supply information.
+            Sample output has been shortened for the sake of simplicity.
+
+        ```python showLineNumbers title="Sample output"
+        {'fan': {'Slot1': {'entry': [{'RPMs': '3435',
+                                      'alarm': 'False',
+                                      'description': 'Fan #1 RPM',
+                                      'min': '1000',
+                                      'slot': '1'},
+                                     {'RPMs': '3379',
+                                      'alarm': 'False',
+                                      'description': 'Fan #2 RPM',
+                                      'min': '1000',
+                                      'slot': '1'},
+                                     {'RPMs': '3355',
+                                      'alarm': 'False',
+                                      'description': 'Fan #3 RPM',
+                                      'min': '1000',
+                                      'slot': '1'}]}},
+         'fantray': {'Slot1': {'entry': {'Inserted': 'True',
+                                         'alarm': 'False',
+                                         'description': 'Fan Tray',
+                                         'min': '1',
+                                         'slot': '1'}}},
+         'power': {'Slot1': {'entry': [{'Volts': '1.7939999999999998',
+                                        'alarm': 'False',
+                                        'description': 'Power: MP - 1.8V VCCIN',
+                                        'max': '1.98',
+                                        'min': '1.62',
+                                        'slot': '1'},
+                                       {'Volts': '1.8046666666666666',
+                                        'alarm': 'False',
+                                        'description': 'Power: DP - 1.8V Power Rail',
+                                        'max': '1.98',
+                                        'min': '1.62',
+                                        'slot': '1'}]}},
+         'power-supply': {'Slot1': {'entry': [{'Inserted': 'False',
+                                               'alarm': 'True',
+                                               'description': 'Power Supply #1 (left)',
+                                               'min': 'True',
+                                               'slot': '1'},
+                                              {'Inserted': 'True',
+                                               'alarm': 'False',
+                                               'description': 'Power Supply #2 (right)',
+                                               'min': 'True',
+                                               'slot': '1'}]}},
+         'thermal': {'Slot0': {'entry': {'DegreesC': '29.8',
+                                         'alarm': 'False',
+                                         'description': 'Temperature: Broadwell MP '
+                                                        'Core',
+                                         'max': '70.0',
+                                         'min': '-5.0',
+                                         'slot': '0'}},
+                     'Slot1': {'entry': [{'DegreesC': '36.5',
+                                          'alarm': 'False',
+                                          'description': 'Temperature @ Rear Left[U54]',
+                                          'max': '70.0',
+                                          'min': '-5.0',
+                                          'slot': '1'},
+                                         {'DegreesC': '46.2',
+                                          'alarm': 'False',
+                                          'description': 'Temperature: FE100 Core',
+                                          'max': '70.0',
+                                          'min': '-5.0',
+                                          'slot': '1'}]}}}
+        ```
+
+        """
+        response = self.op_parser(cmd="show system environmentals")
+
+        return response if response else {}

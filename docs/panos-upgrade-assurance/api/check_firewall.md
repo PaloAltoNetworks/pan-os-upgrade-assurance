@@ -578,6 +578,33 @@ __Returns__
     frame and the desired modes differ.
 * [`CheckStatus.SKIPPED`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when `mode` is not provided.
 
+### `CheckFirewall.check_system_environmentals`
+
+```python
+def check_system_environmentals(
+        components: Optional[List[str]] = None) -> CheckResult
+```
+
+Check system environmentals for alarms.
+
+__Parameters__
+
+
+- __components__ (`list(str), optional`): (defaults to None) List of components to check for alarms.
+    If None, all components are checked. Valid components are 'thermal', 'fantray', 'fan', 'power', 'power-supply'.
+
+__Returns__
+
+
+`CheckResult`: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking             value of:
+
+* [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) if no alarms are found in the
+    specified components.
+* [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) if any alarm is found in specified
+    components.
+* [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when invalid components are
+    specified or device did not return environmentals.
+
 ### `CheckFirewall.get_content_db_version`
 
 ```python

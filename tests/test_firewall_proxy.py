@@ -2278,3 +2278,124 @@ class TestFirewallProxy:
         fw_proxy_mock.op.return_value = raw_response
 
         assert type(fw_proxy_mock.get_system_time_rebooted()) is datetime
+
+    def test_get_system_environmentals(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success"><result>
+          <thermal>
+            <Slot0>
+              <entry>
+                <slot>0</slot>
+                <description>Temperature: Broadwell MP Core</description>
+                <alarm>False</alarm>
+                <DegreesC>29.8</DegreesC>
+                <min>-5.0</min>
+                <max>70.0</max>
+              </entry>
+            </Slot0>
+          </thermal>
+          <fantray>
+            <Slot1>
+              <entry>
+                <slot>1</slot>
+                <description>Fan Tray</description>
+                <alarm>False</alarm>
+                <Inserted>True</Inserted>
+                <min>1</min>
+              </entry>
+            </Slot1>
+          </fantray>
+          <fan>
+            <Slot1>
+              <entry>
+                <slot>1</slot>
+                <description>Fan #1 RPM</description>
+                <alarm>False</alarm>
+                <RPMs>3689</RPMs>
+                <min>1000</min>
+              </entry>
+            </Slot1>
+          </fan>
+          <power>
+            <Slot1>
+              <entry>
+                <slot>1</slot>
+                <description>Power: DP - Switch 1.0V Core</description>
+                <alarm>False</alarm>
+                <Volts>1.008</Volts>
+                <min>0.9</min>
+                <max>1.1</max>
+              </entry>
+            </Slot1>
+          </power>
+          <power-supply>
+            <Slot1>
+              <entry>
+                <slot>1</slot>
+                <description>Power Supply #1 (left)</description>
+                <alarm>True</alarm>
+                <Inserted>False</Inserted>
+                <min>True</min>
+              </entry>
+            </Slot1>
+          </power-supply>
+        </result></response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_system_environmentals() == {
+            "thermal": {
+                "Slot0": {
+                    "entry": {
+                        "slot": "0",
+                        "description": "Temperature: Broadwell MP Core",
+                        "alarm": "False",
+                        "DegreesC": "29.8",
+                        "min": "-5.0",
+                        "max": "70.0",
+                    }
+                }
+            },
+            "fantray": {
+                "Slot1": {"entry": {"slot": "1", "description": "Fan Tray", "alarm": "False", "Inserted": "True", "min": "1"}}
+            },
+            "fan": {
+                "Slot1": {"entry": {"slot": "1", "description": "Fan #1 RPM", "alarm": "False", "RPMs": "3689", "min": "1000"}}
+            },
+            "power": {
+                "Slot1": {
+                    "entry": {
+                        "slot": "1",
+                        "description": "Power: DP - Switch 1.0V Core",
+                        "alarm": "False",
+                        "Volts": "1.008",
+                        "min": "0.9",
+                        "max": "1.1",
+                    }
+                }
+            },
+            "power-supply": {
+                "Slot1": {
+                    "entry": {
+                        "slot": "1",
+                        "description": "Power Supply #1 (left)",
+                        "alarm": "True",
+                        "Inserted": "False",
+                        "min": "True",
+                    }
+                }
+            },
+        }
+
+    def test_get_system_environmentals_empty_response(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_system_environmentals() == {}
