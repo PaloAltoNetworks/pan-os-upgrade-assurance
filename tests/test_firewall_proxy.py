@@ -6,6 +6,7 @@ from xmltodict import parse as xml_parse
 import xml.etree.ElementTree as ET
 from pan.xapi import PanXapiError
 from panos_upgrade_assurance.exceptions import (
+    WrongDataTypeException,
     CommandRunFailedException,
     MalformedResponseException,
     ContentDBVersionsFormatException,
@@ -2399,3 +2400,103 @@ class TestFirewallProxy:
         fw_proxy_mock.op.return_value = raw_response
 
         assert fw_proxy_mock.get_system_environmentals() == {}
+
+    def test_get_dp_cpu_utilization(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+          <result>
+            <resource-monitor>
+              <data-processors>
+                <dp0>
+                  <minute>
+                    <cpu-load-average>
+                      <entry>
+                        <coreid>0</coreid>
+                        <value>0,0,0,0,0</value>
+                      </entry>
+                      <entry>
+                        <coreid>1</coreid>
+                        <value>0,0,0,0,0</value>
+                      </entry>
+                      <entry>
+                        <coreid>2</coreid>
+                        <value>1,1,1,1,1</value>
+                      </entry>
+                      <entry>
+                        <coreid>3</coreid>
+                        <value>0,0,0,0,0</value>
+                      </entry>
+                    </cpu-load-average>
+                  </minute>
+                </dp0>
+              </data-processors>
+            </resource-monitor>
+          </result>
+        </response>
+        """
+
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_dp_cpu_utilization(minutes=5) == {
+            "dp0": {"cpu-load-average": {"0": [0, 0, 0, 0, 0], "1": [0, 0, 0, 0, 0], "2": [1, 1, 1, 1, 1], "3": [0, 0, 0, 0, 0]}}
+        }
+
+    @pytest.mark.parametrize("minutes", [-1, 0, 61])
+    def test_get_dp_cpu_utilization_invalid_minutes(self, fw_proxy_mock, minutes):
+        with pytest.raises(WrongDataTypeException) as exception_msg:
+            fw_proxy_mock.get_dp_cpu_utilization(minutes=minutes)
+
+        assert "Minutes parameter should be between 1 and 60" in str(exception_msg.value)
+
+    def test_get_dp_cpu_utilization_invalid_type(self, fw_proxy_mock):
+        with pytest.raises(WrongDataTypeException) as exception_msg:
+            fw_proxy_mock.get_dp_cpu_utilization(minutes="5")
+
+        assert "Minutes parameter should be an integer" in str(exception_msg.value)
+
+    def test_get_dp_cpu_utilization_no_cpu_load_avg_entry(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+          <result>
+            <resource-monitor>
+              <data-processors>
+                <dp0>
+                  <minute>
+                    <cpu-load-average>
+                    </cpu-load-average>
+                  </minute>
+                </dp0>
+              </data-processors>
+            </resource-monitor>
+          </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        with pytest.raises(MalformedResponseException) as exc_info:
+            fw_proxy_mock.get_dp_cpu_utilization(minutes=5)
+
+        expected = "No CPU load average entries found for data processor"
+        assert expected in str(exc_info.value)
+
+    def test_get_dp_cpu_utilization_no_data_processor(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+          <result>
+            <resource-monitor>
+              <data-processors>
+              </data-processors>
+            </resource-monitor>
+          </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        with pytest.raises(MalformedResponseException) as exc_info:
+            fw_proxy_mock.get_dp_cpu_utilization(minutes=5)
+
+        expected = "No data plane processor elements <data-processors> found in response."
+        assert expected in str(exc_info.value)

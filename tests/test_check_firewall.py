@@ -1347,6 +1347,85 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         assert result.status == CheckStatus.ERROR
         assert "Device did not return environmentals" in result.reason
 
+    @pytest.mark.parametrize("threshold", [-10, 120])
+    def test_check_dp_cpu_utilization_invalid_threshold(self, threshold, check_firewall_mock):
+        with pytest.raises(WrongDataTypeException) as exception_msg:
+            check_firewall_mock.check_dp_cpu_utilization(threshold=threshold)
+
+        assert "Threshold parameter should be between 0 and 100" in str(exception_msg.value)
+
+    @pytest.mark.parametrize("minutes", [-5, 0, 61])
+    def test_check_dp_cpu_utilization_invalid_minutes(self, minutes, check_firewall_mock):
+        with pytest.raises(WrongDataTypeException) as exception_msg:
+            check_firewall_mock.check_dp_cpu_utilization(minutes=minutes)
+
+        assert "Minutes parameter should be between 1 and 60" in str(exception_msg.value)
+
+    @pytest.mark.parametrize("param_value", ["12", 12.5])
+    def test_check_dp_cpu_utilization_invalid_param_types(self, param_value, check_firewall_mock):
+        # both threshold and minutes accept integer only
+        with pytest.raises(WrongDataTypeException):
+            check_firewall_mock.check_dp_cpu_utilization(threshold=param_value)
+
+        with pytest.raises(WrongDataTypeException):
+            check_firewall_mock.check_dp_cpu_utilization(minutes=param_value)
+
+    def test_check_dp_cpu_utilization_success(self, check_firewall_mock):
+        # Mock data for low CPU utilization
+        check_firewall_mock._node.get_dp_cpu_utilization.return_value = {
+            "dp0": {"cpu-load-average": {"0": [10, 10, 10, 10, 10], "1": [15, 15, 15, 15, 15]}}
+        }
+
+        assert check_firewall_mock.check_dp_cpu_utilization(threshold=50) == CheckResult(status=CheckStatus.SUCCESS)
+
+    def test_check_dp_cpu_utilization_high(self, check_firewall_mock):
+        # Mock data for high CPU utilization
+        check_firewall_mock._node.get_dp_cpu_utilization.return_value = {
+            "dp0": {"cpu-load-average": {"0": [85, 85, 85, 85, 85], "1": [90, 90, 90, 90, 90]}}
+        }
+
+        result = check_firewall_mock.check_dp_cpu_utilization(threshold=50)
+
+        assert result.status == CheckStatus.FAIL
+        assert "Average data plane CPU utilization" in result.reason
+        assert "is above or equal to the threshold (50%)" in result.reason
+
+    def test_check_dp_cpu_utilization_api_error(self, check_firewall_mock):
+        # Simulate API error
+        check_firewall_mock._node.get_dp_cpu_utilization.side_effect = Exception("API error")
+
+        result = check_firewall_mock.check_dp_cpu_utilization()
+
+        assert result.status == CheckStatus.ERROR
+        assert "Failed to retrieve data plane CPU utilization" in result.reason
+
+    def test_check_dp_cpu_utilization_no_data(self, check_firewall_mock):
+        # Mock empty data
+        check_firewall_mock._node.get_dp_cpu_utilization.return_value = {"dp0": {"cpu-load-average": {"0": [], "1": []}}}
+
+        result = check_firewall_mock.check_dp_cpu_utilization()
+
+        assert result.status == CheckStatus.ERROR
+        assert "No CPU utilization data available" in result.reason
+
+    def test_check_dp_cpu_utilization_average_calculation(self, check_firewall_mock):
+        check_firewall_mock._node.get_dp_cpu_utilization.return_value = {
+            "dp0": {"cpu-load-average": {"0": [10, 20, 30, 40, 50], "1": [50, 60, 70, 80, 90]}}  # avg = 30  # avg = 70
+        }
+
+        # Average should be (30+70)/2 = 50
+        # With threshold 49, it should fail
+        result_fail = check_firewall_mock.check_dp_cpu_utilization(threshold=49)
+        assert result_fail.status == CheckStatus.FAIL
+
+        # With threshold 50, it should fail (equal to threshold)
+        result_equal = check_firewall_mock.check_dp_cpu_utilization(threshold=50)
+        assert result_equal.status == CheckStatus.FAIL
+
+        # With threshold 51, it should pass
+        result_pass = check_firewall_mock.check_dp_cpu_utilization(threshold=51)
+        assert result_pass.status == CheckStatus.SUCCESS
+
     def test_run_readiness_checks(self, check_firewall_mock):
         check_firewall_mock._check_method_mapping = {
             "check1": MagicMock(return_value=True),

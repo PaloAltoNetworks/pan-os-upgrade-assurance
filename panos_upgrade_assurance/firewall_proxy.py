@@ -1705,3 +1705,69 @@ class FirewallProxy:
         response = self.op_parser(cmd="show system environmentals")
 
         return response if response else {}
+
+    def get_dp_cpu_utilization(self, minutes: int = 5) -> dict:
+        """Get data plane CPU utilization for the last specified minutes.
+
+        The actual API command is `show running resource-monitor minute last {minutes}`.
+
+        # Parameters
+
+        minutes (int, optional): (defaults to 5) The number of minutes to check, between 1 and 60.
+
+        # Raises
+
+        WrongDataTypeException: Raised when the minutes parameter is not an integer or is outside the allowed range.
+
+        # Returns
+
+        dict: Data plane CPU utilization per core and per minute.
+
+        ```python showLineNumbers title="Sample output"
+        {
+            'dp0': {
+                'cpu-load-average': {
+                    '0': [0, 0, 0, 0, 0],
+                    '1': [0, 0, 0, 0, 0],
+                    '2': [1, 1, 1, 1, 1],
+                    '3': [0, 0, 0, 0, 0]
+                }
+            }
+        }
+        ```
+
+        """
+        if not isinstance(minutes, int):
+            raise exceptions.WrongDataTypeException(f"Minutes parameter should be an integer, got {type(minutes)}")
+
+        if minutes < 1 or minutes > 60:
+            raise exceptions.WrongDataTypeException(f"Minutes parameter should be between 1 and 60, got {minutes}")
+
+        # panos SDK op command converts the minutes wrongly to xml so direct XML command is used
+        response = self.op_parser(
+            cmd=f"<show><running><resource-monitor><minute><last>{minutes}</last></minute></resource-monitor></running></show>",
+            cmd_in_xml=True,
+            return_xml=True,
+        )
+
+        result = {}
+
+        data_processors = response.findall(".//data-processors/*")
+        if not data_processors:
+            raise exceptions.MalformedResponseException("No data plane processor elements <data-processors> found in response.")
+
+        for dp in data_processors:
+            dp_name = dp.tag
+            result[dp_name] = {"cpu-load-average": {}}
+
+            cpu_entries = dp.findall(".//cpu-load-average/entry")
+            if not cpu_entries:
+                raise exceptions.MalformedResponseException(f"No CPU load average entries found for data processor '{dp_name}'")
+
+            for entry in cpu_entries:
+                core_id = entry.find("coreid").text
+                # Split the comma-separated values and convert to integers
+                values = [int(val) for val in entry.find("value").text.split(",")]
+                result[dp_name]["cpu-load-average"][core_id] = values
+
+        return result

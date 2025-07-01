@@ -274,7 +274,8 @@ checks_configuration = [
     {"expired_licenses": {"skip_licenses": ["Threat Prevention"]}},
     {'free_disk_space': {'image_version': '10.1.6-h6'}},
     {'ha': {'skip_config_sync': True}},
-    {'planes_clock_sync': {'diff_threshold': 30}}
+    {'planes_clock_sync': {'diff_threshold': 30}},
+    {'dp_cpu_utilization': {'threshold': 50, 'minutes': 2}},
     # tests below require additional configuration
     {'arp_entry_exist': {'ip': '10.0.1.1'} },
     {'ip_sec_tunnel_status': {
@@ -321,6 +322,9 @@ checks_configuration:
       skip_config_sync: true
   - planes_clock_sync:
       diff_threshold: 30
+  - dp_cpu_utilization:
+      threshold: 50
+      minutes: 2
   # tests below require additional configuration
   - arp_entry_exist:
       ip: "10.0.1.1"
@@ -517,6 +521,55 @@ checks_configuration = [
 checks_configuration:
   - content_version:
       version: '6453-5673'
+```
+
+```mdx-code-block
+</TabItem>
+</Tabs>
+```
+
+
+### `dp_cpu_utilization`
+
+This check examines the data plane CPU utilization over a specified time period and compares it against a threshold.
+
+**Method:** [`CheckFirewall.check_dp_cpu_utilization()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallcheck_dp_cpu_utilization)
+
+**Configuration parameters**
+
+parameter | description
+--- | ---
+`threshold` | (optional) Maximum acceptable average CPU utilization percentage. Defaults to 80%.
+`minutes` | (optional) Number of minutes to check, between 1 and 60. Defaults to 5 minutes.
+
+**Sample configuration**
+
+```mdx-code-block
+<Tabs>
+<TabItem value="python" label="Python" default>
+```
+
+```python showLineNumbers
+checks_configuration = [
+    {
+        'dp_cpu_utilization': {
+            'threshold': 90,
+            'minutes': 10
+        }
+    }
+]
+```
+
+```mdx-code-block
+</TabItem>
+<TabItem value="ansible" label="YAML">
+```
+
+```yaml showLineNumbers
+checks_configuration:
+  - dp_cpu_utilization:
+      threshold: 90
+      minutes: 10
 ```
 
 ```mdx-code-block
