@@ -1426,6 +1426,42 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         result_pass = check_firewall_mock.check_dp_cpu_utilization(threshold=51)
         assert result_pass.status == CheckStatus.SUCCESS
 
+    @pytest.mark.parametrize("threshold", [-10, 120])
+    def test_check_mp_cpu_utilization_invalid_threshold(self, threshold, check_firewall_mock):
+        with pytest.raises(WrongDataTypeException) as exception_msg:
+            check_firewall_mock.check_mp_cpu_utilization(threshold=threshold)
+
+        assert "Threshold parameter should be between 0 and 100" in str(exception_msg.value)
+
+    @pytest.mark.parametrize("param_value", ["12", 12.5])
+    def test_check_mp_cpu_utilization_invalid_param_types(self, param_value, check_firewall_mock):
+        with pytest.raises(WrongDataTypeException):
+            check_firewall_mock.check_mp_cpu_utilization(threshold=param_value)
+
+    def test_check_mp_cpu_utilization_success(self, check_firewall_mock):
+        # Mock data for low CPU utilization
+        check_firewall_mock._node.get_mp_cpu_utilization.return_value = 20
+
+        assert check_firewall_mock.check_mp_cpu_utilization(threshold=50) == CheckResult(status=CheckStatus.SUCCESS)
+
+    def test_check_mp_cpu_utilization_high(self, check_firewall_mock):
+        # Mock data for high CPU utilization
+        check_firewall_mock._node.get_mp_cpu_utilization.return_value = 85
+
+        result = check_firewall_mock.check_mp_cpu_utilization(threshold=50)
+
+        assert result.status == CheckStatus.FAIL
+        assert "Management plane CPU utilization" in result.reason
+        assert "threshold (50%)" in result.reason
+
+    def test_check_mp_cpu_utilization_error(self, check_firewall_mock):
+        check_firewall_mock._node.get_mp_cpu_utilization.side_effect = Exception("some error")
+
+        result = check_firewall_mock.check_mp_cpu_utilization()
+
+        assert result.status == CheckStatus.ERROR
+        assert "Failed to retrieve management plane CPU utilization" in result.reason
+
     def test_run_readiness_checks(self, check_firewall_mock):
         check_firewall_mock._check_method_mapping = {
             "check1": MagicMock(return_value=True),

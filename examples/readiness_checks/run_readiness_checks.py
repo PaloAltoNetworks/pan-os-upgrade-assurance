@@ -105,6 +105,7 @@ if __name__ == "__main__":
         {"dynamic_updates": {"test_window": 500}},
         {"environmentals": {"components": ["power-supply"]}},
         {"dp_cpu_utilization": {"threshold": 50, "minutes": 2}},
+        {"mp_cpu_utilization": {"threshold": 10}},
         # checks below require additional configuration
         {
             "session_exist": {

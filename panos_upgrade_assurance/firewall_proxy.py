@@ -1,4 +1,5 @@
 import re
+import ast
 import xml.etree.ElementTree as ET
 from panos_upgrade_assurance.utils import interpret_yes_no
 from xmltodict import parse as XMLParse
@@ -1718,6 +1719,7 @@ class FirewallProxy:
         # Raises
 
         WrongDataTypeException: Raised when the minutes parameter is not an integer or is outside the allowed range.
+        MalformedResponseException: Raised when response does not contain expected elements.
 
         # Returns
 
@@ -1771,3 +1773,52 @@ class FirewallProxy:
                 result[dp_name]["cpu-load-average"][core_id] = values
 
         return result
+
+    def get_mp_cpu_utilization(self) -> int:
+        """Get management plane CPU utilization for the last 1 minute.
+
+        The actual API command is `<show><system><state><filter>sys.monitor.*.mp.exports</filter></state></system></show>`.
+        MP state resides under s0 or s1 depending on the target firewall platform like `sys.monitor.s0.mp.exports` or
+        `sys.monitor.s1.mp.exports` so a wildcard is used to match any.
+
+        # Raises
+
+        MalformedResponseException: Raised when response does not contain expected elements or data format is invalid.
+
+        # Returns
+
+        int: Management plane CPU utilization percentage for the last 1 minute.
+
+        """
+        response = self.op_parser(
+            cmd="<show><system><state><filter>sys.monitor.*.mp.exports</filter></state></system></show>", cmd_in_xml=True
+        )
+        # command returns dict like data in CDATA section - sample response below with disks array removed
+        # <![CDATA[ sys.monitor.s0.mp.exports: { 'cpu': { '1minavg': 3, }, 'disks': [], 'slot': 0, } ]]>
+
+        if isinstance(response, str):
+            if "NO_MATCHES" in response:
+                raise exceptions.MalformedResponseException("No slots found with management plane data.")
+
+            # match data string for cpu - lazy match until first closing curly braces
+            match = re.search(r"'cpu':\s*(\{.*?\})", response)
+            if not match:
+                raise exceptions.MalformedResponseException("No match for management plane CPU data.")
+
+            # Convert the extracted string to a Python dict using eval
+            try:
+                data_str = match.group(1)
+                data = ast.literal_eval(data_str)
+            except Exception as e:
+                raise exceptions.MalformedResponseException(f"Failed to convert management plane CPU data to dict: {str(e)}")
+        else:
+            raise exceptions.MalformedResponseException("Unexpected response format for management plane CPU data.")
+
+        # Extract the CPU 1-minute average
+        try:
+            cpu_utilization = data.get("1minavg")
+            if cpu_utilization is None:
+                raise exceptions.MalformedResponseException("CPU utilization data not found in response.")
+            return int(cpu_utilization)
+        except (AttributeError, ValueError, TypeError) as e:
+            raise exceptions.MalformedResponseException(f"Failed to extract CPU utilization: {str(e)}")

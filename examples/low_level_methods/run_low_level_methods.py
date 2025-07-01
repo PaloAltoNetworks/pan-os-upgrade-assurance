@@ -128,4 +128,6 @@ if __name__ == "__main__":
 
     print(f"\n  dp cpu utilization: {firewall.get_dp_cpu_utilization(minutes=2)}")
 
+    print(f"\n  mp cpu utilization: {firewall.get_mp_cpu_utilization()}")
+
     print()

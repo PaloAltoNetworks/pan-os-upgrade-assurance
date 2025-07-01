@@ -108,6 +108,7 @@ class CheckFirewall:
             CheckType.GLOBAL_JUMBO_FRAME: self.check_global_jumbo_frame,
             CheckType.SYSTEM_ENVIRONMENTALS: self.check_system_environmentals,
             CheckType.DP_CPU_UTILIZATION: self.check_dp_cpu_utilization,
+            CheckType.MP_CPU_UTILIZATION: self.check_mp_cpu_utilization,
         }
 
         self._health_check_method_mapping = {
@@ -1286,6 +1287,54 @@ class CheckFirewall:
         else:
             result.reason = (
                 f"Average data plane CPU utilization ({avg_cpu:.2f}%) is above or equal to the threshold ({threshold}%)"
+            )
+
+        return result
+
+    def check_mp_cpu_utilization(self, threshold: int = 80) -> CheckResult:
+        """Check if the management plane CPU utilization is below a specified threshold.
+
+        This check retrieves the management plane CPU utilization for the last 1 minute and compares it
+        against the provided threshold.
+
+        # Parameters
+
+        threshold (int, optional): (defaults to 80) Maximum acceptable CPU utilization percentage.
+
+        # Raises
+
+        WrongDataTypeException: Raised when the threshold parameter is not an integer or is outside the allowed range.
+
+        # Returns
+
+        CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking \
+            value of:
+
+        * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when CPU utilization is below the threshold.
+        * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when CPU utilization is equal to or above the threshold.
+        * [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when the data cannot be retrieved.
+
+        """
+        if not isinstance(threshold, int):
+            raise exceptions.WrongDataTypeException(f"Threshold parameter should be an integer, got {type(threshold)}")
+
+        if threshold < 0 or threshold > 100:
+            raise exceptions.WrongDataTypeException(f"Threshold parameter should be between 0 and 100, got {threshold}")
+
+        result = CheckResult()
+
+        try:
+            cpu_utilization = self._node.get_mp_cpu_utilization()
+        except Exception as e:
+            result.status = CheckStatus.ERROR
+            result.reason = f"Failed to retrieve management plane CPU utilization: {str(e)}"
+            return result
+
+        if cpu_utilization < threshold:
+            result.status = CheckStatus.SUCCESS
+        else:
+            result.reason = (
+                f"Management plane CPU utilization ({cpu_utilization}%) is above or equal to the threshold ({threshold}%)"
             )
 
         return result

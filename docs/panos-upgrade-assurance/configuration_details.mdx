@@ -270,12 +270,13 @@ checks_configuration = [
         }
     },
     {'content_version': {'version': '8634-7678'}},
+    {'dp_cpu_utilization': {'threshold': 50, 'minutes': 2}},
     {'dynamic_updates': {'test_window': 120}},
     {"expired_licenses": {"skip_licenses": ["Threat Prevention"]}},
     {'free_disk_space': {'image_version': '10.1.6-h6'}},
     {'ha': {'skip_config_sync': True}},
+    {'mp_cpu_utilization': {'threshold': 40}},
     {'planes_clock_sync': {'diff_threshold': 30}},
-    {'dp_cpu_utilization': {'threshold': 50, 'minutes': 2}},
     # tests below require additional configuration
     {'arp_entry_exist': {'ip': '10.0.1.1'} },
     {'ip_sec_tunnel_status': {
@@ -311,6 +312,9 @@ checks_configuration:
         hash_method: "sha1"
   - content_version:
       version: "8634-7678"
+  - dp_cpu_utilization:
+      threshold: 50
+      minutes: 2
   - dynamic_updates:
       test_window: 120
   - expired_licenses:
@@ -320,11 +324,10 @@ checks_configuration:
       image_version: "10.1.6-h6"
   - ha:
       skip_config_sync: true
+  - mp_cpu_utilization:
+      threshold: 40
   - planes_clock_sync:
       diff_threshold: 30
-  - dp_cpu_utilization:
-      threshold: 50
-      minutes: 2
   # tests below require additional configuration
   - arp_entry_exist:
       ip: "10.0.1.1"
@@ -869,6 +872,53 @@ the check to fail.
 Does not require configuration.
 
 **Method**: [`CheckFirewall.check_non_finished_jobs()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallcheck_non_finished_jobs)
+
+
+### `mp_cpu_utilization`
+
+This check examines the management plane CPU utilization for the last 1 minute and compares it against a threshold.
+
+**Method:** [`CheckFirewall.check_mp_cpu_utilization()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallcheck_mp_cpu_utilization)
+
+**Configuration parameters**
+
+parameter | description
+--- | ---
+`threshold` | (optional) Maximum acceptable CPU utilization percentage. Defaults to 80%.
+
+**Sample configuration**
+
+```mdx-code-block
+<Tabs>
+<TabItem value="python" label="Python" default>
+```
+
+```python showLineNumbers
+checks_configuration = [
+    {
+        'mp_cpu_utilization': {
+            'threshold': 75
+        }
+    }
+]
+```
+
+```mdx-code-block
+</TabItem>
+<TabItem value="ansible" label="YAML">
+```
+
+```yaml showLineNumbers
+checks_configuration:
+  - mp_cpu_utilization:
+      threshold: 75
+```
+
+```mdx-code-block
+</TabItem>
+</Tabs>
+```
+
 
 ### `ntp_sync`
 

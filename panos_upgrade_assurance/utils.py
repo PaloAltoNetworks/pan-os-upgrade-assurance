@@ -35,6 +35,7 @@ class CheckType:
     GLOBAL_JUMBO_FRAME = "global_jumbo_frame"
     SYSTEM_ENVIRONMENTALS = "environmentals"
     DP_CPU_UTILIZATION = "dp_cpu_utilization"
+    MP_CPU_UTILIZATION = "mp_cpu_utilization"
 
 
 class SnapType:
