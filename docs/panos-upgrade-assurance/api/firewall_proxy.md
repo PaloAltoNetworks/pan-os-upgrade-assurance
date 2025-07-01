@@ -1474,3 +1474,64 @@ __Returns__
                                   'slot': '1'}]}}}
 ```
 
+### `FirewallProxy.get_dp_cpu_utilization`
+
+```python
+def get_dp_cpu_utilization(minutes: int = 5) -> dict
+```
+
+Get data plane CPU utilization for the last specified minutes.
+
+The actual API command is `show running resource-monitor minute last {minutes}`.
+
+__Parameters__
+
+
+- __minutes__ (`int, optional`): (defaults to 5) The number of minutes to check, between 1 and 60.
+
+__Raises__
+
+
+- `WrongDataTypeException`: Raised when the minutes parameter is not an integer or is outside the allowed range.
+- `MalformedResponseException`: Raised when response does not contain expected elements.
+
+__Returns__
+
+
+`dict`: Data plane CPU utilization per core and per minute.
+
+```python showLineNumbers title="Sample output"
+{
+    'dp0': {
+        'cpu-load-average': {
+            '0': [0, 0, 0, 0, 0],
+            '1': [0, 0, 0, 0, 0],
+            '2': [1, 1, 1, 1, 1],
+            '3': [0, 0, 0, 0, 0]
+        }
+    }
+}
+```
+
+### `FirewallProxy.get_mp_cpu_utilization`
+
+```python
+def get_mp_cpu_utilization() -> int
+```
+
+Get management plane CPU utilization for the last 1 minute.
+
+The actual API command is `<show><system><state><filter>sys.monitor.*.mp.exports</filter></state></system></show>`.
+MP state resides under s0 or s1 depending on the target firewall platform like `sys.monitor.s0.mp.exports` or
+`sys.monitor.s1.mp.exports` so a wildcard is used to match any.
+
+__Raises__
+
+
+- `MalformedResponseException`: Raised when response does not contain expected elements or data format is invalid.
+
+__Returns__
+
+
+`int`: Management plane CPU utilization percentage for the last 1 minute.
+
