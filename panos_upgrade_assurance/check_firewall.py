@@ -107,6 +107,8 @@ class CheckFirewall:
             CheckType.JOBS: self.check_non_finished_jobs,
             CheckType.GLOBAL_JUMBO_FRAME: self.check_global_jumbo_frame,
             CheckType.SYSTEM_ENVIRONMENTALS: self.check_system_environmentals,
+            CheckType.DP_CPU_UTILIZATION: self.check_dp_cpu_utilization,
+            CheckType.MP_CPU_UTILIZATION: self.check_mp_cpu_utilization,
         }
 
         self._health_check_method_mapping = {
@@ -1215,6 +1217,125 @@ class CheckFirewall:
             result.reason = f"Alarms detected in the following components: {', '.join(failed_components)}"
         else:
             result.status = CheckStatus.SUCCESS
+
+        return result
+
+    def check_dp_cpu_utilization(self, threshold: int = 80, minutes: int = 5) -> CheckResult:
+        """Check if the data plane CPU utilization is below a specified threshold.
+
+        This check retrieves the data plane CPU utilization for the specified duration and calculates the average CPU load
+        across all cores. If the average CPU load is below the threshold, the check passes.
+
+        # Parameters
+
+        threshold (int, optional): (defaults to 80) Maximum acceptable average CPU utilization percentage.
+        minutes (int, optional): (defaults to 5) Number of minutes to check, between 1 and 60.
+
+        # Raises
+
+        WrongDataTypeException: Raised when the threshold or minutes parameters are not integers.
+
+        # Returns
+
+        CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking \
+            value of:
+
+        * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when average CPU utilization is below the threshold.
+        * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when average CPU utilization is equal to or above the threshold.
+        * [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when the data cannot be retrieved.
+
+        """
+        if not isinstance(threshold, int):
+            raise exceptions.WrongDataTypeException(f"Threshold parameter should be an integer, got {type(threshold)}")
+
+        if threshold < 0 or threshold > 100:
+            raise exceptions.WrongDataTypeException(f"Threshold parameter should be between 0 and 100, got {threshold}")
+
+        if not isinstance(minutes, int):
+            raise exceptions.WrongDataTypeException(f"Minutes parameter should be an integer, got {type(minutes)}")
+
+        if minutes < 1 or minutes > 60:
+            raise exceptions.WrongDataTypeException(f"Minutes parameter should be between 1 and 60, got {minutes}")
+
+        result = CheckResult()
+
+        try:
+            cpu_data = self._node.get_dp_cpu_utilization(minutes=minutes)
+        except Exception as e:
+            result.status = CheckStatus.ERROR
+            result.reason = f"Failed to retrieve data plane CPU utilization: {str(e)}"
+            return result
+
+        total_cpu = 0
+        total_samples = 0
+
+        # sum up the average CPU utilization across all cores and all values
+        for dp_name, dp_data in cpu_data.items():
+            for core_id, values in dp_data["cpu-load-average"].items():
+                total_cpu += sum(values)
+                total_samples += len(values)
+
+        if total_samples == 0:
+            result.status = CheckStatus.ERROR
+            result.reason = "No CPU utilization data available"
+            return result
+
+        avg_cpu = total_cpu / total_samples
+
+        if avg_cpu < threshold:
+            result.status = CheckStatus.SUCCESS
+        else:
+            result.reason = (
+                f"Average data plane CPU utilization ({avg_cpu:.2f}%) is above or equal to the threshold ({threshold}%)"
+            )
+
+        return result
+
+    def check_mp_cpu_utilization(self, threshold: int = 80) -> CheckResult:
+        """Check if the management plane CPU utilization is below a specified threshold.
+
+        This check retrieves the management plane CPU utilization for the last 1 minute and compares it
+        against the provided threshold.
+
+        # Parameters
+
+        threshold (int, optional): (defaults to 80) Maximum acceptable CPU utilization percentage.
+
+        # Raises
+
+        WrongDataTypeException: Raised when the threshold parameter is not an integer or is outside the allowed range.
+
+        # Returns
+
+        CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking \
+            value of:
+
+        * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when CPU utilization is below the threshold.
+        * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when CPU utilization is equal to or above the threshold.
+        * [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when the data cannot be retrieved.
+
+        """
+        if not isinstance(threshold, int):
+            raise exceptions.WrongDataTypeException(f"Threshold parameter should be an integer, got {type(threshold)}")
+
+        if threshold < 0 or threshold > 100:
+            raise exceptions.WrongDataTypeException(f"Threshold parameter should be between 0 and 100, got {threshold}")
+
+        result = CheckResult()
+
+        try:
+            cpu_utilization = self._node.get_mp_cpu_utilization()
+        except Exception as e:
+            result.status = CheckStatus.ERROR
+            result.reason = f"Failed to retrieve management plane CPU utilization: {str(e)}"
+            return result
+
+        if cpu_utilization < threshold:
+            result.status = CheckStatus.SUCCESS
+        else:
+            result.reason = (
+                f"Management plane CPU utilization ({cpu_utilization}%) is above or equal to the threshold ({threshold}%)"
+            )
 
         return result
 
