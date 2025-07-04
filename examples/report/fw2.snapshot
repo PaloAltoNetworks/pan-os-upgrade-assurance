@@ -241,5 +241,32 @@
     "ethernet1/1": "down",
     "ethernet1/2": "up",
     "ethernet1/3": "up"
+  },
+  "mtu": {
+    "TCI": {"mtu": 1500},
+    "ethernet1/1": {"mtu": 1500},
+    "ethernet1/1.100": {"mtu": 1500},
+    "ethernet1/1.150": {"mtu": 1500},
+    "ethernet1/13": {"mtu": 1500},
+    "ethernet1/17": {"mtu": 1500},
+    "ethernet1/18": {"mtu": 1500},
+    "ethernet1/19": {"mtu": 1500},
+    "ethernet1/2": {"mtu": 1500},
+    "ethernet1/2.100": {"mtu": 1500},
+    "ethernet1/2.20": {"mtu": 1500},
+    "ethernet1/2.222": {"mtu": 1500},
+    "ethernet1/20": {"mtu": 1500},
+    "ethernet1/3": {"mtu": 1500},
+    "ethernet1/3.100": {"mtu": 1500},
+    "ethernet1/3.222": {"mtu": 1500},
+    "ethernet1/3.30": {"mtu": 1500},
+    "ethernet1/4": {"mtu": 1500},
+    "ethernet1/4.222": {"mtu": null},
+    "ethernet1/6": {"mtu": 1200},
+    "ethernet1/6.123": {"mtu": 1200},
+    "ethernet1/9": {"mtu": 1500},
+    "ha1-a": {"mtu": null},
+    "ha1-b": {"mtu": null},
+    "hsci": {"mtu": null}
   }
 }

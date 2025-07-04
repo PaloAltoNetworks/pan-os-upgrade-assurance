@@ -6,6 +6,7 @@ from panos_upgrade_assurance.utils import printer
 from panos.panorama import Panorama
 from argparse import ArgumentParser
 from getpass import getpass
+from pprint import pprint
 
 if __name__ == "__main__":
     argparser = ArgumentParser(
@@ -90,7 +91,9 @@ if __name__ == "__main__":
         "session_stats",
         "ip_sec_tunnels",
         "global_jumbo_frame",
+        {'mtu': { 'include_subinterfaces': True }}
     ]
 
     snap = check_node.run_snapshots(snapshots_config=areas)
     printer(snap)
+    # pprint(snap)

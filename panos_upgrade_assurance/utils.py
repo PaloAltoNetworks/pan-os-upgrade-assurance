@@ -58,6 +58,7 @@ class SnapType:
     IPSEC_TUNNELS = "ip_sec_tunnels"
     FIB_ROUTES = "fib_routes"
     GLOBAL_JUMBO_FRAME = "global_jumbo_frame"
+    INTERFACES_MTU = "mtu"
 
 
 class HealthType:
