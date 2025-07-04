@@ -1553,10 +1553,10 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         with pytest.raises(WrongDataTypeException):
             check_firewall_mock.run_snapshots(snapshots_config)
 
-        # raise exceptions.WrongDataTypeException(f"Wrong configuration format for snapshot: {snap_type}.")
+        # raise exceptions.WrongDataTypeException(f"Wrong configuration format for snapshot: {snapshot}.")
         # NOTE configs are already validated in ConfigParser._extrac_element_name - above exception is never executed.
         # which is listed as missing in pytest coverage
-        # assert str(exception_msg.value) == f"Wrong configuration format for snapshot: snap_type."
+        # assert "Wrong configuration format for snapshot:" in str(exception_msg.value)
 
     @pytest.mark.parametrize(
         "running_software, expected_status",
