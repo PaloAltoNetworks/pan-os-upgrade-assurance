@@ -781,7 +781,7 @@ This method provides a convenient way of running snapshots of a device state. Fo
 __Parameters__
 
 
-- __snapshots_config__ (`list(str), optional`): (defaults to `None`) Defines snapshots of which areas will be taken.
+- __snapshots_config__ (`list(str,dict), optional`): (defaults to `None`) Defines snapshots of which areas will be taken.
 
 __Raises__
 
