@@ -130,4 +130,8 @@ if __name__ == "__main__":
 
     print(f"\n  mp cpu utilization: {firewall.get_mp_cpu_utilization()}")
 
+    print(f"\n  interface details: {firewall.get_interface_details('ethernet1/1')}")
+
+    print(f"\n  interfaces mtu size: {firewall.get_interfaces_mtu(include_subinterfaces=True)}")
+
     print()

@@ -2610,3 +2610,236 @@ class TestFirewallProxy:
             fw_proxy_mock.get_mp_cpu_utilization()
 
         assert "Failed to extract CPU utilization" in str(exc_info.value)
+
+    def test_get_interface_details(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+          <result>
+            <dp>dp0</dp>
+            <ifnet>
+              <name>ethernet1/6.123</name>
+              <id>138</id>
+              <tag>123</tag>
+              <mode>layer3</mode>
+              <fwd_type>vr</fwd_type>
+              <vr>default</vr>
+              <mtu>900</mtu>
+              <df_ignore>False</df_ignore>
+              <addr/>
+              <dyn-addr/>
+              <addr6/>
+              <ndpmon>False</ndpmon>
+              <dad>False</dad>
+              <ipv6_client>False</ipv6_client>
+              <ra>False</ra>
+              <dhcpv6_client>False</dhcpv6_client>
+              <inherited>False</inherited>
+              <service/>
+              <mgt_subnet>False</mgt_subnet>
+              <vsys>vsys6</vsys>
+              <zone>N/A</zone>
+              <tcpmss>False</tcpmss>
+              <mssadjv4>0</mssadjv4>
+              <mssadjv6>0</mssadjv6>
+              <policing>False</policing>
+              <circuitonly>False</circuitonly>
+              <tunnel/>
+              <sdwan>False</sdwan>
+              <proxy-protocol>no</proxy-protocol>
+              <gre>False</gre>
+              <counters>
+                <hw/>
+                <ifnet>
+                  <entry>
+                    <name>ethernet1/6.123</name>
+                    <ibytes>0</ibytes>
+                    <obytes>0</obytes>
+                    <ipackets>0</ipackets>
+                    <opackets>0</opackets>
+                    <ierrors>0</ierrors>
+                    <idrops>0</idrops>
+                    <flowstate>0</flowstate>
+                    <ifwderrors>0</ifwderrors>
+                    <noroute>0</noroute>
+                    <noarp>0</noarp>
+                    <noneigh>0</noneigh>
+                    <neighpend>0</neighpend>
+                    <nomac>0</nomac>
+                    <zonechange>0</zonechange>
+                    <land>0</land>
+                    <pod>0</pod>
+                    <teardrop>0</teardrop>
+                    <ipspoof>0</ipspoof>
+                    <macspoof>0</macspoof>
+                    <icmp_frag>0</icmp_frag>
+                    <l2_encap>0</l2_encap>
+                    <l2_decap>0</l2_decap>
+                    <tcp_conn>0</tcp_conn>
+                    <udp_conn>0</udp_conn>
+                    <sctp_conn>0</sctp_conn>
+                    <other_conn>0</other_conn>
+                  </entry>
+                </ifnet>
+              </counters>
+            </ifnet>
+          </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_interface_details(interface_name="ethernet1/6.123") == {
+            "dp": "dp0",
+            "ifnet": {
+                "addr": None,
+                "addr6": None,
+                "circuitonly": "False",
+                "counters": {
+                    "hw": None,
+                    "ifnet": {
+                        "entry": {
+                            "flowstate": "0",
+                            "ibytes": "0",
+                            "icmp_frag": "0",
+                            "idrops": "0",
+                            "ierrors": "0",
+                            "ifwderrors": "0",
+                            "ipackets": "0",
+                            "ipspoof": "0",
+                            "l2_decap": "0",
+                            "l2_encap": "0",
+                            "land": "0",
+                            "macspoof": "0",
+                            "name": "ethernet1/6.123",
+                            "neighpend": "0",
+                            "noarp": "0",
+                            "nomac": "0",
+                            "noneigh": "0",
+                            "noroute": "0",
+                            "obytes": "0",
+                            "opackets": "0",
+                            "other_conn": "0",
+                            "pod": "0",
+                            "sctp_conn": "0",
+                            "tcp_conn": "0",
+                            "teardrop": "0",
+                            "udp_conn": "0",
+                            "zonechange": "0",
+                        },
+                    },
+                },
+                "dad": "False",
+                "df_ignore": "False",
+                "dhcpv6_client": "False",
+                "dyn-addr": None,
+                "fwd_type": "vr",
+                "gre": "False",
+                "id": "138",
+                "inherited": "False",
+                "ipv6_client": "False",
+                "mgt_subnet": "False",
+                "mode": "layer3",
+                "mssadjv4": "0",
+                "mssadjv6": "0",
+                "mtu": "900",
+                "name": "ethernet1/6.123",
+                "ndpmon": "False",
+                "policing": "False",
+                "proxy-protocol": "no",
+                "ra": "False",
+                "sdwan": "False",
+                "service": None,
+                "tag": "123",
+                "tcpmss": "False",
+                "tunnel": None,
+                "vr": "default",
+                "vsys": "vsys6",
+                "zone": "N/A",
+            },
+        }
+
+    def test_get_interface_details_not_found(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+          <result>
+            <dp>dp0</dp>
+            <error>Interface 'ethernet1/123' not found</error>
+          </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_interface_details(interface_name="ethernet1/123") == {
+            "dp": "dp0",
+            "error": "Interface 'ethernet1/123' not found",
+        }
+
+    def test_get_interfaces_mtu(self, fw_proxy_mock):
+        # Mock the command to get parent interface MTUs
+        parent_interfaces_xml = """
+        <response status="success">
+          <result>
+            <![CDATA[ sw.dev.interface.config: { 'TCI': { 'hwaddr': b4:0c:25:ea:00:0c, 'mtu': 1500, }, 'ethernet1/1': { 'hwaddr': b4:0c:25:ea:00:40, 'mtu': 1500, }, 'ethernet1/1.100': { }, 'ethernet1/2': { 'hwaddr': b4:0c:25:ea:00:41, 'mtu': 1200, }, 'ethernet1/3': { 'hwaddr': b4:0c:25:ea:00:42, 'mtu': 1500, }, 'ha1-a': { }, 'ha1-b': { }, 'hsci': { }, } ]]>
+          </result>
+        </response>
+        """
+        parent_response = ET.fromstring(parent_interfaces_xml)
+        fw_proxy_mock.op.return_value = parent_response
+
+        # Test without sub-interfaces
+        assert fw_proxy_mock.get_interfaces_mtu(include_subinterfaces=False) == {
+            "TCI": {"mtu": 1500},
+            "ethernet1/1": {"mtu": 1500},
+            "ethernet1/2": {"mtu": 1200},
+            "ethernet1/3": {"mtu": 1500},
+            "ha1-a": {"mtu": None},
+            "ha1-b": {"mtu": None},
+            "hsci": {"mtu": None},
+        }
+
+    def test_get_interfaces_mtu_with_subinterfaces(self, fw_proxy_mock):
+        # Mock the command to get parent interface MTUs
+        parent_interfaces_xml = """
+        <response status="success">
+          <result>
+            <![CDATA[ sw.dev.interface.config: { 'ethernet1/1': { 'hwaddr': b4:0c:25:ea:00:40, 'mtu': 1500, }, 'ethernet1/1.100': { }, 'ethernet1/2': { 'hwaddr': b4:0c:25:ea:00:41, 'mtu': 1200, } } ]]>
+          </result>
+        </response>
+        """
+        parent_response = ET.fromstring(parent_interfaces_xml)
+
+        # Mock get_interface_details for sub-interface using MagicMock
+        fw_proxy_mock.get_interface_details = MagicMock()
+        fw_proxy_mock.get_interface_details.side_effect = lambda interface_name: (
+            {"ifnet": {"mtu": "900"}} if interface_name == "ethernet1/1.100" else {}
+        )
+
+        fw_proxy_mock.op.return_value = parent_response
+
+        # Test with sub-interfaces
+        assert fw_proxy_mock.get_interfaces_mtu(include_subinterfaces=True) == {
+            "ethernet1/1": {"mtu": 1500},
+            "ethernet1/1.100": {"mtu": 900},
+            "ethernet1/2": {"mtu": 1200},
+        }
+
+        # Verify get_interface_details was called for the sub-interface
+        fw_proxy_mock.get_interface_details.assert_called_with("ethernet1/1.100")
+
+    def test_get_interfaces_mtu_malformed_response(self, fw_proxy_mock):
+        # Mock the command with invalid response
+        invalid_response_xml = """
+        <response status="success">
+          <result>
+            <![CDATA[ some random text without the expected format ]]>
+          </result>
+        </response>
+        """
+        invalid_response = ET.fromstring(invalid_response_xml)
+        fw_proxy_mock.op.return_value = invalid_response
+
+        with pytest.raises(MalformedResponseException) as exc_info:
+            fw_proxy_mock.get_interfaces_mtu()
+
+        assert "sw.dev.interface.config system state data not found in response" in str(exc_info.value)

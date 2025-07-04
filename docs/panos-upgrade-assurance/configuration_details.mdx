@@ -1035,11 +1035,44 @@ checks_configuration:
 
 ## State snapshots
 
-State snapshots store information about the state of a particular device area. They do not take any configurations. They store every possible information about an area. Use reports or custom code to extract a subset of information if required.
+State snapshots store information about the state of a particular device area. Some snapshots can take optional configurations to customize the snapshot behavior otherwise they store every possible information about an area. You may also use reports or custom code to extract a subset of information if required.
 
 They can be triggered using a common method: [`CheckFirewall.run_snapshots()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallrun_snapshots). When running this method a list of state areas is provided using the `snapshot_config` paramter. This list is specified in [`ConfigParser`][cfgprs] class [`dialect`][dialect]. For details, refer to the documentation for this class.
 
 Following that [`dialect`][dialect], when no list is passed, **all** state snapshots are made.
+
+- `str` - the element simply specifies the name of a snapshot to run.
+- `dict` - the element contains the snapshot name and a configuration (if a particular snapshot supports one); the dictionary format is as follows:
+
+  ```mdx-code-block
+  <Tabs>
+  <TabItem value="python" label="Python" default>
+  ```
+
+  ```python
+  {
+    'snapshot_name': {
+      'config_name': 'config_value',
+      'config2_name': 'config2_value'
+    }
+  }
+  ```
+
+  ```mdx-code-block
+  </TabItem>
+  <TabItem value="ansible" label="YAML">
+  ```
+
+  ```yaml
+  snapshot_name:
+    config_name: 'config_value'
+    config2_name: 'config2_value'
+  ```
+
+  ```mdx-code-block
+  </TabItem>
+  </Tabs>
+  ```
 
 The output of the [`CheckFirewall.run_snapshots()`](/panos/docs/panos-upgrade-assurance/api/check_firewall#checkfirewallrun_snapshots) method is formatted as a dictionary where:
 
@@ -1119,6 +1152,9 @@ snapshots_config = [
   'session_stats',
   'ip_sec_tunnels',
   'fib_routes',
+  {'mtu': {
+    'include_subinterfaces': True
+  }},
 ]
 ```
 
@@ -1138,6 +1174,8 @@ snapshots_config:
   - session_stats
   - ip_sec_tunnels
   - fib_routes
+  - mtu:
+      include_subinterfaces: true
 ```
 
 ```mdx-code-block
@@ -1201,6 +1239,59 @@ Gets information about the session statistics, such as current sessions count pe
 
 **Method:** [`FirewallProxy.get_session_stats()`](/panos/docs/panos-upgrade-assurance/api/firewall_proxy#firewallproxyget_session_stats)
 
+### `mtu`
+
+Takes a snapshot of MTU sizes for all interfaces on the device.
+
+This snapshot captures the MTU sizes for network interfaces on the device. When `include_subinterfaces` is set to `True`, 
+it will also query all sub-interfaces individually and include MTU values for all, which might take longer time to retrieve.
+
+:::caution
+Use `include_subinterfaces` with caution as it will query each sub-interface one-by-one and may take a long time to capture all
+sub-interfaces if there are a lot of them.
+:::
+
+**Method:** [`FirewallProxy.get_interfaces_mtu()`](/panos/docs/panos-upgrade-assurance/api/firewall_proxy#firewallproxyget_interfaces_mtu)
+
+**Configuration parameters**
+
+parameter | description
+--- | ---
+`include_subinterfaces` | (optional, defaults to `False`) Whether to include sub-interfaces in the results.
+
+**Sample configuration**
+
+```mdx-code-block
+<Tabs>
+<TabItem value="python" label="Python" default>
+```
+
+```python showLineNumbers
+snapshots_config = [
+    {
+        'mtu': {
+            'include_subinterfaces': True
+        }
+    }
+]
+```
+
+```mdx-code-block
+</TabItem>
+<TabItem value="ansible" label="YAML">
+```
+
+```yaml showLineNumbers
+snapshots_config:
+  - mtu:
+      include_subinterfaces: true
+```
+
+```mdx-code-block
+</TabItem>
+</Tabs>
+```
+
 ## Reports
 
 The reporting part is actually the result of comparison of two snapshots. It is advised to run reports using the common method as some of the comparison results are calculated with it. The common method is: [`SnapshotCompare.compare_snapshots()`](/panos/docs/panos-upgrade-assurance/api/snapshot_compare#snapshotcomparecompare_snapshots).
@@ -1244,7 +1335,8 @@ reports = [
             {'num-max': 10},
             {'num-tcp': 10},
         ]
-    }}
+    }},
+    'mtu'
 ]
 ```
 
@@ -1283,6 +1375,7 @@ reports:
       thresholds:
         - num-max: 10
         - num-tcp: 10
+  - mtu
 ```
 
 ```mdx-code-block
@@ -1739,6 +1832,27 @@ reports:
 ```mdx-code-block
 </TabItem>
 </Tabs>
+```
+
+### `mtu`
+
+Provides a report on differences between interface MTU sizes. It simply compares MTU sizes for all interfaces from both snapshots.
+
+**Method:** [`SnapshotCompare.get_diff_and_threshold()`](/panos/docs/panos-upgrade-assurance/api/snapshot_compare#snapshotcompareget_diff_and_threshold)
+
+**Sample configuration**
+
+This report produces the standardized dictionary.
+
+```python
+reports = [
+    'mtu'
+]
+```
+
+```yaml
+reports:
+  - mtu
 ```
 
 ## Health Checks

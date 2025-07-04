@@ -1518,7 +1518,7 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
             "snapshot2": MagicMock(return_value={"status": "failed"}),
         }
 
-        snapshots_config = ["snapshot1", "snapshot2"]
+        snapshots_config = ["snapshot1", {"snapshot2": {"param1": 123}}]
 
         result = check_firewall_mock.run_snapshots(snapshots_config)
 
@@ -1529,7 +1529,23 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         assert result == expected_result
 
         check_firewall_mock._snapshot_method_mapping["snapshot1"].assert_called_once_with()
-        check_firewall_mock._snapshot_method_mapping["snapshot2"].assert_called_once_with()
+        check_firewall_mock._snapshot_method_mapping["snapshot2"].assert_called_once_with(param1=123)
+
+    def test_run_snapshots_empty_dict(self, check_firewall_mock):
+        check_firewall_mock._snapshot_method_mapping = {
+            "snapshot1": MagicMock(return_value={"status": "success"}),
+        }
+
+        snapshots_config = [{"snapshot1": None}]
+
+        result = check_firewall_mock.run_snapshots(snapshots_config)
+
+        expected_result = {
+            "snapshot1": {"status": "success"},
+        }
+        assert result == expected_result
+
+        check_firewall_mock._snapshot_method_mapping["snapshot1"].assert_called_once_with()
 
     def test_run_snapshots_wrong_data_type_exception(self, check_firewall_mock):
         snapshots_config = ["snapshot1", 123]
@@ -1537,10 +1553,10 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         with pytest.raises(WrongDataTypeException):
             check_firewall_mock.run_snapshots(snapshots_config)
 
-        # raise exceptions.WrongDataTypeException(f"Wrong configuration format for snapshot: {snap_type}.")
+        # raise exceptions.WrongDataTypeException(f"Wrong configuration format for snapshot: {snapshot}.")
         # NOTE configs are already validated in ConfigParser._extrac_element_name - above exception is never executed.
         # which is listed as missing in pytest coverage
-        # assert str(exception_msg.value) == f"Wrong configuration format for snapshot: snap_type."
+        # assert "Wrong configuration format for snapshot:" in str(exception_msg.value)
 
     @pytest.mark.parametrize(
         "running_software, expected_status",

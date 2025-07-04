@@ -33,6 +33,7 @@ if __name__ == "__main__":
             }
         },
         "global_jumbo_frame",
+        "mtu"
     ]
 
     compare = SnapshotCompare(

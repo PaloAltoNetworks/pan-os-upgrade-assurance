@@ -1822,3 +1822,173 @@ class FirewallProxy:
             return int(cpu_utilization)
         except (AttributeError, ValueError, TypeError) as e:
             raise exceptions.MalformedResponseException(f"Failed to extract CPU utilization: {str(e)}")
+
+    def get_interface_details(self, interface_name: str) -> dict:
+        """Get details for a specific interface.
+
+        This method retrieves details for a given interface using the `show interface` command.
+
+        # Parameters
+
+        interface_name (str): The name of the interface to query.
+
+        # Returns
+
+        dict: Interface details.
+
+        ```python showLineNumbers title="Sample output"
+        {'dp': 'dp0',
+         'ifnet': {'addr': None,
+                   'addr6': None,
+                   'circuitonly': 'False',
+                   'counters': {'hw': None,
+                                'ifnet': {'entry': {'flowstate': '0',
+                                                    'ibytes': '0',
+                                                    'icmp_frag': '0',
+                                                    'idrops': '0',
+                                                    'ierrors': '0',
+                                                    'ifwderrors': '0',
+                                                    'ipackets': '0',
+                                                    'ipspoof': '0',
+                                                    'l2_decap': '0',
+                                                    'l2_encap': '0',
+                                                    'land': '0',
+                                                    'macspoof': '0',
+                                                    'name': 'ethernet1/6.123',
+                                                    'neighpend': '0',
+                                                    'noarp': '0',
+                                                    'nomac': '0',
+                                                    'noneigh': '0',
+                                                    'noroute': '0',
+                                                    'obytes': '0',
+                                                    'opackets': '0',
+                                                    'other_conn': '0',
+                                                    'pod': '0',
+                                                    'sctp_conn': '0',
+                                                    'tcp_conn': '0',
+                                                    'teardrop': '0',
+                                                    'udp_conn': '0',
+                                                    'zonechange': '0'}}},
+                   'dad': 'False',
+                   'df_ignore': 'False',
+                   'dhcpv6_client': 'False',
+                   'dyn-addr': None,
+                   'fwd_type': 'vr',
+                   'gre': 'False',
+                   'id': '138',
+                   'inherited': 'False',
+                   'ipv6_client': 'False',
+                   'mgt_subnet': 'False',
+                   'mode': 'layer3',
+                   'mssadjv4': '0',
+                   'mssadjv6': '0',
+                   'mtu': '900',
+                   'name': 'ethernet1/6.123',
+                   'ndpmon': 'False',
+                   'policing': 'False',
+                   'proxy-protocol': 'no',
+                   'ra': 'False',
+                   'sdwan': 'False',
+                   'service': None,
+                   'tag': '123',
+                   'tcpmss': 'False',
+                   'tunnel': None,
+                   'vr': 'default',
+                   'vsys': 'vsys6',
+                   'zone': 'N/A'}}
+        ```
+
+        ```python showLineNumbers title="Interface not found"
+        {'dp': 'dp0', 'error': "Interface 'ethernet1/123' not found"}
+        ```
+
+        """
+        intf_details = self.op_parser(cmd=f"<show><interface>{interface_name}</interface></show>", cmd_in_xml=True)
+        return intf_details
+
+    def get_interfaces_mtu(self, include_subinterfaces: bool = False) -> dict:
+        """Get MTU sizes for all interfaces.
+
+        This method retrieves MTU sizes for all interfaces on the device. It can optionally include
+        sub-interfaces as well.
+
+        The API command `show system state filter sw.dev.interface.config` is used to retrive MTU sizes for parent interfaces
+        however it does not include MTU values for sub-interfaces. Sub-interfaces are individually queried via the
+        `get_interface_details()` method if requested.
+
+        # Parameters
+
+        include_subinterfaces (bool, optional): (defaults to False) Whether to include sub-interfaces in the results.
+
+        # Returns
+
+        dict: A dictionary containing interfaces and their MTU sizes.
+
+        ```python showLineNumbers title="Sample output"
+        {
+            'ethernet1/1': {
+                'mtu': 1500,
+            },
+            'ethernet1/1.20': {
+                'mtu': 900,
+            },
+            'ethernet1/2': {
+                'mtu': 1200,
+            },
+            'ethernet1/3': {
+                'mtu': None,
+            },
+        }
+        ```
+        """
+        result = {}
+
+        # Get parent interfaces and their MTUs using `show system state filter sw.dev.interface.config`
+        response = self.op_parser(
+            cmd="<show><system><state><filter>sw.dev.interface.config</filter></state></system></show>", cmd_in_xml=True
+        )
+        # command returns dict like data in CDATA section - see below for a truncated output
+        # <![CDATA[ sw.dev.interface.config: { 'TCI': { 'hwaddr': b4:0c:25:ea:00:0c, 'mtu': 1500, },
+        # 'ethernet1/1': { 'hwaddr': b4:0c:25:ea:00:40, 'mtu': 1500, }, 'ethernet1/1.100': { },
+        # 'ethernet1/2': { 'hwaddr': b4:0c:25:ea:00:41, 'mtu': 1500, },
+        # 'ethernet1/20': { 'hwaddr': b4:0c:25:ea:00:53, 'mtu': 1500, },
+        # 'ethernet1/3': { 'hwaddr': b4:0c:25:ea:00:42, 'mtu': 1500, }, 'ha1-a': { }, 'ha1-b': { }, 'hsci': { }, } ]]>
+
+        # match dict like output from response str
+        match = re.search(r"sw\.dev\.interface\.config:\s*(\{.*\})", response)
+        if match:
+            interfaces_state_str = match.group(1)
+            # add quotes around non-quoted values
+            interfaces_state_str = re.sub(
+                r"'([^']+)':\s+([^'{},\s][^{},\s]*(?:\.[^{},\s]+)*)", r"'\1': '\2'", interfaces_state_str
+            )
+            # convert the string representation of dictionary to an actual dictionary
+            interfaces_state_dict = ast.literal_eval(interfaces_state_str)
+            subinterfaces = []
+
+            for intf_name, intf_data in interfaces_state_dict.items():
+                # Skip special interfaces like TCI, ha1-a, etc.
+                # if intf_name in ['TCI', 'ha1-a', 'ha1-b', 'hsci']:
+                #     continue
+
+                # if it's a subinterface (contains ".")
+                if "." in intf_name:
+                    if include_subinterfaces:
+                        subinterfaces.append(intf_name)
+                    continue
+
+                # parent interface MTU
+                intf_mtu = intf_data.get("mtu") if isinstance(intf_data, dict) else None
+                result[intf_name] = {"mtu": int(intf_mtu) if intf_mtu is not None else None}
+
+            # Process subinterfaces if requested
+            if include_subinterfaces and subinterfaces:
+                for subif in subinterfaces:
+                    # sub-interface MTU
+                    subif_details = self.get_interface_details(subif)
+                    subif_mtu = subif_details.get("ifnet", {}).get("mtu")
+                    result[subif] = {"mtu": int(subif_mtu) if subif_mtu is not None else None}
+        else:
+            raise exceptions.MalformedResponseException("sw.dev.interface.config system state data not found in response")
+
+        return result

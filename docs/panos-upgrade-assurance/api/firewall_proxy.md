@@ -1535,3 +1535,131 @@ __Returns__
 
 `int`: Management plane CPU utilization percentage for the last 1 minute.
 
+### `FirewallProxy.get_interface_details`
+
+```python
+def get_interface_details(interface_name: str) -> dict
+```
+
+Get details for a specific interface.
+
+This method retrieves details for a given interface using the `show interface` command.
+
+__Parameters__
+
+
+- __interface_name__ (`str`): The name of the interface to query.
+
+__Returns__
+
+
+`dict`: Interface details.
+
+```python showLineNumbers title="Sample output"
+{'dp': 'dp0',
+ 'ifnet': {'addr': None,
+           'addr6': None,
+           'circuitonly': 'False',
+           'counters': {'hw': None,
+                        'ifnet': {'entry': {'flowstate': '0',
+                                            'ibytes': '0',
+                                            'icmp_frag': '0',
+                                            'idrops': '0',
+                                            'ierrors': '0',
+                                            'ifwderrors': '0',
+                                            'ipackets': '0',
+                                            'ipspoof': '0',
+                                            'l2_decap': '0',
+                                            'l2_encap': '0',
+                                            'land': '0',
+                                            'macspoof': '0',
+                                            'name': 'ethernet1/6.123',
+                                            'neighpend': '0',
+                                            'noarp': '0',
+                                            'nomac': '0',
+                                            'noneigh': '0',
+                                            'noroute': '0',
+                                            'obytes': '0',
+                                            'opackets': '0',
+                                            'other_conn': '0',
+                                            'pod': '0',
+                                            'sctp_conn': '0',
+                                            'tcp_conn': '0',
+                                            'teardrop': '0',
+                                            'udp_conn': '0',
+                                            'zonechange': '0'}}},
+           'dad': 'False',
+           'df_ignore': 'False',
+           'dhcpv6_client': 'False',
+           'dyn-addr': None,
+           'fwd_type': 'vr',
+           'gre': 'False',
+           'id': '138',
+           'inherited': 'False',
+           'ipv6_client': 'False',
+           'mgt_subnet': 'False',
+           'mode': 'layer3',
+           'mssadjv4': '0',
+           'mssadjv6': '0',
+           'mtu': '900',
+           'name': 'ethernet1/6.123',
+           'ndpmon': 'False',
+           'policing': 'False',
+           'proxy-protocol': 'no',
+           'ra': 'False',
+           'sdwan': 'False',
+           'service': None,
+           'tag': '123',
+           'tcpmss': 'False',
+           'tunnel': None,
+           'vr': 'default',
+           'vsys': 'vsys6',
+           'zone': 'N/A'}}
+```
+
+```python showLineNumbers title="Interface not found"
+{'dp': 'dp0', 'error': "Interface 'ethernet1/123' not found"}
+```
+
+### `FirewallProxy.get_interfaces_mtu`
+
+```python
+def get_interfaces_mtu(include_subinterfaces: bool = False) -> dict
+```
+
+Get MTU sizes for all interfaces.
+
+This method retrieves MTU sizes for all interfaces on the device. It can optionally include
+sub-interfaces as well.
+
+The API command `show system state filter sw.dev.interface.config` is used to retrive MTU sizes for parent interfaces
+however it does not include MTU values for sub-interfaces. Sub-interfaces are individually queried via the
+`get_interface_details()` method if requested.
+
+__Parameters__
+
+
+- __include_subinterfaces__ (`bool, optional`): (defaults to False) Whether to include sub-interfaces in the results.
+
+__Returns__
+
+
+`dict`: A dictionary containing interfaces and their MTU sizes.
+
+```python showLineNumbers title="Sample output"
+{
+    'ethernet1/1': {
+        'mtu': 1500,
+    },
+    'ethernet1/1.20': {
+        'mtu': 900,
+    },
+    'ethernet1/2': {
+        'mtu': 1200,
+    },
+    'ethernet1/3': {
+        'mtu': None,
+    },
+}
+```
+

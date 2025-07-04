@@ -87,6 +87,7 @@ class CheckFirewall:
             SnapType.IPSEC_TUNNELS: self.get_ip_sec_tunnels,
             SnapType.FIB_ROUTES: self._node.get_fib,
             SnapType.GLOBAL_JUMBO_FRAME: self.get_global_jumbo_frame,
+            SnapType.INTERFACES_MTU: self._node.get_interfaces_mtu,
         }
 
         self._check_method_mapping = {
@@ -1458,7 +1459,7 @@ class CheckFirewall:
 
         # Parameters
 
-        snapshots_config (list(str), optional): (defaults to `None`) Defines snapshots of which areas will be taken.
+        snapshots_config (list(str,dict), optional): (defaults to `None`) Defines snapshots of which areas will be taken.
 
         # Raises
 
@@ -1475,11 +1476,19 @@ class CheckFirewall:
             requested_config=snapshots_config,
         ).prepare_config()
 
-        for snap_type in snaps_list:
-            if not isinstance(snap_type, str):
-                raise exceptions.WrongDataTypeException(f"Wrong configuration format for snapshot: {snap_type}.")
+        for snapshot in snaps_list:
+            if isinstance(snapshot, dict):
+                snap_type, snap_config = next(iter(snapshot.items()))
+                if snap_config is None:
+                    snap_config = {}
+            elif isinstance(snapshot, str):
+                snap_type, snap_config = snapshot, {}
+            else:
+                raise exceptions.WrongDataTypeException(f"Wrong configuration format for snapshot: {snapshot}.")
 
-            result[snap_type] = self._snapshot_method_mapping[snap_type]()
+            result[snap_type] = self._snapshot_method_mapping[snap_type](
+                **snap_config
+            )  # (**) would pass dict config values as separate parameters to method.
 
         return result
 
