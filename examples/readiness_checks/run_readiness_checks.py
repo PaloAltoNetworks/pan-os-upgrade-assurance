@@ -103,7 +103,6 @@ if __name__ == "__main__":
             }
         },
         {"dynamic_updates": {"test_window": 500}},
-        {"environmentals": {"components": ["power-supply"]}},
         {"dp_cpu_utilization": {"threshold": 50, "minutes": 2}},
         {"mp_cpu_utilization": {"threshold": 10}},
         # checks below require additional configuration
@@ -117,6 +116,9 @@ if __name__ == "__main__":
         {"arp_entry_exist": {"ip": "10.0.1.1"}},
         {"ip_sec_tunnel_status": {"tunnel_name": "ipsec_tun"}},
         {"global_jumbo_frame": {"mode": True}},
+        # checks below must be provided explicitly
+        # they are not run with all keyword or all-exclusive config
+        {"environmentals": {"components": ["power-supply"]}},
     ]
 
     check_readiness = check_node.run_readiness_checks(

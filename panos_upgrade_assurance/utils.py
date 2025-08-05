@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from copy import deepcopy
-from typing import Optional, Union, List, Iterable, Iterator
+from typing import Optional, Union, List, Iterable, Iterator, Set
 from typing_extensions import TypeAlias
 from enum import Enum
 from panos_upgrade_assurance import exceptions
