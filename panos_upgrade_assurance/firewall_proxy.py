@@ -1,4 +1,5 @@
 import re
+import ast
 import xml.etree.ElementTree as ET
 from panos_upgrade_assurance.utils import interpret_yes_no
 from xmltodict import parse as XMLParse
@@ -1705,3 +1706,289 @@ class FirewallProxy:
         response = self.op_parser(cmd="show system environmentals")
 
         return response if response else {}
+
+    def get_dp_cpu_utilization(self, minutes: int = 5) -> dict:
+        """Get data plane CPU utilization for the last specified minutes.
+
+        The actual API command is `show running resource-monitor minute last {minutes}`.
+
+        # Parameters
+
+        minutes (int, optional): (defaults to 5) The number of minutes to check, between 1 and 60.
+
+        # Raises
+
+        WrongDataTypeException: Raised when the minutes parameter is not an integer or is outside the allowed range.
+        MalformedResponseException: Raised when response does not contain expected elements.
+
+        # Returns
+
+        dict: Data plane CPU utilization per core and per minute.
+
+        ```python showLineNumbers title="Sample output"
+        {
+            'dp0': {
+                'cpu-load-average': {
+                    '0': [0, 0, 0, 0, 0],
+                    '1': [0, 0, 0, 0, 0],
+                    '2': [1, 1, 1, 1, 1],
+                    '3': [0, 0, 0, 0, 0]
+                }
+            }
+        }
+        ```
+
+        """
+        if not isinstance(minutes, int):
+            raise exceptions.WrongDataTypeException(f"Minutes parameter should be an integer, got {type(minutes)}")
+
+        if minutes < 1 or minutes > 60:
+            raise exceptions.WrongDataTypeException(f"Minutes parameter should be between 1 and 60, got {minutes}")
+
+        # panos SDK op command converts the minutes wrongly to xml so direct XML command is used
+        response = self.op_parser(
+            cmd=f"<show><running><resource-monitor><minute><last>{minutes}</last></minute></resource-monitor></running></show>",
+            cmd_in_xml=True,
+            return_xml=True,
+        )
+
+        result = {}
+
+        data_processors = response.findall(".//data-processors/*")
+        if not data_processors:
+            raise exceptions.MalformedResponseException("No data plane processor elements <data-processors> found in response.")
+
+        for dp in data_processors:
+            dp_name = dp.tag
+            result[dp_name] = {"cpu-load-average": {}}
+
+            cpu_entries = dp.findall(".//cpu-load-average/entry")
+            if not cpu_entries:
+                raise exceptions.MalformedResponseException(f"No CPU load average entries found for data processor '{dp_name}'")
+
+            for entry in cpu_entries:
+                core_id = entry.find("coreid").text
+                # Split the comma-separated values and convert to integers
+                values = [int(val) for val in entry.find("value").text.split(",")]
+                result[dp_name]["cpu-load-average"][core_id] = values
+
+        return result
+
+    def get_mp_cpu_utilization(self) -> int:
+        """Get management plane CPU utilization for the last 1 minute.
+
+        The actual API command is `<show><system><state><filter>sys.monitor.*.mp.exports</filter></state></system></show>`.
+        MP state resides under s0 or s1 depending on the target firewall platform like `sys.monitor.s0.mp.exports` or
+        `sys.monitor.s1.mp.exports` so a wildcard is used to match any.
+
+        # Raises
+
+        MalformedResponseException: Raised when response does not contain expected elements or data format is invalid.
+
+        # Returns
+
+        int: Management plane CPU utilization percentage for the last 1 minute.
+
+        """
+        response = self.op_parser(
+            cmd="<show><system><state><filter>sys.monitor.*.mp.exports</filter></state></system></show>", cmd_in_xml=True
+        )
+        # command returns dict like data in CDATA section - sample response below with disks array removed
+        # <![CDATA[ sys.monitor.s0.mp.exports: { 'cpu': { '1minavg': 3, }, 'disks': [], 'slot': 0, } ]]>
+
+        if isinstance(response, str):
+            if "NO_MATCHES" in response:
+                raise exceptions.MalformedResponseException("No slots found with management plane data.")
+
+            # match data string for cpu - lazy match until first closing curly braces
+            match = re.search(r"'cpu':\s*(\{.*?\})", response)
+            if not match:
+                raise exceptions.MalformedResponseException("No match for management plane CPU data.")
+
+            # Convert the extracted string to a Python dict using eval
+            try:
+                data_str = match.group(1)
+                data = ast.literal_eval(data_str)
+            except Exception as e:
+                raise exceptions.MalformedResponseException(f"Failed to convert management plane CPU data to dict: {str(e)}")
+        else:
+            raise exceptions.MalformedResponseException("Unexpected response format for management plane CPU data.")
+
+        # Extract the CPU 1-minute average
+        try:
+            cpu_utilization = data.get("1minavg")
+            if cpu_utilization is None:
+                raise exceptions.MalformedResponseException("CPU utilization data not found in response.")
+            return int(cpu_utilization)
+        except (AttributeError, ValueError, TypeError) as e:
+            raise exceptions.MalformedResponseException(f"Failed to extract CPU utilization: {str(e)}")
+
+    def get_interface_details(self, interface_name: str) -> dict:
+        """Get details for a specific interface.
+
+        This method retrieves details for a given interface using the `show interface` command.
+
+        # Parameters
+
+        interface_name (str): The name of the interface to query.
+
+        # Returns
+
+        dict: Interface details.
+
+        ```python showLineNumbers title="Sample output"
+        {'dp': 'dp0',
+         'ifnet': {'addr': None,
+                   'addr6': None,
+                   'circuitonly': 'False',
+                   'counters': {'hw': None,
+                                'ifnet': {'entry': {'flowstate': '0',
+                                                    'ibytes': '0',
+                                                    'icmp_frag': '0',
+                                                    'idrops': '0',
+                                                    'ierrors': '0',
+                                                    'ifwderrors': '0',
+                                                    'ipackets': '0',
+                                                    'ipspoof': '0',
+                                                    'l2_decap': '0',
+                                                    'l2_encap': '0',
+                                                    'land': '0',
+                                                    'macspoof': '0',
+                                                    'name': 'ethernet1/6.123',
+                                                    'neighpend': '0',
+                                                    'noarp': '0',
+                                                    'nomac': '0',
+                                                    'noneigh': '0',
+                                                    'noroute': '0',
+                                                    'obytes': '0',
+                                                    'opackets': '0',
+                                                    'other_conn': '0',
+                                                    'pod': '0',
+                                                    'sctp_conn': '0',
+                                                    'tcp_conn': '0',
+                                                    'teardrop': '0',
+                                                    'udp_conn': '0',
+                                                    'zonechange': '0'}}},
+                   'dad': 'False',
+                   'df_ignore': 'False',
+                   'dhcpv6_client': 'False',
+                   'dyn-addr': None,
+                   'fwd_type': 'vr',
+                   'gre': 'False',
+                   'id': '138',
+                   'inherited': 'False',
+                   'ipv6_client': 'False',
+                   'mgt_subnet': 'False',
+                   'mode': 'layer3',
+                   'mssadjv4': '0',
+                   'mssadjv6': '0',
+                   'mtu': '900',
+                   'name': 'ethernet1/6.123',
+                   'ndpmon': 'False',
+                   'policing': 'False',
+                   'proxy-protocol': 'no',
+                   'ra': 'False',
+                   'sdwan': 'False',
+                   'service': None,
+                   'tag': '123',
+                   'tcpmss': 'False',
+                   'tunnel': None,
+                   'vr': 'default',
+                   'vsys': 'vsys6',
+                   'zone': 'N/A'}}
+        ```
+
+        ```python showLineNumbers title="Interface not found"
+        {'dp': 'dp0', 'error': "Interface 'ethernet1/123' not found"}
+        ```
+
+        """
+        intf_details = self.op_parser(cmd=f"<show><interface>{interface_name}</interface></show>", cmd_in_xml=True)
+        return intf_details
+
+    def get_interfaces_mtu(self, include_subinterfaces: bool = False) -> dict:
+        """Get MTU sizes for all interfaces.
+
+        This method retrieves MTU sizes for all interfaces on the device. It can optionally include
+        sub-interfaces as well.
+
+        The API command `show system state filter sw.dev.interface.config` is used to retrive MTU sizes for parent interfaces
+        however it does not include MTU values for sub-interfaces. Sub-interfaces are individually queried via the
+        `get_interface_details()` method if requested.
+
+        # Parameters
+
+        include_subinterfaces (bool, optional): (defaults to False) Whether to include sub-interfaces in the results.
+
+        # Returns
+
+        dict: A dictionary containing interfaces and their MTU sizes.
+
+        ```python showLineNumbers title="Sample output"
+        {
+            'ethernet1/1': {
+                'mtu': 1500,
+            },
+            'ethernet1/1.20': {
+                'mtu': 900,
+            },
+            'ethernet1/2': {
+                'mtu': 1200,
+            },
+            'ethernet1/3': {
+                'mtu': None,
+            },
+        }
+        ```
+        """
+        result = {}
+
+        # Get parent interfaces and their MTUs using `show system state filter sw.dev.interface.config`
+        response = self.op_parser(
+            cmd="<show><system><state><filter>sw.dev.interface.config</filter></state></system></show>", cmd_in_xml=True
+        )
+        # command returns dict like data in CDATA section - see below for a truncated output
+        # <![CDATA[ sw.dev.interface.config: { 'TCI': { 'hwaddr': b4:0c:25:ea:00:0c, 'mtu': 1500, },
+        # 'ethernet1/1': { 'hwaddr': b4:0c:25:ea:00:40, 'mtu': 1500, }, 'ethernet1/1.100': { },
+        # 'ethernet1/2': { 'hwaddr': b4:0c:25:ea:00:41, 'mtu': 1500, },
+        # 'ethernet1/20': { 'hwaddr': b4:0c:25:ea:00:53, 'mtu': 1500, },
+        # 'ethernet1/3': { 'hwaddr': b4:0c:25:ea:00:42, 'mtu': 1500, }, 'ha1-a': { }, 'ha1-b': { }, 'hsci': { }, } ]]>
+
+        # match dict like output from response str
+        match = re.search(r"sw\.dev\.interface\.config:\s*(\{.*\})", response)
+        if match:
+            interfaces_state_str = match.group(1)
+            # add quotes around non-quoted values
+            interfaces_state_str = re.sub(
+                r"'([^']+)':\s+([^'{},\s][^{},\s]*(?:\.[^{},\s]+)*)", r"'\1': '\2'", interfaces_state_str
+            )
+            # convert the string representation of dictionary to an actual dictionary
+            interfaces_state_dict = ast.literal_eval(interfaces_state_str)
+            subinterfaces = []
+
+            for intf_name, intf_data in interfaces_state_dict.items():
+                # Skip special interfaces like TCI, ha1-a, etc.
+                # if intf_name in ['TCI', 'ha1-a', 'ha1-b', 'hsci']:
+                #     continue
+
+                # if it's a subinterface (contains ".")
+                if "." in intf_name:
+                    if include_subinterfaces:
+                        subinterfaces.append(intf_name)
+                    continue
+
+                # parent interface MTU
+                intf_mtu = intf_data.get("mtu") if isinstance(intf_data, dict) else None
+                result[intf_name] = {"mtu": int(intf_mtu) if intf_mtu is not None else None}
+
+            # Process subinterfaces if requested
+            if include_subinterfaces and subinterfaces:
+                for subif in subinterfaces:
+                    # sub-interface MTU
+                    subif_details = self.get_interface_details(subif)
+                    subif_mtu = subif_details.get("ifnet", {}).get("mtu")
+                    result[subif] = {"mtu": int(subif_mtu) if subif_mtu is not None else None}
+        else:
+            raise exceptions.MalformedResponseException("sw.dev.interface.config system state data not found in response")
+
+        return result

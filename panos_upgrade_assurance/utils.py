@@ -34,6 +34,8 @@ class CheckType:
     JOBS = "jobs"
     GLOBAL_JUMBO_FRAME = "global_jumbo_frame"
     SYSTEM_ENVIRONMENTALS = "environmentals"
+    DP_CPU_UTILIZATION = "dp_cpu_utilization"
+    MP_CPU_UTILIZATION = "mp_cpu_utilization"
 
 
 class SnapType:
@@ -56,6 +58,7 @@ class SnapType:
     IPSEC_TUNNELS = "ip_sec_tunnels"
     FIB_ROUTES = "fib_routes"
     GLOBAL_JUMBO_FRAME = "global_jumbo_frame"
+    INTERFACES_MTU = "mtu"
 
 
 class HealthType:
