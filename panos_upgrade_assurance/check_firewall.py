@@ -62,7 +62,7 @@ class CheckFirewall:
         [`CheckType`](/panos/docs/panos-upgrade-assurance/api/utils#class-checktype) class, values are references to methods that
         will be run.
 
-    _explicit_checks (set): Internal variable containing a set of readiness checks that are only run if passed explicitly in
+    EXPLICIT_CHECKS (set): Class variable containing a set of readiness checks that are only run if passed explicitly in
         `checks_configuration` to [`run_readiness_checks()`](#checkfirewallrun_readiness_checks).
 
     """
