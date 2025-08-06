@@ -2,9 +2,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from copy import deepcopy
 from typing import Optional, Union, List, Iterable, Iterator
-from typing_extensions import TypeAlias
 from enum import Enum
 from panos_upgrade_assurance import exceptions
+import sys
+
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias
+else:  # TypeAlias is added in python 3.10 so import from typing_extensions if python version is lower
+    from typing_extensions import TypeAlias
 
 
 class CheckType:
