@@ -1,4 +1,5 @@
 import pytest
+from panos_upgrade_assurance.check_firewall import CheckFirewall
 from panos_upgrade_assurance.utils import ConfigParser, CheckType, SnapType, interpret_yes_no
 from deepdiff import DeepDiff
 from panos_upgrade_assurance.exceptions import WrongDataTypeException, UnknownParameterException
@@ -53,7 +54,7 @@ class TestConfigParser:
         """Check if ConfigParser sets _requested_config_element_names when requested_config is not provided."""
         parser = ConfigParser(valid_config_elements, requested_config)
         assert parser._requested_config_element_names == set(valid_config_elements)
-        assert parser.requested_config == valid_config_elements
+        assert sorted(parser.requested_config) == sorted(valid_config_elements)
 
     @pytest.mark.parametrize(
         "requested_config, expected_requested_config_element_names",
@@ -149,6 +150,36 @@ class TestConfigParser:
 
         parser = ConfigParser([], requested_config)  # testing requested config - valid_elements is not important here
         assert parser._requested_all_not_elements == expected_requested_all_not_elements
+
+    def test_init_requested_config_element_names_with_explicit_elements(self):
+        """Test ConfigParser with explicit_elements parameter.
+
+        _requested_config_element_names is set by subsctracting explicit_elements from valid_elements, only when requested_config
+            is NOT provided.
+
+        """
+        valid_elements = ["check1", "check2", "check3", "check4"]
+        explicit_elements = {"check3", "check4"}
+
+        # Test with no requested config - explicit elements should be excluded
+        parser = ConfigParser(valid_elements, explicit_elements=explicit_elements)
+        assert parser._requested_config_element_names == set(["check1", "check2"])
+
+        # Test with explicit request of an explicit element as string
+        parser = ConfigParser(valid_elements, requested_config=["check3"], explicit_elements=explicit_elements)
+        assert parser._requested_config_element_names == {"check3"}
+
+        # Test with explicit request of an explicit element as dict with config
+        parser = ConfigParser(
+            valid_elements, requested_config=[{"check3": {"param": "value"}}], explicit_elements=explicit_elements
+        )
+        assert parser._requested_config_element_names == {"check3"}
+
+        # Test with 'all' including explicit elements as dict
+        parser = ConfigParser(
+            valid_elements, requested_config=["all", {"check3": {"param": "value"}}], explicit_elements=explicit_elements
+        )
+        assert parser._requested_config_element_names == {"all", "check3"}
 
     @pytest.mark.parametrize(
         "requested_config, element_name",
@@ -597,8 +628,8 @@ class TestConfigParser:
     @pytest.mark.parametrize(
         "valid_config_elements, requested_config, expected",
         [
-            (valid_check_types, [], valid_check_types),
-            (valid_check_types, ["all"], valid_check_types),
+            (valid_check_types, [], list(set(valid_check_types) - CheckFirewall.EXPLICIT_CHECKS)),
+            (valid_check_types, ["all"], list(set(valid_check_types) - CheckFirewall.EXPLICIT_CHECKS)),
             (
                 valid_check_types,
                 [{"ha": None}, "content_version", {"free_disk_space": {"image_version": "10.1.1"}}],
@@ -607,8 +638,9 @@ class TestConfigParser:
             (
                 valid_check_types,
                 ["!ha", "!ntp_sync"],
-                list(set(valid_check_types) - {"ha", "ntp_sync"}),
+                list(set(valid_check_types) - {"ha", "ntp_sync"} - CheckFirewall.EXPLICIT_CHECKS),
             ),
+            (valid_check_types, ["all"] + list(CheckFirewall.EXPLICIT_CHECKS), valid_check_types),
             (
                 valid_check_types,
                 [
@@ -702,7 +734,7 @@ class TestConfigParser:
     )
     def test_prepare_config(self, valid_config_elements, requested_config, expected):
         """Check if config is prepared in expected way."""
-        parser = ConfigParser(valid_config_elements, requested_config)
+        parser = ConfigParser(valid_config_elements, requested_config, CheckFirewall.EXPLICIT_CHECKS)
         final_config = parser.prepare_config()
         assert not DeepDiff(
             final_config, expected, ignore_order=True

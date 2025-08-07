@@ -62,7 +62,13 @@ class CheckFirewall:
         [`CheckType`](/panos/docs/panos-upgrade-assurance/api/utils#class-checktype) class, values are references to methods that
         will be run.
 
+    EXPLICIT_CHECKS (set): Class variable containing a set of readiness checks that are only run if passed explicitly in
+        `checks_configuration` to [`run_readiness_checks()`](#checkfirewallrun_readiness_checks).
+
     """
+
+    # explicit readiness checks will only be run if explicitly provided in requested config
+    EXPLICIT_CHECKS = {CheckType.SYSTEM_ENVIRONMENTALS}
 
     def __init__(self, node: FirewallProxy, skip_force_locale: Optional[bool] = False) -> None:
         """CheckFirewall constructor.
@@ -1430,6 +1436,7 @@ class CheckFirewall:
         checks_list = ConfigParser(
             valid_elements=set(self._check_method_mapping.keys()),
             requested_config=checks_configuration,
+            explicit_elements=CheckFirewall.EXPLICIT_CHECKS,
         ).prepare_config()
 
         for check in checks_list:

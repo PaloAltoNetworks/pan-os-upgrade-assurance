@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from copy import deepcopy
-from typing import Optional, Union, List, Iterable, Iterator
+from typing import Optional, Union, List, Iterable, Iterator, Set
 from enum import Enum
 from panos_upgrade_assurance import exceptions
 import sys
@@ -202,6 +202,7 @@ class ConfigParser:
         self,
         valid_elements: Iterable,
         requested_config: Optional[List[ConfigElement]] = None,
+        explicit_elements: Optional[Set[str]] = None,
     ):
         """ConfigParser constructor.
 
@@ -221,6 +222,8 @@ class ConfigParser:
         valid_elements (Iterable): Valid elements against which we check the requested config.
         requested_config (list, optional): (defaults to `None`) A list of requested configuration items with an optional
             configuration.
+        explicit_elements (set, optional): (defaults to `None`) A set of elements that should only be included when
+            explicitly requested.
 
         # Raises
 
@@ -228,6 +231,7 @@ class ConfigParser:
 
         """
         self.valid_elements = set(valid_elements)
+        self.explicit_elements = set(explicit_elements) if explicit_elements else set()
 
         if requested_config:  # if not None or not empty list
             self.requested_config = deepcopy(requested_config)
@@ -238,8 +242,8 @@ class ConfigParser:
                 if not self._is_valid_element_name(element_name):
                     raise exceptions.UnknownParameterException(f"Unknown configuration parameter passed: {element_name}.")
         else:
-            self._requested_config_element_names = set(valid_elements)
-            self.requested_config = list(valid_elements)  # Meaning 'all' valid tests
+            self._requested_config_element_names = set(valid_elements) - self.explicit_elements
+            self.requested_config = list(self._requested_config_element_names)  # 'all' valid tests except explicit ones
             self._requested_all_not_elements = False
 
     @staticmethod
@@ -460,13 +464,14 @@ class ConfigParser:
             if self.is_element_explicit_excluded(valid_element, self._requested_config_element_names):
                 continue
             elif self._requested_all_not_elements:
-                final_configs.append(valid_element)
+                if valid_element not in self.explicit_elements:
+                    final_configs.append(valid_element)
             elif self.is_element_included(valid_element, self._requested_config_element_names, all_not_elements_check=False):
                 # get element from original requested_config (via valid_element) and put it to final config
                 config_element = self.get_config_element_by_name(valid_element)
                 if config_element is not None:
                     final_configs.append(config_element)
-                elif "all" in self.requested_config:
+                elif "all" in self.requested_config and valid_element not in self.explicit_elements:
                     final_configs.append(valid_element)
             else:
                 continue  # donot add element if element is not included while not all exclusive
