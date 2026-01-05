@@ -91,9 +91,12 @@ if __name__ == "__main__":
         "session_stats",
         "ip_sec_tunnels",
         "global_jumbo_frame",
-        {'mtu': { 'include_subinterfaces': True }}
+        {'mtu': { 'include_subinterfaces': True }},
+        "are_routes",
+        "are_fib_routes"
     ]
 
     snap = check_node.run_snapshots(snapshots_config=areas)
+
     printer(snap)
     # pprint(snap)

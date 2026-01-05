@@ -105,11 +105,11 @@ __Returns__
 `dict`: Result of comparison in a form of the Python dictionary. Keys in this dictionary are again state areas where values
     depend on the actual comparison method that was run.
 
-### `SnapshotCompare.key_checker`
+### `SnapshotCompare.validate_keys_exist`
 
 ```python
 @staticmethod
-def key_checker(left_dict: dict, right_dict: dict, key: Union[str, set,
+def validate_keys_exist(left_dict: dict, right_dict: dict, key: Union[str, set,
                                                               list]) -> None
 ```
 
@@ -130,11 +130,11 @@ __Raises__
 
 - `MissingKeyException`: when key is not available in at least one snapshot.
 
-### `SnapshotCompare.calculate_change_percentage`
+### `SnapshotCompare._calculate_metric_change_percentage`
 
 ```python
 @staticmethod
-def calculate_change_percentage(
+def _calculate_metric_change_percentage(
         first_value: Union[str, int], second_value: Union[str, int],
         threshold: Union[str, float]) -> Dict[str, Union[bool, float]]
 ```
@@ -367,7 +367,7 @@ def calculate_passed(result: Dict[str, Union[dict, str]]) -> None
 The static method to calculate the upper level `passed` value.
 
 When two snapshots are compared, a dictionary that is the result of this comparison is structured as in the following
-[`get_diff_and_threshold()`](#snapshotcompareget_diff_and_threshold) method: each root key contains a dictionary that has
+[`compare_type_generic()`](#snapshotcomparecompare_type_generic) method: each root key contains a dictionary that has
 a structure returned by the [`calculate_diff_on_dicts()`](#snapshotcomparecalculate_diff_on_dicts) method.
 
 This method takes a dictionary under the root key and calculates the `passed` flag based on the all `passed` flags in
@@ -405,10 +405,10 @@ __Parameters__
 
 - __result__ (`dict`): A dictionary for which the `passed` property should be calculated.
 
-### `SnapshotCompare.get_diff_and_threshold`
+### `SnapshotCompare.compare_type_generic`
 
 ```python
-def get_diff_and_threshold(
+def compare_type_generic(
     report_type: str,
     properties: Optional[List[str]] = None,
     count_change_threshold: Optional[Union[int, float]] = None
@@ -505,10 +505,10 @@ __Returns__
 
 `dict`: Comparison results.
 
-### `SnapshotCompare.get_count_change_percentage`
+### `SnapshotCompare.compare_type_metric_values`
 
 ```python
-def get_count_change_percentage(
+def compare_type_metric_values(
     report_type: str,
     thresholds: Optional[List[Dict[str, Union[int, float]]]] = None
 ) -> Optional[Dict[str, Union[bool, dict]]]
@@ -516,7 +516,7 @@ def get_count_change_percentage(
 
 Generic method to calculate the change on values and compare them against a given threshold.
 
-In opposition to the [`get_diff_and_threshold()`](#snapshotcompareget_diff_and_threshold) method, this one does not
+In opposition to the [`compare_type_generic()`](#snapshotcomparecompare_type_generic) method, this one does not
 calculate the count change but the actual difference between the numerical values.
 A good example is a change in the session count. The snapshot for this area is a dictionary with the keys taking values
 of different session types and values containing the actual session count:
@@ -591,7 +591,7 @@ __Raises__
 __Returns__
 
 
-`dict`: The result of difference compared against a threshold. The result for each value is in the same form as returned             by the [`calculate_change_percentage()`](#snapshotcomparecalculate_change_percentage) method. For the examples             above, the return value would be:
+`dict`: The result of difference compared against a threshold. The result for each value is in the same form as returned             by the [`_calculate_metric_change_percentage()`](#snapshotcompare_calculate_metric_change_percentage) method. For the examples             above, the return value would be:
 
 ```python showLineNumbers title="Sample output"
 {

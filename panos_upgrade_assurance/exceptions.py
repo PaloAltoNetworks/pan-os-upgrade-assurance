@@ -99,6 +99,12 @@ class SnapshotSchemeMismatchException(SnapshotCompareException):
     pass
 
 
+class SnapshotNoneComparisonException(SnapshotCompareException):
+    """Raised when attempting to compare None with dict in snapshot comparison."""
+
+    pass
+
+
 class UnknownParameterException(CheckFirewallException, UtilsException):
     """Used when one of the requested configuration parameters is not a valid."""
 

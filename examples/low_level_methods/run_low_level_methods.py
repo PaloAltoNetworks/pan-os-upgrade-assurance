@@ -84,54 +84,75 @@ if __name__ == "__main__":
     print(f"\n  pending changed: {firewall.is_pending_changes()}")
     print(f"\n  full commit pending: {firewall.is_full_commit_required()}")
 
-    print(f"\n  ha configuration\n{firewall.get_ha_configuration()}")
+    print(f"\n  ha configuration:\n{firewall.get_ha_configuration()}")
 
-    print(f"\n  nic statuses\n{firewall.get_nics()}")
+    print(f"\n  nic statuses:\n{firewall.get_nics()}")
 
-    print(f"\n  licenses information\n{firewall.get_licenses()}")
+    print(f"\n  licenses information:\n{firewall.get_licenses()}")
 
-    print(f"\n  support license information\n{firewall.get_support_license()}")
+    print(f"\n  support license information:\n{firewall.get_support_license()}")
 
-    print(f"\n  routes information\n{firewall.get_routes()}")
+    try:
+        print(f"\n  legacy routes information:\n{firewall.get_routes()}")
+    except Exception as exc:
+        print(f"\n  legacy routes information:\n{exc}")
 
-    print(f"\n  BGP peers information\n{firewall.get_bgp_peers()}")
+    try:
+        print(f"\n  legacy fib information:\n{firewall.get_fib()}")
+    except Exception as exc:
+        print(f"\n  legacy fib information:\n{exc}")
 
-    print(f"\n  arp entries information\n{firewall.get_arp_table()}")
+    try:
+        print(f"\n  legacy BGP peers information:\n{firewall.get_bgp_peers()}")
+    except Exception as exc:
+        print(f"\n  legacy BGP peers information:\n{exc}")
 
-    print(f"\n  session information\n{firewall.get_session_stats()}")
+    print(f"\n  arp entries information:\n{firewall.get_arp_table()}")
 
-    print(f"\n  session information\n{firewall.get_sessions()}")
+    print(f"\n  session information:\n{firewall.get_session_stats()}")
 
-    print(f"\n  tunnels information\n{firewall.get_tunnels()}")
+    print(f"\n  session information:\n{firewall.get_sessions()}")
 
-    print(f"\n  NTP SRVs information\n{firewall.get_ntp_servers()}")
+    print(f"\n  tunnels information:\n{firewall.get_tunnels()}")
+
+    print(f"\n  NTP SRVs information:\n{firewall.get_ntp_servers()}")
 
     print(f"\n  content DB version: {firewall.get_content_db_version()}")
 
     print(f"\n  latest availble content DB version: {firewall.get_latest_available_content_version()}")
 
-    print(f"\n  disk utilization: {firewall.get_disk_utilization()}")
+    print(f"\n  disk utilization:\n{firewall.get_disk_utilization()}")
 
-    print(f"\n  available image versions: {firewall.get_available_image_data()}")
+    print(f"\n  available image versions:\n{firewall.get_available_image_data()}")
 
-    print(f"\n  management plane clock: {firewall.get_mp_clock()}")
+    print(f"\n  management plane clock:\n{firewall.get_mp_clock()}")
 
-    print(f"\n  data plane clock: {firewall.get_dp_clock()}")
+    print(f"\n  data plane clock:\n{firewall.get_dp_clock()}")
 
-    print(f"\n  certificates: {firewall.get_certificates()}")
+    print(f"\n  certificates:\n{firewall.get_certificates()}")
 
-    print(f"\n  dynamic schedules: {firewall.get_update_schedules()}")
+    print(f"\n  dynamic schedules:\n{firewall.get_update_schedules()}")
 
-    print(f"\n  jobs: {firewall.get_jobs()}")
+    print(f"\n  jobs:\n{firewall.get_jobs()}")
 
-    print(f"\n  system environmentals: {firewall.get_system_environmentals()}")
+    print(f"\n  system environmentals:\n{firewall.get_system_environmentals()}")
 
-    print(f"\n  dp cpu utilization: {firewall.get_dp_cpu_utilization(minutes=2)}")
+    print(f"\n  dp cpu utilization:\n{firewall.get_dp_cpu_utilization(minutes=2)}")
 
-    print(f"\n  mp cpu utilization: {firewall.get_mp_cpu_utilization()}")
+    print(f"\n  mp cpu utilization:\n{firewall.get_mp_cpu_utilization()}")
 
-    print(f"\n  interface details: {firewall.get_interface_details('ethernet1/1')}")
+    print(f"\n  interface details:\n{firewall.get_interface_details('ethernet1/1')}")
 
-    print(f"\n  interfaces mtu size: {firewall.get_interfaces_mtu(include_subinterfaces=True)}")
+    print(f"\n  interfaces mtu size:\n{firewall.get_interfaces_mtu(include_subinterfaces=True)}")
+
+    try:
+        print(f"\n  ARE routes:\n{firewall.get_are_routes()}")
+    except Exception as exc:
+        print(f"\n  ARE routes:\n{exc}")
+
+    try:
+        print(f"\n  ARE FIB:\n{firewall.get_are_fib()}")
+    except Exception as exc:
+        print(f"\n  ARE FIB:\n{exc}")
 
     print()
