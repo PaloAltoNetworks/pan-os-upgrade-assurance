@@ -825,7 +825,7 @@ class TestCheckFirewall:
                 "metric": "10",
                 "nexthop": "vr public",
                 "route-table": "unicast",
-                "virtual-router": "private"
+                "virtual-router": "private",
             }
         }
         check_firewall_mock._node.get_routes.return_value = routes_data
@@ -850,7 +850,7 @@ class TestCheckFirewall:
                 "@vr": "default",
                 "peer-group": "Peer-Group1",
                 "status": "Established",
-                "peer-address": "169.254.8.2:35355"
+                "peer-address": "169.254.8.2:35355",
             }
         }
         check_firewall_mock._node.get_bgp_peers.return_value = bgp_data
@@ -901,7 +901,7 @@ class TestCheckFirewall:
                 "mac": "12:34:56:78:9a:bc",
                 "port": "ethernet1/1",
                 "status": "c",
-                "ttl": "1094"
+                "ttl": "1094",
             }
         }
         check_firewall_mock._node.get_arp_table.return_value = arp_data
@@ -927,7 +927,7 @@ class TestCheckFirewall:
             "num-tcp": "4",
             "num-udp": "0",
             "num-icmp": "0",
-            "num-max": "819200"
+            "num-max": "819200",
         }
         check_firewall_mock._node.get_session_stats.return_value = session_stats
 
@@ -952,7 +952,7 @@ class TestCheckFirewall:
                 "Next Hop Type": "0",
                 "Flags": "ug",
                 "Next Hop": "10.10.11.1",
-                "MTU": "1500"
+                "MTU": "1500",
             }
         }
         check_firewall_mock._node.get_fib.return_value = fib_data
@@ -977,7 +977,7 @@ class TestCheckFirewall:
             },
             "ethernet1/2": {
                 "mtu": 9192,
-            }
+            },
         }
         check_firewall_mock._node.get_interfaces_mtu.return_value = interfaces_mtu
 
@@ -993,7 +993,7 @@ class TestCheckFirewall:
             },
             "ethernet1/1.1": {
                 "mtu": 1500,
-            }
+            },
         }
         check_firewall_mock._node.get_interfaces_mtu.return_value = interfaces_mtu
 
@@ -1020,13 +1020,7 @@ class TestCheckFirewall:
                         "protocol": "static",
                         "vrfId": 0,
                         "selected": True,
-                        "nexthops": [
-                            {
-                                "fib": True,
-                                "interfaceName": "ethernet1/1",
-                                "active": True
-                            }
-                        ]
+                        "nexthops": [{"fib": True, "interfaceName": "ethernet1/1", "active": True}],
                     }
                 ]
             }
@@ -1054,7 +1048,7 @@ class TestCheckFirewall:
                 "Next Hop Type": "0",
                 "Flags": "ug",
                 "Next Hop": "10.10.11.1",
-                "MTU": "1500"
+                "MTU": "1500",
             }
         }
         check_firewall_mock._node.get_are_fib.return_value = are_fib

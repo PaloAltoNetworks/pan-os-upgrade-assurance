@@ -522,7 +522,7 @@ class SnapshotCompare:
         comparison_result: Dict[str, dict],
         left_snapshot_type_dict: Dict[str, Union[str, dict]],
         right_snapshot_type_dict: Dict[str, Union[str, dict]],
-        count_change_threshold: Union[int, float]
+        count_change_threshold: Union[int, float],
     ) -> Dict[str, Union[bool, float]]:
         """Calculate the percentage of elements changed between two snapshots of a snapshot type.
 
@@ -567,11 +567,7 @@ class SnapshotCompare:
         diff_percentage = round(float(diff) * 100, 2)
         passed = diff_percentage <= count_change_threshold
 
-        return {
-            "passed": passed,
-            "change_percentage": diff_percentage,
-            "change_threshold": float(count_change_threshold)
-        }
+        return {"passed": passed, "change_percentage": diff_percentage, "change_threshold": float(count_change_threshold)}
 
     def compare_type_generic(
         self,
@@ -674,9 +670,7 @@ class SnapshotCompare:
         report_type_right_snapshot = self.right_snap[report_type]["snapshot"]
 
         if report_type_left_snapshot is None or report_type_right_snapshot is None:
-            raise exceptions.SnapshotNoneComparisonException(
-                "Cannot compare snapshot when either side is None."
-            )
+            raise exceptions.SnapshotNoneComparisonException("Cannot compare snapshot when either side is None.")
 
         diff = self.calculate_diff_on_dicts(
             left_side_to_compare=report_type_left_snapshot,
@@ -690,7 +684,7 @@ class SnapshotCompare:
                 comparison_result=result,
                 left_snapshot_type_dict=report_type_left_snapshot,
                 right_snapshot_type_dict=report_type_right_snapshot,
-                count_change_threshold=count_change_threshold
+                count_change_threshold=count_change_threshold,
             )
             result.update({"count_change_percentage": count_change_result})
 
@@ -810,9 +804,7 @@ class SnapshotCompare:
         report_type_right_snapshot = self.right_snap[report_type]["snapshot"]
 
         if report_type_left_snapshot is None or report_type_right_snapshot is None:
-            raise exceptions.SnapshotNoneComparisonException(
-                "Cannot compare snapshot when either side is None."
-            )
+            raise exceptions.SnapshotNoneComparisonException("Cannot compare snapshot when either side is None.")
 
         requested_elements = set(next(iter(unary_dict)) for unary_dict in thresholds)
         try:
@@ -847,10 +839,7 @@ class SnapshotCompare:
         return result
 
     def compare_type_are_routes(
-        self,
-        report_type: str,
-        properties: Optional[List[str]] = None,
-        count_change_threshold: Optional[Union[int, float]] = None
+        self, report_type: str, properties: Optional[List[str]] = None, count_change_threshold: Optional[Union[int, float]] = None
     ) -> Dict[str, Union[bool, dict]]:
         """Compare advanced routing engine routes between two snapshots of the are_routes type.
 
@@ -876,9 +865,7 @@ class SnapshotCompare:
         report_type_right_snapshot = self.right_snap[report_type]["snapshot"]
 
         if report_type_left_snapshot is None or report_type_right_snapshot is None:
-            raise exceptions.SnapshotNoneComparisonException(
-                "Cannot compare snapshot when either side is None."
-            )
+            raise exceptions.SnapshotNoneComparisonException("Cannot compare snapshot when either side is None.")
 
         # Extract normalized routing data from both snapshots
         left_normalized = self._normalize_are_routes(report_type_left_snapshot)
@@ -898,7 +885,7 @@ class SnapshotCompare:
                 comparison_result=result,
                 left_snapshot_type_dict=left_normalized,
                 right_snapshot_type_dict=right_normalized,
-                count_change_threshold=count_change_threshold
+                count_change_threshold=count_change_threshold,
             )
             result.update({"count_change_percentage": count_change_result})
 
@@ -938,7 +925,7 @@ class SnapshotCompare:
                         # Add all route attributes directly to the prefix dictionary
                         **{k: v for k, v in best_route.items() if k != "nexthops"},
                         # Add an empty nexthops dictionary that will be populated below
-                        "nexthops": {}
+                        "nexthops": {},
                     }
 
                     # Convert nexthops list to a dictionary keyed by <interface>_<nexthop-ip>

@@ -67,6 +67,7 @@ class SnapType:
     ARE_ROUTES = "are_routes"
     ARE_FIB_ROUTES = "are_fib_routes"
 
+
 class HealthType:
     """Class mapping the health check configuration strings to commonly used variables.
 
@@ -147,7 +148,7 @@ def enum_state_dict_factory(data):
     for key, value in data:
         if key == "status" and (isinstance(value, SnapStatus) or isinstance(value, CheckStatus)):
             # Convert Status enum to boolean
-            result["state"] = (value == SnapStatus.SUCCESS if isinstance(value, SnapStatus) else value == CheckStatus.SUCCESS)
+            result["state"] = value == SnapStatus.SUCCESS if isinstance(value, SnapStatus) else value == CheckStatus.SUCCESS
             # Keep the original status name
             result["status"] = value.name
         else:

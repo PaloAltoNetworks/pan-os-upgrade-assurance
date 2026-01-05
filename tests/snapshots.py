@@ -40,7 +40,7 @@ snap1 = {
                 "owner": "1",
                 "id": "3",
             },
-        }
+        },
     },
     "routes": {
         "state": True,
@@ -86,8 +86,8 @@ snap1 = {
                 "age": None,
                 "interface": "ethernet1/3",
                 "route-table": "unicast",
-            }
-        }
+            },
+        },
     },
     "bgp_peers": {
         "state": True,
@@ -152,7 +152,7 @@ snap1 = {
                     }
                 },
             }
-        }
+        },
     },
     "session_stats": {
         "state": True,
@@ -207,14 +207,9 @@ snap1 = {
             "tmo-tcphandshake": "10",
             "kbps": "1",
             "num-gtpu-pending": "0",
-        }
+        },
     },
-    "content_version": {
-        "state": True,
-        "status": "SUCCESS",
-        "reason": "",
-        "snapshot": {"version": "8647-7730"}
-    },
+    "content_version": {"state": True, "status": "SUCCESS", "reason": "", "snapshot": {"version": "8647-7730"}},
     "arp_table": {
         "state": True,
         "status": "SUCCESS",
@@ -236,7 +231,7 @@ snap1 = {
                 "status": "c",
                 "ttl": "153",
             },
-        }
+        },
     },
     "license": {
         "state": True,
@@ -332,13 +327,13 @@ snap1 = {
                 "expired": "no",
                 "authcode": None,
             },
-        }
+        },
     },
     "nics": {
         "state": True,
         "status": "SUCCESS",
         "reason": "",
-        "snapshot": {"ethernet1/1": "up", "ethernet1/2": "up", "ethernet1/3": "up", "tunnel": "up"}
+        "snapshot": {"ethernet1/1": "up", "ethernet1/2": "up", "ethernet1/3": "up", "tunnel": "up"},
     },
     "are_routes": {
         "state": True,
@@ -372,7 +367,7 @@ snap1 = {
                                 "interfaceIndex": 16,
                                 "interfaceName": "ethernet1/1",
                                 "active": True,
-                                "weight": 1
+                                "weight": 1,
                             },
                             {
                                 "flags": "A E ",
@@ -381,9 +376,9 @@ snap1 = {
                                 "interfaceIndex": 17,
                                 "interfaceName": "ethernet1/2",
                                 "active": True,
-                                "weight": 1
-                            }
-                        ]
+                                "weight": 1,
+                            },
+                        ],
                     }
                 ]
             },
@@ -414,13 +409,13 @@ snap1 = {
                                 "interfaceIndex": 61441,
                                 "interfaceName": "public-lr",
                                 "active": True,
-                                "weight": 1
+                                "weight": 1,
                             }
-                        ]
+                        ],
                     }
                 ]
-            }
-        }
+            },
+        },
     },
     "are_fib_routes": {
         "state": True,
@@ -433,18 +428,18 @@ snap1 = {
                 "Next Hop Type": "0",
                 "Flags": "ug",
                 "Next Hop": "10.10.11.1",
-                "MTU": "1500"
+                "MTU": "1500",
             },
             "1.1.1.1/32_loopback.10_0.0.0.0": {
                 "Destination": "1.1.1.1/32",
                 "Interface": "loopback.10",
                 "Next Hop Type": "3",
                 "Flags": "uh",
-                "Next Hop": "0.0.0.0",
-                "MTU": "1500"
-            }
-        }
-    }
+                "Next Hop": "0.0.0.0",  # nosec
+                "MTU": "1500",
+            },
+        },
+    },
 }
 
 
@@ -477,7 +472,7 @@ snap2 = {
                 "owner": "1",
                 "id": "3",
             },
-        }
+        },
     },
     "routes": {
         "state": True,
@@ -523,8 +518,8 @@ snap2 = {
                 "age": None,
                 "interface": "ethernet1/3",
                 "route-table": "unicast",
-            }
-        }
+            },
+        },
     },
     "bgp_peers": {
         "state": True,
@@ -589,7 +584,7 @@ snap2 = {
                     }
                 },
             }
-        }
+        },
     },
     "session_stats": {
         "state": True,
@@ -644,14 +639,9 @@ snap2 = {
             "tmo-tcphandshake": "10",
             "kbps": "0",
             "num-gtpu-pending": "0",
-        }
+        },
     },
-    "content_version": {
-        "state": True,
-        "status": "SUCCESS",
-        "reason": "",
-        "snapshot": {"version": "8647-7730"}
-    },
+    "content_version": {"state": True, "status": "SUCCESS", "reason": "", "snapshot": {"version": "8647-7730"}},
     "arp_table": {
         "state": True,
         "status": "SUCCESS",
@@ -665,7 +655,7 @@ snap2 = {
                 "status": "i",
                 "ttl": "1",
             }
-        }
+        },
     },
     "license": {
         "state": True,
@@ -751,13 +741,13 @@ snap2 = {
                 "expired": "no",
                 "authcode": None,
             },
-        }
+        },
     },
     "nics": {
         "state": True,
         "status": "SUCCESS",
         "reason": "",
-        "snapshot": {"ethernet1/1": "down", "ethernet1/2": "up", "ethernet1/3": "up"}
+        "snapshot": {"ethernet1/1": "down", "ethernet1/2": "up", "ethernet1/3": "up"},
     },
     "are_routes": {
         "state": True,
@@ -791,9 +781,9 @@ snap2 = {
                                 "interfaceIndex": 17,
                                 "interfaceName": "ethernet1/2",
                                 "active": True,
-                                "weight": 1
+                                "weight": 1,
                             }
-                        ]
+                        ],
                     }
                 ]
             },
@@ -824,13 +814,13 @@ snap2 = {
                                 "interfaceIndex": 61441,
                                 "interfaceName": "public-lr",
                                 "active": True,
-                                "weight": 1
+                                "weight": 1,
                             }
-                        ]
+                        ],
                     }
                 ]
-            }
-        }
+            },
+        },
     },
     "are_fib_routes": {
         "state": True,
@@ -843,16 +833,16 @@ snap2 = {
                 "Next Hop Type": "0",
                 "Flags": "ug",
                 "Next Hop": "10.10.11.1",
-                "MTU": "1500"
+                "MTU": "1500",
             },
             "10.0.0.0/8_ethernet1/3_0.0.0.0": {
                 "Destination": "10.0.0.0/8",
                 "Interface": "ethernet1/3",
                 "Next Hop Type": "3",
                 "Flags": "uh",
-                "Next Hop": "0.0.0.0",
-                "MTU": "1500"
-            }
-        }
-    }
+                "Next Hop": "0.0.0.0",  # nosec
+                "MTU": "1500",
+            },
+        },
+    },
 }

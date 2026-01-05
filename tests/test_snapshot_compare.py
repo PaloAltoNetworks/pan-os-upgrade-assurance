@@ -3,7 +3,11 @@ from unittest.mock import MagicMock
 from deepdiff import DeepDiff
 from panos_upgrade_assurance.snapshot_compare import SnapshotCompare
 from panos_upgrade_assurance.exceptions import (
-    WrongDataTypeException, MissingKeyException, SnapshotSchemeMismatchException, SnapshotNoneComparisonException)
+    WrongDataTypeException,
+    MissingKeyException,
+    SnapshotSchemeMismatchException,
+    SnapshotNoneComparisonException,
+)
 from snapshots import snap1, snap2
 
 
@@ -131,7 +135,9 @@ class TestSnapshotCompare:
         """Check if specific parent dict is compared only on a report type."""
         report_type = "ip_sec_tunnels"
         properties = ["ipsec_tun"]  # compare specific ipsec tunnel only
-        result = SnapshotCompare.calculate_diff_on_dicts(snap1[report_type]["snapshot"], snap2[report_type]["snapshot"], properties)
+        result = SnapshotCompare.calculate_diff_on_dicts(
+            snap1[report_type]["snapshot"], snap2[report_type]["snapshot"], properties
+        )
         assert result == {
             "added": {"added_keys": [], "passed": True},
             "changed": {
@@ -152,7 +158,9 @@ class TestSnapshotCompare:
         """Check if rest is compared when specific parent dict is skipped on a report type."""
         report_type = "ip_sec_tunnels"
         properties = ["!ipsec_tun"]  # skip specific ipsec tunnel and compare the rest
-        result = SnapshotCompare.calculate_diff_on_dicts(snap1[report_type]["snapshot"], snap2[report_type]["snapshot"], properties)
+        result = SnapshotCompare.calculate_diff_on_dicts(
+            snap1[report_type]["snapshot"], snap2[report_type]["snapshot"], properties
+        )
         assert result == {
             "added": {"added_keys": [], "passed": True},
             "changed": {
@@ -173,7 +181,9 @@ class TestSnapshotCompare:
         """Check if sub-dicts are also compared on a report type."""
         report_type = "license"
         properties = ["Logging Service"]  # Logging Service has "custom" sub-dict
-        result = SnapshotCompare.calculate_diff_on_dicts(snap1[report_type]["snapshot"], snap2[report_type]["snapshot"], properties)
+        result = SnapshotCompare.calculate_diff_on_dicts(
+            snap1[report_type]["snapshot"], snap2[report_type]["snapshot"], properties
+        )
         assert result == {
             "added": {"added_keys": [], "passed": True},
             "changed": {
@@ -218,7 +228,9 @@ class TestSnapshotCompare:
             "!PA-VM",
             "!PAN-DB URL Filtering",
         ]
-        result = SnapshotCompare.calculate_diff_on_dicts(snap1[report_type]["snapshot"], snap2[report_type]["snapshot"], properties)
+        result = SnapshotCompare.calculate_diff_on_dicts(
+            snap1[report_type]["snapshot"], snap2[report_type]["snapshot"], properties
+        )
         assert result == {
             "added": {"added_keys": [], "passed": True},
             "changed": {
@@ -242,7 +254,9 @@ class TestSnapshotCompare:
         """Check if only provided sub-dicts(keys) are compared on a report type."""
         report_type = "license"
         properties = ["custom"]  # Logging Service has "custom" sub-dict
-        result = SnapshotCompare.calculate_diff_on_dicts(snap1[report_type]["snapshot"], snap2[report_type]["snapshot"], properties)
+        result = SnapshotCompare.calculate_diff_on_dicts(
+            snap1[report_type]["snapshot"], snap2[report_type]["snapshot"], properties
+        )
         assert result == {
             "added": {"added_keys": [], "passed": True},
             "changed": {
@@ -278,7 +292,9 @@ class TestSnapshotCompare:
         # Logging Service has "custom" sub-dict but since properities have parent-child relantionship,
         # no "and" operation will be applied and all keys for "Logging Service" will be compared
         properties = ["custom", "Logging Service"]
-        result = SnapshotCompare.calculate_diff_on_dicts(snap1[report_type]["snapshot"], snap2[report_type]["snapshot"], properties)
+        result = SnapshotCompare.calculate_diff_on_dicts(
+            snap1[report_type]["snapshot"], snap2[report_type]["snapshot"], properties
+        )
         assert result == {
             "added": {"added_keys": [], "passed": True},
             "changed": {
@@ -313,7 +329,9 @@ class TestSnapshotCompare:
         """Check if multiple exlusions works on a report type."""
         report_type = "license"
         properties = ["!custom", "!serial"]
-        result = SnapshotCompare.calculate_diff_on_dicts(snap1[report_type]["snapshot"], snap2[report_type]["snapshot"], properties)
+        result = SnapshotCompare.calculate_diff_on_dicts(
+            snap1[report_type]["snapshot"], snap2[report_type]["snapshot"], properties
+        )
         assert result == {
             "added": {"added_keys": [], "passed": True},
             "changed": {"changed_raw": {}, "passed": True},
@@ -445,64 +463,76 @@ class TestSnapshotCompare:
                 {
                     "added": {"added_keys": ["key1", "key2"]},
                     "missing": {"missing_keys": ["key3"]},
-                    "changed": {"changed_raw": {"key4": {}, "key5": {}}}
+                    "changed": {"changed_raw": {"key4": {}, "key5": {}}},
                 },
                 {"key3": "value", "key4": "old", "key5": "old", "key6": "unchanged"},
                 {"key1": "value", "key2": "value", "key4": "new", "key5": "new", "key6": "unchanged"},
                 100.0,
-                {"change_percentage": 125.0, "change_threshold": 100.0, "passed": False}
+                {"change_percentage": 125.0, "change_threshold": 100.0, "passed": False},
             ),
             # Case 2: Changes exceed threshold
             (
                 {
                     "added": {"added_keys": ["key1", "key2"]},
                     "missing": {"missing_keys": ["key3"]},
-                    "changed": {"changed_raw": {"key4": {}, "key5": {}}}
+                    "changed": {"changed_raw": {"key4": {}, "key5": {}}},
                 },
                 {"key3": "value", "key4": "old", "key5": "old", "key6": "unchanged"},
                 {"key1": "value", "key2": "value", "key4": "new", "key5": "new", "key6": "unchanged"},
                 50.0,
-                {"change_percentage": 125.0, "change_threshold": 50.0, "passed": False}
+                {"change_percentage": 125.0, "change_threshold": 50.0, "passed": False},
             ),
             # Case 3: Empty left snapshot
             (
-                {
-                    "added": {"added_keys": ["key1"]},
-                    "missing": {"missing_keys": []},
-                    "changed": {"changed_raw": {}}
-                },
+                {"added": {"added_keys": ["key1"]}, "missing": {"missing_keys": []}, "changed": {"changed_raw": {}}},
                 {},
                 {"key1": "value"},
                 10.0,
-                {"change_percentage": 100.0, "change_threshold": 10.0, "passed": False}
+                {"change_percentage": 100.0, "change_threshold": 10.0, "passed": False},
             ),
             # Case 4: Both snapshots empty
             (
-                {
-                    "added": {"added_keys": []},
-                    "missing": {"missing_keys": []},
-                    "changed": {"changed_raw": {}}
-                },
+                {"added": {"added_keys": []}, "missing": {"missing_keys": []}, "changed": {"changed_raw": {}}},
                 {},
                 {},
                 10.0,
-                {"change_percentage": 0.0, "change_threshold": 10.0, "passed": True}
+                {"change_percentage": 0.0, "change_threshold": 10.0, "passed": True},
             ),
             # Case 5: Changes within threshold - should pass
             (
                 {
                     "added": {"added_keys": ["key11"]},
                     "missing": {"missing_keys": ["key1"]},
-                    "changed": {"changed_raw": {"key2": {}}}
+                    "changed": {"changed_raw": {"key2": {}}},
                 },
-                {"key1": "v1", "key2": "old", "key3": "v3", "key4": "v4", "key5": "v5",
-                 "key6": "v6", "key7": "v7", "key8": "v8", "key9": "v9", "key10": "v10"},  # 10 items
-                {"key2": "new", "key3": "v3", "key4": "v4", "key5": "v5", "key6": "v6",
-                 "key7": "v7", "key8": "v8", "key9": "v9", "key10": "v10", "key11": "v11"},  # 1 missing, 1 added, 1 changed
+                {
+                    "key1": "v1",
+                    "key2": "old",
+                    "key3": "v3",
+                    "key4": "v4",
+                    "key5": "v5",
+                    "key6": "v6",
+                    "key7": "v7",
+                    "key8": "v8",
+                    "key9": "v9",
+                    "key10": "v10",
+                },  # 10 items
+                {
+                    "key2": "new",
+                    "key3": "v3",
+                    "key4": "v4",
+                    "key5": "v5",
+                    "key6": "v6",
+                    "key7": "v7",
+                    "key8": "v8",
+                    "key9": "v9",
+                    "key10": "v10",
+                    "key11": "v11",
+                },  # 1 missing, 1 added, 1 changed
                 50.0,
-                {"change_percentage": 30.0, "change_threshold": 50.0, "passed": True}
+                {"change_percentage": 30.0, "change_threshold": 50.0, "passed": True},
             ),
-        ]
+        ],
     )
     def test_calculate_count_change_percentage(self, comparison_result, left_dict, right_dict, threshold, expected):
         """Test various scenarios for count change percentage calculation."""
@@ -512,7 +542,7 @@ class TestSnapshotCompare:
             comparison_result=comparison_result,
             left_snapshot_type_dict=left_dict,
             right_snapshot_type_dict=right_dict,
-            count_change_threshold=threshold
+            count_change_threshold=threshold,
         )
 
         assert result["change_percentage"] == expected["change_percentage"]
@@ -530,11 +560,13 @@ class TestSnapshotCompare:
     def test_compare_type_generic_calls_calculate_diff_on_dicts(self):
         """Test that compare_type_generic calls calculate_diff_on_dicts."""
         snapshot_compare = SnapshotCompare(snap1, snap2)
-        snapshot_compare.calculate_diff_on_dicts = MagicMock(return_value={
-            "missing": {"passed": True, "missing_keys": []},
-            "added": {"passed": True, "added_keys": []},
-            "changed": {"passed": True, "changed_raw": {}}
-        })
+        snapshot_compare.calculate_diff_on_dicts = MagicMock(
+            return_value={
+                "missing": {"passed": True, "missing_keys": []},
+                "added": {"passed": True, "added_keys": []},
+                "changed": {"passed": True, "changed_raw": {}},
+            }
+        )
 
         snapshot_compare.compare_type_generic(report_type="nics")
 
@@ -545,11 +577,9 @@ class TestSnapshotCompare:
         snapshot_compare = SnapshotCompare(snap1, snap2)
 
         # Mock the helper method
-        snapshot_compare._calculate_count_change_percentage = MagicMock(return_value={
-            "passed": True,
-            "change_percentage": 10.0,
-            "change_threshold": 50.0
-        })
+        snapshot_compare._calculate_count_change_percentage = MagicMock(
+            return_value={"passed": True, "change_percentage": 10.0, "change_threshold": 50.0}
+        )
 
         # Call with count_change_threshold
         snapshot_compare.compare_type_generic(report_type="nics", count_change_threshold=50)
@@ -562,8 +592,22 @@ class TestSnapshotCompare:
         assert call_args.kwargs["count_change_threshold"] == 50
 
     def test_compare_type_generic_count_change_false(self):
-        left_snapshot = {"nics": {"state": True, "status": "SUCCESS", "reason": "", "snapshot": {"ethernet1/2": "up", "ethernet1/3": "up", "tunnel": "up"}}}
-        right_snapshot = {"nics": {"state": True, "status": "SUCCESS", "reason": "", "snapshot": {"ethernet1/2": "up", "ethernet1/3": "down", "tunnel": "up"}}}
+        left_snapshot = {
+            "nics": {
+                "state": True,
+                "status": "SUCCESS",
+                "reason": "",
+                "snapshot": {"ethernet1/2": "up", "ethernet1/3": "up", "tunnel": "up"},
+            }
+        }
+        right_snapshot = {
+            "nics": {
+                "state": True,
+                "status": "SUCCESS",
+                "reason": "",
+                "snapshot": {"ethernet1/2": "up", "ethernet1/3": "down", "tunnel": "up"},
+            }
+        }
         change_threshold = 10
         snapshot_compare = SnapshotCompare(left_snapshot, right_snapshot)
         result = snapshot_compare.compare_type_generic(report_type="nics", count_change_threshold=change_threshold)
@@ -575,8 +619,22 @@ class TestSnapshotCompare:
         }
 
     def test_compare_type_generic_count_change_true(self):
-        left_snapshot = {"nics": {"state": True, "status": "SUCCESS", "reason": "", "snapshot": {"ethernet1/2": "up", "ethernet1/3": "up", "tunnel": "up"}}}
-        right_snapshot = {"nics": {"state": True, "status": "SUCCESS", "reason": "", "snapshot": {"ethernet1/2": "up", "ethernet1/3": "down", "tunnel": "up"}}}
+        left_snapshot = {
+            "nics": {
+                "state": True,
+                "status": "SUCCESS",
+                "reason": "",
+                "snapshot": {"ethernet1/2": "up", "ethernet1/3": "up", "tunnel": "up"},
+            }
+        }
+        right_snapshot = {
+            "nics": {
+                "state": True,
+                "status": "SUCCESS",
+                "reason": "",
+                "snapshot": {"ethernet1/2": "up", "ethernet1/3": "down", "tunnel": "up"},
+            }
+        }
         change_threshold = 40
 
         snapshot_compare = SnapshotCompare(left_snapshot, right_snapshot)
@@ -603,12 +661,35 @@ class TestSnapshotCompare:
     @pytest.mark.parametrize(
         "left_snapshot, right_snapshot, expected_change_pct",
         [
-            ({"nics": {"state": True, "status": "SUCCESS", "reason": "", "snapshot": {}}},
-             {"nics": {"state": True, "status": "SUCCESS", "reason": "", "snapshot": {}}}, 0),
-            ({"nics": {"state": True, "status": "SUCCESS", "reason": "", "snapshot": {}}},
-             {"nics": {"state": True, "status": "SUCCESS", "reason": "", "snapshot": {"ethernet1/2": "up", "ethernet1/3": "down", "tunnel": "up"}}}, 100),
-            ({"nics": {"state": True, "status": "SUCCESS", "reason": "", "snapshot": {"ethernet1/2": "up", "ethernet1/3": "up", "tunnel": "up"}}},
-             {"nics": {"state": True, "status": "SUCCESS", "reason": "", "snapshot": {}}}, 100),
+            (
+                {"nics": {"state": True, "status": "SUCCESS", "reason": "", "snapshot": {}}},
+                {"nics": {"state": True, "status": "SUCCESS", "reason": "", "snapshot": {}}},
+                0,
+            ),
+            (
+                {"nics": {"state": True, "status": "SUCCESS", "reason": "", "snapshot": {}}},
+                {
+                    "nics": {
+                        "state": True,
+                        "status": "SUCCESS",
+                        "reason": "",
+                        "snapshot": {"ethernet1/2": "up", "ethernet1/3": "down", "tunnel": "up"},
+                    }
+                },
+                100,
+            ),
+            (
+                {
+                    "nics": {
+                        "state": True,
+                        "status": "SUCCESS",
+                        "reason": "",
+                        "snapshot": {"ethernet1/2": "up", "ethernet1/3": "up", "tunnel": "up"},
+                    }
+                },
+                {"nics": {"state": True, "status": "SUCCESS", "reason": "", "snapshot": {}}},
+                100,
+            ),
         ],
     )
     def test_compare_type_generic_empty_dicts_count_change(self, left_snapshot, right_snapshot, expected_change_pct):
@@ -663,7 +744,9 @@ class TestSnapshotCompare:
         snapshot_compare.validate_keys_exist = MagicMock()
         snapshot_compare.compare_type_metric_values(report_type=report_type, thresholds=thresholds)
 
-        snapshot_compare.validate_keys_exist.assert_called_with(snap1[report_type]["snapshot"], snap2[report_type]["snapshot"], threshold_elements)
+        snapshot_compare.validate_keys_exist.assert_called_with(
+            snap1[report_type]["snapshot"], snap2[report_type]["snapshot"], threshold_elements
+        )
 
     def test_compare_type_metric_values_scheme_mismatch_exception(self):
         report_type = "session_stats"
@@ -733,17 +816,9 @@ class TestSnapshotCompare:
                         "protocol": "static",
                         "installed": True,
                         "nexthops": [
-                            {
-                                "interfaceName": "ethernet1/1",
-                                "ip": "10.0.0.1",
-                                "active": True
-                            },
-                            {
-                                "interfaceName": "ethernet1/2",
-                                "ip": "10.0.0.2",
-                                "active": True
-                            }
-                        ]
+                            {"interfaceName": "ethernet1/1", "ip": "10.0.0.1", "active": True},
+                            {"interfaceName": "ethernet1/2", "ip": "10.0.0.2", "active": True},
+                        ],
                     }
                 ]
             }
@@ -770,24 +845,13 @@ class TestSnapshotCompare:
         are_routes = {
             "public-lr": {
                 "0.0.0.0/0": [
-                    {
-                        "prefix": "0.0.0.0/0",
-                        "protocol": "static",
-                        "installed": False,  # Not installed
-                        "nexthops": []
-                    },
+                    {"prefix": "0.0.0.0/0", "protocol": "static", "installed": False, "nexthops": []},  # Not installed
                     {
                         "prefix": "0.0.0.0/0",
                         "protocol": "bgp",
                         "installed": True,  # Installed
-                        "nexthops": [
-                            {
-                                "interfaceName": "ethernet1/3",
-                                "ip": "10.0.0.3",
-                                "active": True
-                            }
-                        ]
-                    }
+                        "nexthops": [{"interfaceName": "ethernet1/3", "ip": "10.0.0.3", "active": True}],
+                    },
                 ]
             }
         }
@@ -803,28 +867,78 @@ class TestSnapshotCompare:
         [
             # Test case 1: Identical routes
             (
-                {"public-lr": {"0.0.0.0/0": [{"prefix": "0.0.0.0/0", "protocol": "static", "installed": True,
-                                              "nexthops": [{"interfaceName": "ethernet1/1", "ip": "10.0.0.1"}]}]}},
-                {"public-lr": {"0.0.0.0/0": [{"prefix": "0.0.0.0/0", "protocol": "static", "installed": True,
-                                              "nexthops": [{"interfaceName": "ethernet1/1", "ip": "10.0.0.1"}]}]}},
-                True  # Expecting passed=True (no differences)
+                {
+                    "public-lr": {
+                        "0.0.0.0/0": [
+                            {
+                                "prefix": "0.0.0.0/0",
+                                "protocol": "static",
+                                "installed": True,
+                                "nexthops": [{"interfaceName": "ethernet1/1", "ip": "10.0.0.1"}],
+                            }
+                        ]
+                    }
+                },
+                {
+                    "public-lr": {
+                        "0.0.0.0/0": [
+                            {
+                                "prefix": "0.0.0.0/0",
+                                "protocol": "static",
+                                "installed": True,
+                                "nexthops": [{"interfaceName": "ethernet1/1", "ip": "10.0.0.1"}],
+                            }
+                        ]
+                    }
+                },
+                True,  # Expecting passed=True (no differences)
             ),
             # Test case 2: Different nexthops
             (
-                {"public-lr": {"0.0.0.0/0": [{"prefix": "0.0.0.0/0", "protocol": "static", "installed": True,
-                                              "nexthops": [{"interfaceName": "ethernet1/1", "ip": "10.0.0.1"}]}]}},
-                {"public-lr": {"0.0.0.0/0": [{"prefix": "0.0.0.0/0", "protocol": "static", "installed": True,
-                                              "nexthops": [{"interfaceName": "ethernet1/2", "ip": "10.0.0.2"}]}]}},
-                False  # Expecting passed=False (differences found)
+                {
+                    "public-lr": {
+                        "0.0.0.0/0": [
+                            {
+                                "prefix": "0.0.0.0/0",
+                                "protocol": "static",
+                                "installed": True,
+                                "nexthops": [{"interfaceName": "ethernet1/1", "ip": "10.0.0.1"}],
+                            }
+                        ]
+                    }
+                },
+                {
+                    "public-lr": {
+                        "0.0.0.0/0": [
+                            {
+                                "prefix": "0.0.0.0/0",
+                                "protocol": "static",
+                                "installed": True,
+                                "nexthops": [{"interfaceName": "ethernet1/2", "ip": "10.0.0.2"}],
+                            }
+                        ]
+                    }
+                },
+                False,  # Expecting passed=False (differences found)
             ),
             # Test case 3: Added route
             (
                 {"public-lr": {}},
-                {"public-lr": {"0.0.0.0/0": [{"prefix": "0.0.0.0/0", "protocol": "static", "installed": True,
-                                              "nexthops": [{"interfaceName": "ethernet1/1", "ip": "10.0.0.1"}]}]}},
-                False  # Expecting passed=False (differences found)
+                {
+                    "public-lr": {
+                        "0.0.0.0/0": [
+                            {
+                                "prefix": "0.0.0.0/0",
+                                "protocol": "static",
+                                "installed": True,
+                                "nexthops": [{"interfaceName": "ethernet1/1", "ip": "10.0.0.1"}],
+                            }
+                        ]
+                    }
+                },
+                False,  # Expecting passed=False (differences found)
             ),
-        ]
+        ],
     )
     def test_compare_type_are_routes(self, left_routes, right_routes, expected_diff):
         """Test the compare_type_are_routes method."""
@@ -854,7 +968,9 @@ class TestSnapshotCompare:
         assert "0.0.0.0/0" in result["changed"]["changed_raw"]["public-lr"]["changed"]["changed_raw"]
 
         # Verify uptime is different
-        nexthops_diff = result["changed"]["changed_raw"]["public-lr"]["changed"]["changed_raw"]["0.0.0.0/0"]["changed"]["changed_raw"]
+        nexthops_diff = result["changed"]["changed_raw"]["public-lr"]["changed"]["changed_raw"]["0.0.0.0/0"]["changed"][
+            "changed_raw"
+        ]
         assert "uptime" in nexthops_diff
         assert nexthops_diff["uptime"]["left_snap"] == "00:00:26"
         assert nexthops_diff["uptime"]["right_snap"] == "01:30:26"
@@ -864,22 +980,26 @@ class TestSnapshotCompare:
         # Create test snapshots with ARE routes
         left_routes = {
             "public-lr": {
-                "0.0.0.0/0": [{
-                    "prefix": "0.0.0.0/0",
-                    "protocol": "static",
-                    "installed": True,
-                    "nexthops": [{"interfaceName": "ethernet1/1", "ip": "10.0.0.1"}]
-                }]
+                "0.0.0.0/0": [
+                    {
+                        "prefix": "0.0.0.0/0",
+                        "protocol": "static",
+                        "installed": True,
+                        "nexthops": [{"interfaceName": "ethernet1/1", "ip": "10.0.0.1"}],
+                    }
+                ]
             }
         }
         right_routes = {
             "public-lr": {
-                "0.0.0.0/0": [{
-                    "prefix": "0.0.0.0/0",
-                    "protocol": "static",
-                    "installed": True,
-                    "nexthops": [{"interfaceName": "ethernet1/2", "ip": "10.0.0.2"}]
-                }]
+                "0.0.0.0/0": [
+                    {
+                        "prefix": "0.0.0.0/0",
+                        "protocol": "static",
+                        "installed": True,
+                        "nexthops": [{"interfaceName": "ethernet1/2", "ip": "10.0.0.2"}],
+                    }
+                ]
             }
         }
         left_snapshot = {"are_routes": {"state": True, "status": "SUCCESS", "reason": "", "snapshot": left_routes}}
@@ -888,11 +1008,13 @@ class TestSnapshotCompare:
         snapshot_compare = SnapshotCompare(left_snapshot, right_snapshot)
 
         # Mock calculate_diff_on_dicts
-        snapshot_compare.calculate_diff_on_dicts = MagicMock(return_value={
-            "missing": {"passed": True, "missing_keys": []},
-            "added": {"passed": True, "added_keys": []},
-            "changed": {"passed": True, "changed_raw": {}}
-        })
+        snapshot_compare.calculate_diff_on_dicts = MagicMock(
+            return_value={
+                "missing": {"passed": True, "missing_keys": []},
+                "added": {"passed": True, "added_keys": []},
+                "changed": {"passed": True, "changed_raw": {}},
+            }
+        )
 
         # Call the method
         snapshot_compare.compare_type_are_routes(report_type="are_routes")
@@ -905,22 +1027,26 @@ class TestSnapshotCompare:
         # Create test snapshots with ARE routes
         left_routes = {
             "public-lr": {
-                "0.0.0.0/0": [{
-                    "prefix": "0.0.0.0/0",
-                    "protocol": "static",
-                    "installed": True,
-                    "nexthops": [{"interfaceName": "ethernet1/1", "ip": "10.0.0.1"}]
-                }]
+                "0.0.0.0/0": [
+                    {
+                        "prefix": "0.0.0.0/0",
+                        "protocol": "static",
+                        "installed": True,
+                        "nexthops": [{"interfaceName": "ethernet1/1", "ip": "10.0.0.1"}],
+                    }
+                ]
             }
         }
         right_routes = {
             "public-lr": {
-                "0.0.0.0/0": [{
-                    "prefix": "0.0.0.0/0",
-                    "protocol": "static",
-                    "installed": True,
-                    "nexthops": [{"interfaceName": "ethernet1/2", "ip": "10.0.0.2"}]
-                }]
+                "0.0.0.0/0": [
+                    {
+                        "prefix": "0.0.0.0/0",
+                        "protocol": "static",
+                        "installed": True,
+                        "nexthops": [{"interfaceName": "ethernet1/2", "ip": "10.0.0.2"}],
+                    }
+                ]
             }
         }
         left_snapshot = {"are_routes": {"state": True, "status": "SUCCESS", "reason": "", "snapshot": left_routes}}
@@ -929,11 +1055,9 @@ class TestSnapshotCompare:
         snapshot_compare = SnapshotCompare(left_snapshot, right_snapshot)
 
         # Mock the helper method
-        snapshot_compare._calculate_count_change_percentage = MagicMock(return_value={
-            "passed": True,
-            "change_percentage": 5.0,
-            "change_threshold": 25.0
-        })
+        snapshot_compare._calculate_count_change_percentage = MagicMock(
+            return_value={"passed": True, "change_percentage": 5.0, "change_threshold": 25.0}
+        )
 
         # Call with count_change_threshold
         snapshot_compare.compare_type_are_routes(report_type="are_routes", count_change_threshold=25)
@@ -953,12 +1077,14 @@ class TestSnapshotCompare:
         # Create identical ARE routes snapshots
         identical_routes = {
             "public-lr": {
-                "0.0.0.0/0": [{
-                    "prefix": "0.0.0.0/0",
-                    "protocol": "static",
-                    "installed": True,
-                    "nexthops": [{"interfaceName": "ethernet1/1", "ip": "10.0.0.1"}]
-                }]
+                "0.0.0.0/0": [
+                    {
+                        "prefix": "0.0.0.0/0",
+                        "protocol": "static",
+                        "installed": True,
+                        "nexthops": [{"interfaceName": "ethernet1/1", "ip": "10.0.0.1"}],
+                    }
+                ]
             }
         }
         left_snapshot = {"are_routes": {"state": True, "status": "SUCCESS", "reason": "", "snapshot": identical_routes}}
@@ -1150,18 +1276,31 @@ class TestSnapshotCompare:
                                         "changed_raw": {
                                             "0.0.0.0/0": {
                                                 "added": {"added_keys": [], "passed": True},
-                                                "changed": {"changed_raw": {
-                                                    "nexthops": {
-                                                        "added": {"added_keys": [], "passed": True},
-                                                        "changed": {"changed_raw": {}, "passed": True},
-                                                        "missing": {"missing_keys": ["ethernet1/1_direct"], "passed": False},
-                                                    "passed": False}}, "passed": False},
+                                                "changed": {
+                                                    "changed_raw": {
+                                                        "nexthops": {
+                                                            "added": {"added_keys": [], "passed": True},
+                                                            "changed": {"changed_raw": {}, "passed": True},
+                                                            "missing": {"missing_keys": ["ethernet1/1_direct"], "passed": False},
+                                                            "passed": False,
+                                                        }
+                                                    },
+                                                    "passed": False,
+                                                },
                                                 "missing": {"missing_keys": [], "passed": True},
-                                            "passed": False}}, "passed": False},
-                                    "missing": {"missing_keys": [], "passed": True}, "passed": False}},
-                                "passed": False},
+                                                "passed": False,
+                                            }
+                                        },
+                                        "passed": False,
+                                    },
+                                    "missing": {"missing_keys": [], "passed": True},
+                                    "passed": False,
+                                }
+                            },
+                            "passed": False,
+                        },
                         "missing": {"missing_keys": [], "passed": True},
-                        "passed": False
+                        "passed": False,
                     }
                 },
             ),
@@ -1171,11 +1310,14 @@ class TestSnapshotCompare:
                     "are_fib_routes": {
                         "added": {
                             "passed": False,
-                            "added_keys": ["10.0.0.0/8_ethernet1/3_0.0.0.0", "0.0.0.0/0_ethernet1/2_10.10.11.1"]},
-                        "changed": {"passed": True, "changed_raw": {}}, "passed": False,
+                            "added_keys": ["10.0.0.0/8_ethernet1/3_0.0.0.0", "0.0.0.0/0_ethernet1/2_10.10.11.1"],
+                        },
+                        "changed": {"passed": True, "changed_raw": {}},
+                        "passed": False,
                         "missing": {
                             "passed": False,
-                            "missing_keys": ["0.0.0.0/0_ethernet1/1_10.10.11.1", "1.1.1.1/32_loopback.10_0.0.0.0"]}
+                            "missing_keys": ["0.0.0.0/0_ethernet1/1_10.10.11.1", "1.1.1.1/32_loopback.10_0.0.0.0"],
+                        },
                     }
                 },
             ),

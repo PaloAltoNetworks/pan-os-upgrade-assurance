@@ -3118,9 +3118,9 @@ class TestFirewallProxy:
                                 "interfaceIndex": 16,
                                 "interfaceName": "ethernet1/1",
                                 "active": True,
-                                "weight": 1
+                                "weight": 1,
                             }
-                        ]
+                        ],
                     }
                 ]
             }
