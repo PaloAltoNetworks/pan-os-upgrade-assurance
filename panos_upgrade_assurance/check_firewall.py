@@ -10,11 +10,13 @@ from packaging.version import Version
 
 from panos_upgrade_assurance.utils import (
     CheckResult,
+    SnapResult,
     ConfigParser,
     interpret_yes_no,
     CheckType,
     SnapType,
     CheckStatus,
+    SnapStatus,
     SupportedHashes,
     HealthType,
 )
@@ -83,17 +85,19 @@ class CheckFirewall:
         """
         self._node = node
         self._snapshot_method_mapping = {
-            SnapType.NICS: self._node.get_nics,
-            SnapType.ROUTES: self._node.get_routes,
-            SnapType.BGP_PEERS: self._node.get_bgp_peers,
-            SnapType.LICENSE: self._node.get_licenses,
-            SnapType.ARP_TABLE: self._node.get_arp_table,
-            SnapType.CONTENT_VERSION: self.get_content_db_version,
-            SnapType.SESSION_STATS: self._node.get_session_stats,
-            SnapType.IPSEC_TUNNELS: self.get_ip_sec_tunnels,
-            SnapType.FIB_ROUTES: self._node.get_fib,
-            SnapType.GLOBAL_JUMBO_FRAME: self.get_global_jumbo_frame,
-            SnapType.INTERFACES_MTU: self._node.get_interfaces_mtu,
+            SnapType.NICS: self.get_nics_snapshot,
+            SnapType.ROUTES: self.get_routes_snapshot,
+            SnapType.BGP_PEERS: self.get_bgp_peers_snapshot,
+            SnapType.LICENSE: self.get_license_snapshot,
+            SnapType.ARP_TABLE: self.get_arp_table_snapshot,
+            SnapType.CONTENT_VERSION: self.get_content_db_version_snapshot,
+            SnapType.SESSION_STATS: self.get_session_stats_snapshot,
+            SnapType.IPSEC_TUNNELS: self.get_ip_sec_tunnels_snapshot,
+            SnapType.FIB_ROUTES: self.get_fib_snapshot,
+            SnapType.GLOBAL_JUMBO_FRAME: self.get_global_jumbo_frame_snapshot,
+            SnapType.INTERFACES_MTU: self.get_interfaces_mtu_snapshot,
+            SnapType.ARE_ROUTES: self.get_are_routes_snapshot,
+            SnapType.ARE_FIB_ROUTES: self.get_are_fib_snapshot,
         }
 
         self._check_method_mapping = {
@@ -1346,12 +1350,93 @@ class CheckFirewall:
 
         return result
 
-    def get_content_db_version(self) -> Dict[str, str]:
-        """Get Content DB version.
+    # Wrapper methods for capturing snapshots
+    def get_nics_snapshot(self) -> SnapResult:
+        """Get NICs information as a snapshot.
 
         # Returns
 
-        dict(str): To keep the standard of all `get` methods returning a dictionary this value is also returned as a dictionary \
+        SnapResult: Object of [`SnapResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-snapresult) class \
+            representing the result of the NICs snapshot operation.
+        """
+        result = SnapResult()
+        try:
+            result.snapshot = self._node.get_nics()
+            result.status = SnapStatus.SUCCESS
+        except Exception as e:
+            result.reason = f"Failed to retrieve NICs information: {str(e)}"
+        return result
+
+    def get_routes_snapshot(self) -> SnapResult:
+        """Get routes information for Legacy Routing Engine as a snapshot.
+
+        # Returns
+
+        SnapResult: Object of [`SnapResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-snapresult) class \
+            representing the result of the routes snapshot operation.
+        """
+        result = SnapResult()
+        try:
+            result.snapshot = self._node.get_routes()
+            result.status = SnapStatus.SUCCESS
+        except Exception as e:
+            result.reason = f"Failed to retrieve routes information: {str(e)}"
+        return result
+
+    def get_bgp_peers_snapshot(self) -> SnapResult:
+        """Get BGP peers information for Legacy Routing Engine as a snapshot.
+
+        # Returns
+
+        SnapResult: Object of [`SnapResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-snapresult) class \
+            representing the result of the BGP peers snapshot operation.
+        """
+        result = SnapResult()
+        try:
+            result.snapshot = self._node.get_bgp_peers()
+            result.status = SnapStatus.SUCCESS
+        except Exception as e:
+            result.reason = f"Failed to retrieve BGP peers information: {str(e)}"
+        return result
+
+    def get_license_snapshot(self) -> SnapResult:
+        """Get license information as a snapshot.
+
+        # Returns
+
+        SnapResult: Object of [`SnapResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-snapresult) class \
+            representing the result of the license snapshot operation.
+        """
+        result = SnapResult()
+        try:
+            result.snapshot = self._node.get_licenses()
+            result.status = SnapStatus.SUCCESS
+        except exceptions.DeviceNotLicensedException as e:
+            result.reason = str(e)
+        except Exception as e:
+            result.reason = f"Failed to retrieve license information: {str(e)}"
+        return result
+
+    def get_arp_table_snapshot(self) -> SnapResult:
+        """Get ARP table information as a snapshot.
+
+        # Returns
+
+        SnapResult: Object of [`SnapResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-snapresult) class \
+            representing the result of the ARP table snapshot operation.
+        """
+        result = SnapResult()
+        try:
+            result.snapshot = self._node.get_arp_table()
+            result.status = SnapStatus.SUCCESS
+        except Exception as e:
+            result.reason = f"Failed to retrieve ARP table information: {str(e)}"
+        return result
+
+    def get_content_db_version_snapshot(self) -> SnapResult:
+        """Get Content DB version as a snapshot.
+
+        To keep the standard of all snapshots represented as a dictionary, content version is also returned as a dictionary \
             in the following format:
 
         ```python showLineNumbers
@@ -1360,15 +1445,39 @@ class CheckFirewall:
         }
         ```
 
-        """
-        return {"version": self._node.get_content_db_version()}
+        # Returns
 
-    def get_ip_sec_tunnels(self) -> Dict[str, dict]:
-        """Extract information about IPSEC tunnels from all tunnel data retrieved from a device.
+        SnapResult: Object of [`SnapResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-snapresult) class \
+            representing the result of the content DB version snapshot operation.
+        """
+        result = SnapResult()
+        try:
+            result.snapshot = {"version": self._node.get_content_db_version()}
+            result.status = SnapStatus.SUCCESS
+        except Exception as e:
+            result.reason = f"Failed to retrieve content DB version information: {str(e)}"
+        return result
+
+    def get_session_stats_snapshot(self) -> SnapResult:
+        """Get session statistics as a snapshot.
 
         # Returns
 
-        dict: Currently configured IPSEC tunnels. The returned value is similar to the example below. It can differ though \
+        SnapResult: Object of [`SnapResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-snapresult) class \
+            representing the result of the session statistics snapshot operation.
+        """
+        result = SnapResult()
+        try:
+            result.snapshot = self._node.get_session_stats()
+            result.status = SnapStatus.SUCCESS
+        except Exception as e:
+            result.reason = f"Failed to retrieve session statistics: {str(e)}"
+        return result
+
+    def get_ip_sec_tunnels_snapshot(self) -> SnapResult:
+        """Get IPSec tunnels information as a snapshot.
+
+        Currently configured IPSEC tunnels. The returned snapshot value is similar to the example below. It can differ though \
             depending on the version of PanOS:
 
         ```python showLineNumbers title="Example"
@@ -1388,15 +1497,44 @@ class CheckFirewall:
         }
         ```
 
-        """
-        return self._node.get_tunnels().get("IPSec", {})
+        # Returns
 
-    def get_global_jumbo_frame(self) -> Dict[str, bool]:
-        """Get whether global jumbo frame configuration is set or not.
+        SnapResult: Object of [`SnapResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-snapresult) class \
+            representing the result of the IPSec tunnels snapshot operation.
+        """
+        result = SnapResult()
+        try:
+            tunnels = self._node.get_tunnels()
+            if "IPSec" not in tunnels:
+                result.reason = "No IPSec tunnel element returned."
+                result.status = SnapStatus.ERROR
+            else:
+                result.snapshot = tunnels.get("IPSec", {})
+                result.status = SnapStatus.SUCCESS
+        except Exception as e:
+            result.reason = f"Failed to retrieve IPSec tunnels information: {str(e)}"
+        return result
+
+    def get_fib_snapshot(self) -> SnapResult:
+        """Get FIB routes information for Legacy Routing Engine as a snapshot.
 
         # Returns
 
-        dict: The global jumbo frame configuration.
+        SnapResult: Object of [`SnapResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-snapresult) class \
+            representing the result of the FIB routes snapshot operation.
+        """
+        result = SnapResult()
+        try:
+            result.snapshot = self._node.get_fib()
+            result.status = SnapStatus.SUCCESS
+        except Exception as e:
+            result.reason = f"Failed to retrieve FIB routes information: {str(e)}"
+        return result
+
+    def get_global_jumbo_frame_snapshot(self) -> SnapResult:
+        """Get global jumbo frame configuration as a snapshot.
+
+        The global jumbo frame configuration. The returned snapshot value is similar to the example below.
 
         ```python showLineNumbers title="Example"
         {
@@ -1404,8 +1542,70 @@ class CheckFirewall:
         }
         ```
 
+        # Returns
+
+        SnapResult: Object of [`SnapResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-snapresult) class \
+            representing the result of the global jumbo frame snapshot operation.
         """
-        return {"mode": self._node.is_global_jumbo_frame_set()}
+        result = SnapResult()
+        try:
+            result.snapshot = {"mode": self._node.is_global_jumbo_frame_set()}
+            result.status = SnapStatus.SUCCESS
+        except Exception as e:
+            result.reason = f"Failed to retrieve global jumbo frame configuration: {str(e)}"
+        return result
+
+    def get_interfaces_mtu_snapshot(self, include_subinterfaces: bool = False) -> SnapResult:
+        """Get interfaces MTU information as a snapshot.
+
+        # Parameters
+
+        include_subinterfaces (bool, optional): (defaults to False) Whether to include sub-interfaces in the snapshot.
+
+        # Returns
+
+        SnapResult: Object of [`SnapResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-snapresult) class \
+            representing the result of the interfaces MTU snapshot operation.
+        """
+        result = SnapResult()
+        try:
+            result.snapshot = self._node.get_interfaces_mtu(include_subinterfaces)
+            result.status = SnapStatus.SUCCESS
+        except Exception as e:
+            result.reason = f"Failed to retrieve interfaces MTU information: {str(e)}"
+        return result
+
+    def get_are_routes_snapshot(self) -> SnapResult:
+        """Get ARE routes information as a snapshot.
+
+        # Returns
+
+        SnapResult: Object of [`SnapResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-snapresult) class \
+            representing the result of the ARE routes snapshot operation.
+        """
+        result = SnapResult()
+        try:
+            result.snapshot = self._node.get_are_routes()
+            result.status = SnapStatus.SUCCESS
+        except Exception as e:
+            result.reason = f"Failed to retrieve ARE routes information: {str(e)}"
+        return result
+
+    def get_are_fib_snapshot(self) -> SnapResult:
+        """Get ARE FIB routes information as a snapshot.
+
+        # Returns
+
+        SnapResult: Object of [`SnapResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-snapresult) class \
+            representing the result of the ARE FIB routes snapshot operation.
+        """
+        result = SnapResult()
+        try:
+            result.snapshot = self._node.get_are_fib()
+            result.status = SnapStatus.SUCCESS
+        except Exception as e:
+            result.reason = f"Failed to retrieve ARE FIB routes information: {str(e)}"
+        return result
 
     def run_readiness_checks(
         self,
@@ -1454,7 +1654,7 @@ class CheckFirewall:
             check_result = self._check_method_mapping[check_type](
                 **check_config
             )  # (**) would pass dict config values as separate parameters to method.
-            result[check_type] = str(check_result) if report_style else {"state": bool(check_result), "reason": str(check_result)}
+            result[check_type] = str(check_result) if report_style else check_result.to_dict()
 
         return result
 
@@ -1474,7 +1674,7 @@ class CheckFirewall:
 
         # Returns
 
-        dict: The results of the executed snapshots.
+        dict: The results of the executed snapshots, including status, reason, and snapshot data as dictionary values.
 
         """
         result = {}
@@ -1493,9 +1693,11 @@ class CheckFirewall:
             else:
                 raise exceptions.WrongDataTypeException(f"Wrong configuration format for snapshot: {snapshot}.")
 
-            result[snap_type] = self._snapshot_method_mapping[snap_type](
+            snap_result = self._snapshot_method_mapping[snap_type](
                 **snap_config
             )  # (**) would pass dict config values as separate parameters to method.
+
+            result[snap_type] = snap_result.to_dict()
 
         return result
 
@@ -1546,7 +1748,7 @@ class CheckFirewall:
                 **check_config
             )  # (**) would pass dict config values as separate parameters to method.
 
-            result[check_type] = str(check_result) if report_style else {"state": bool(check_result), "reason": str(check_result)}
+            result[check_type] = str(check_result) if report_style else check_result.to_dict()
 
         return result
 

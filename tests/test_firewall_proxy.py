@@ -532,6 +532,35 @@ class TestFirewallProxy:
             },
         }
 
+    def test_get_routes_malformed_response(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                This is an unexpected format
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        with pytest.raises(MalformedResponseException) as exc_info:
+            fw_proxy_mock.get_routes()
+
+        assert str(exc_info.value) == "This is an unexpected format"
+
+    def test_get_routes_empty_response(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        # Should not raise an exception for empty response
+        assert fw_proxy_mock.get_routes() == {}
+
     def test_get_routes_same_dest(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
@@ -762,10 +791,39 @@ class TestFirewallProxy:
             }
         }
 
-    def test_get_bgp_peers_no_peers(self, fw_proxy_mock):
+    def test_get_bgp_peers_empty_response(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result/>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_bgp_peers() == {}
+
+    def test_get_bgp_peers_malformed_response(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                This is an unexpected format
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        with pytest.raises(MalformedResponseException) as exc_info:
+            fw_proxy_mock.get_bgp_peers()
+
+        assert str(exc_info.value) == "This is an unexpected format"
+
+    def test_get_bgp_peers_no_entry(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <no-entry>dict with no entry</no-entry>
+            </result>
         </response>
         """
         raw_response = ET.fromstring(xml_text)
@@ -807,6 +865,41 @@ class TestFirewallProxy:
                 "ttl": "1777",
             },
         }
+
+    def test_get_arp_table_empty(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <dp>dp0</dp>
+                <timeout>1800</timeout>
+                <total>0</total>
+                <entries>
+                </entries>
+                <max>32000</max>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_arp_table() == {}
+
+    def test_get_arp_table_malformed_response(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <dp>dp0</dp>
+                <timeout>1800</timeout>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        with pytest.raises(MalformedResponseException) as exc_info:
+            fw_proxy_mock.get_arp_table()
+
+        assert "Unexpected response format for ARP table" in str(exc_info.value)
 
     def test_get_sessions(self, fw_proxy_mock):
         xml_text = """
@@ -880,6 +973,18 @@ class TestFirewallProxy:
                 "xsport": "32336",
             },
         ]
+
+    def test_get_sessions_empty(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_sessions() == []
 
     def test_get_session_stats(self, fw_proxy_mock):
         xml_text = """
@@ -1059,6 +1164,33 @@ class TestFirewallProxy:
                 }
             },
             "SSL-VPN": {},
+            "hop": {},
+        }
+
+    def test_get_tunnels_empty(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <dp>dp0</dp>
+                <num_ipsec>0</num_ipsec>
+                <num_sslvpn>0</num_sslvpn>
+                <hop />
+                <IPSec />
+                <SSL-VPN />
+                <GlobalProtect-Gateway />
+                <GlobalProtect-site-to-site />
+                <total>0</total>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_tunnels() == {
+            "IPSec": {},
+            "SSL-VPN": {},
+            "GlobalProtect-Gateway": {},
+            "GlobalProtect-site-to-site": {},
             "hop": {},
         }
 
@@ -2048,8 +2180,8 @@ class TestFirewallProxy:
         <response status="success">
             <result>
                 <![CDATA[
-        User ID service info: 
-            User id service:               down           
+        User ID service info:
+            User id service:               down
             Reason:                        user_id service is not enabled
         ]]>
             </result>
@@ -2064,9 +2196,9 @@ class TestFirewallProxy:
         <response status="success">
             <result>
                 <![CDATA[
-        User ID service info: 
-            User id service:               up           
-            listening port:                5007           
+        User ID service info:
+            User id service:               up
+            listening port:                5007
             number of clients:             1
         ]]>
             </result>
@@ -2843,3 +2975,184 @@ class TestFirewallProxy:
             fw_proxy_mock.get_interfaces_mtu()
 
         assert "sw.dev.interface.config system state data not found in response" in str(exc_info.value)
+
+    def test_get_are_fib_routes(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <dp>dp0</dp>
+                <total>16</total>
+                <fibs>
+                    <entry>
+                        <id>2</id>
+                        <vr>VR-MAIN</vr>
+                        <max>32768</max>
+                        <type>0</type>
+                        <ecmp>0</ecmp>
+                        <entries>
+                            <entry>
+                                <id>19</id>
+                                <dst>0.0.0.0/0</dst>
+                                <interface>ethernet1/1</interface>
+                                <nh_type>0</nh_type>
+                                <flags>ug</flags>
+                                <nexthop>10.10.11.1</nexthop>
+                                <mtu>1500</mtu>
+                            </entry>
+                            <entry>
+                                <id>1</id>
+                                <dst>1.1.1.1/32</dst>
+                                <interface>loopback.10</interface>
+                                <nh_type>3</nh_type>
+                                <flags>uh</flags>
+                                <nexthop>1.2.3.4</nexthop>
+                                <mtu>1500</mtu>
+                            </entry>
+                        </entries>
+                        <nentries>16</nentries>
+                    </entry>
+                    <entry>
+                        <id>3</id>
+                        <vr>VR-MAIN</vr>
+                        <max>32768</max>
+                        <type>1</type>
+                        <ecmp>0</ecmp>
+                        <entries/>
+                        <nentries>0</nentries>
+                    </entry>
+                </fibs>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_are_fib() == {
+            "0.0.0.0/0_ethernet1/1_10.10.11.1": {
+                "Destination": "0.0.0.0/0",
+                "Interface": "ethernet1/1",
+                "Next Hop Type": "0",
+                "Flags": "ug",
+                "Next Hop": "10.10.11.1",
+                "MTU": "1500",
+            },
+            "1.1.1.1/32_loopback.10_1.2.3.4": {
+                "Destination": "1.1.1.1/32",
+                "Interface": "loopback.10",
+                "Next Hop Type": "3",
+                "Flags": "uh",
+                "Next Hop": "1.2.3.4",
+                "MTU": "1500",
+            },
+        }
+
+    def test_get_are_fib_routes_none(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <dp>dp0</dp>
+                <total>0</total>
+                <fibs/>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_are_fib() == {}
+
+    def test_parse_fib_malformed_response(self, fw_proxy_mock):
+        with pytest.raises(MalformedResponseException) as exc_info:
+            fw_proxy_mock._parse_fib({"no-fibs": "invalid"})
+        assert "Unexpected response format for FIB table" in str(exc_info.value)
+
+    def test_parse_fib_empty_fibs(self, fw_proxy_mock):
+        assert fw_proxy_mock._parse_fib({"fibs": None}) == {}
+
+    def test_parse_fib_no_entry(self, fw_proxy_mock):
+        with pytest.raises(MalformedResponseException) as exc_info:
+            fw_proxy_mock._parse_fib({"fibs": {"no-entry": "value"}})
+        assert "No 'entry' field under 'fibs' in FIB response" in str(exc_info.value)
+
+    def test_parse_fib_invalid_entry(self, fw_proxy_mock):
+        with pytest.raises(MalformedResponseException) as exc_info:
+            fw_proxy_mock._parse_fib({"fibs": {"entry": ["invalid_entry"]}})
+        assert "Unexpected format for fib entry in FIB response" in str(exc_info.value)
+
+    def test_get_are_routes(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <json>{"public-lr": {"0.0.0.0/0": [{"prefix": "0.0.0.0/0", "protocol": "static", "vrfId": 0, "vrfName": "default", "selected": true, "destSelected": true, "distance": 10, "metric": 10, "installed": true, "table": 254, "internalStatus": 16, "internalFlags": 73, "internalNextHopNum": 2, "internalNextHopActiveNum": 2, "installedNexthopGroupId": 35, "uptime": "00:00:26", "nexthops": [{"flags": "A E ", "fib": true, "directlyConnected": true, "interfaceIndex": 16, "interfaceName": "ethernet1/1", "active": true, "weight": 1}]}]}}</json>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        expected = {
+            "public-lr": {
+                "0.0.0.0/0": [
+                    {
+                        "prefix": "0.0.0.0/0",
+                        "protocol": "static",
+                        "vrfId": 0,
+                        "vrfName": "default",
+                        "selected": True,
+                        "destSelected": True,
+                        "distance": 10,
+                        "metric": 10,
+                        "installed": True,
+                        "table": 254,
+                        "internalStatus": 16,
+                        "internalFlags": 73,
+                        "internalNextHopNum": 2,
+                        "internalNextHopActiveNum": 2,
+                        "installedNexthopGroupId": 35,
+                        "uptime": "00:00:26",
+                        "nexthops": [
+                            {
+                                "flags": "A E ",
+                                "fib": True,
+                                "directlyConnected": True,
+                                "interfaceIndex": 16,
+                                "interfaceName": "ethernet1/1",
+                                "active": True,
+                                "weight": 1,
+                            }
+                        ],
+                    }
+                ]
+            }
+        }
+        assert fw_proxy_mock.get_are_routes() == expected
+
+    def test_get_are_routes_malformed_response(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <not-json>Invalid JSON format</not-json>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        with pytest.raises(MalformedResponseException) as exc_info:
+            fw_proxy_mock.get_are_routes()
+        assert "Expected string JSON response" in str(exc_info.value)
+
+    def test_get_are_routes_invalid_json(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <json>{"invalid": "json</json>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        with pytest.raises(MalformedResponseException) as exc_info:
+            fw_proxy_mock.get_are_routes()
+        assert "Failed to decode JSON response" in str(exc_info.value)

@@ -610,18 +610,24 @@ class FirewallProxy:
 
         response = self.op_parser(cmd="show routing route")
 
+        if response is None:
+            return {}
+
         result = {}
-        if "entry" in response:
-            routes = response["entry"]
-            for route in routes if isinstance(routes, list) else [routes]:
-                result[
-                    (
-                        f"{route['virtual-router'].replace(' ', '-')}_"
-                        f"{route['destination']}_"
-                        f"{route['interface'] if route['interface'] else ''}_"
-                        f"{route['nexthop'].replace(' ', '-')}"
-                    )
-                ] = dict(route)
+        if isinstance(response, dict):
+            if "entry" in response:
+                routes = response["entry"]
+                for route in routes if isinstance(routes, list) else [routes]:
+                    result[
+                        (
+                            f"{route['virtual-router'].replace(' ', '-')}_"
+                            f"{route['destination']}_"
+                            f"{route['interface'] if route['interface'] else ''}_"
+                            f"{route['nexthop'].replace(' ', '-')}"
+                        )
+                    ] = dict(route)
+        else:
+            raise exceptions.MalformedResponseException(f"{str(response)}")
 
         return result
 
@@ -714,14 +720,17 @@ class FirewallProxy:
         result = {}
 
         if response is None:
-            return result
+            return {}
 
-        if "entry" in response:
-            bgp_peers = response["entry"]
-            for peer in bgp_peers if isinstance(bgp_peers, list) else [bgp_peers]:
-                result[
-                    f"{peer['@vr'].replace(' ', '-')}_{peer['peer-group'].replace(' ', '-')}_{peer['@peer'].replace(' ', '-')}"
-                ] = dict(peer)
+        if isinstance(response, dict):
+            if "entry" in response:
+                bgp_peers = response["entry"]
+                for peer in bgp_peers if isinstance(bgp_peers, list) else [bgp_peers]:
+                    result[
+                        f"{peer['@vr'].replace(' ', '-')}_{peer['peer-group'].replace(' ', '-')}_{peer['@peer'].replace(' ', '-')}"
+                    ] = dict(peer)
+        else:
+            raise exceptions.MalformedResponseException(f"{str(response)}")
 
         return result
 
@@ -767,7 +776,11 @@ class FirewallProxy:
         result = {}
         response = self.op_parser(cmd="<show><arp><entry name = 'all'/></arp></show>", cmd_in_xml=True)
 
-        if response.get("entries", {}):
+        if not isinstance(response, dict) or "entries" not in response:
+            raise exceptions.MalformedResponseException(f"Unexpected response format for ARP table: {str(response)}")
+
+        # An empty or None value for entries key is valid (no ARP entries)
+        if response.get("entries"):
             arp_table = response["entries"].get("entry", [])
             for entry in arp_table if isinstance(arp_table, list) else [arp_table]:
                 result[f'{entry["interface"]}_{entry["ip"]}'] = dict(entry)
@@ -936,6 +949,7 @@ class FirewallProxy:
 
         """
         response = self.op_parser(cmd="show running tunnel flow all")
+
         result = {}
         for tunnelType, tunnelData in dict(response).items():
             if tunnelData is None:
@@ -1573,9 +1587,52 @@ class FirewallProxy:
 
         """
         response = self.op_parser(cmd="show routing fib")
-        if response["fibs"] is None:
+        return self._parse_fib(response)
+
+    def get_are_fib(self) -> dict:
+        """Get the information from the Advanced Routing Engine forwarding information table (FIB).
+
+        The actual API command run is `show advanced-routing fib`.
+
+        As of now API returns the complete same structure with the `show routing fib` command.
+        See `get_fib()` for details of the return type.
+
+        # Returns
+
+        dict: Status of the route entries in the FIB
+
+        """
+        response = self.op_parser(cmd="show advanced-routing fib")
+        return self._parse_fib(response)
+
+    def _parse_fib(self, fib_response) -> dict:
+        """Parse the forwarding information base (FIB) response from PAN-OS API.
+
+        This helper method processes the output from both 'show routing fib' and
+        'show advanced-routing fib' API commands, which share the same structure.
+        It converts the API response into a standardized dictionary format with
+        keys that combine destination, interface, and nexthop values.
+
+        # Parameters
+
+        fib_response (dict): Raw FIB response from the API.
+
+        # Returns
+
+        dict: Parsed FIB entries where each key is formatted as:
+            '{destination}_{interface}_{nexthop}' with detailed route information as values.
+
+        """
+        if not isinstance(fib_response, dict) or "fibs" not in fib_response:
+            raise exceptions.MalformedResponseException("Unexpected response format for FIB table: {str(fib_response)}")
+
+        if fib_response["fibs"] is None:
             return {}
-        fibs = response["fibs"]["entry"]
+
+        if "entry" not in fib_response["fibs"]:
+            raise exceptions.MalformedResponseException("No 'entry' field under 'fibs' in FIB response")
+
+        fibs = fib_response["fibs"]["entry"]
 
         results = {}
 
@@ -1596,8 +1653,150 @@ class FirewallProxy:
                             "MTU": entry.get("mtu"),
                         }
                         results[key] = result_entry
+            else:
+                raise exceptions.MalformedResponseException("Unexpected format for fib entry in FIB response")
 
         return results
+
+    def get_are_routes(self) -> dict:
+        """Get the advanced routing engine routes.
+
+        The actual API command run is `show advanced-routing route`.
+
+        This method fetches the routes from the advanced routing engine. The response includes
+        information about routes in different logical routers and their details such as
+        prefix, protocol, nexthops, etc.
+
+        # Returns
+
+        dict: The advanced routing engine routes by logical router.
+
+        ```python showLineNumbers title="Sample output"
+        {
+          "public-lr": {
+            "0.0.0.0/0": [
+              {
+                "prefix": "0.0.0.0/0",
+                "protocol": "static",
+                "vrfId": 0,
+                "vrfName": "default",
+                "selected": true,
+                "destSelected": true,
+                "distance": 10,
+                "metric": 10,
+                "installed": true,
+                "table": 254,
+                "internalStatus": 16,
+                "internalFlags": 73,
+                "internalNextHopNum": 2,
+                "internalNextHopActiveNum": 2,
+                "installedNexthopGroupId": 35,
+                "uptime": "00:00:26",
+                "nexthops": [
+                  {
+                    "flags": "A E ",
+                    "fib": true,
+                    "directlyConnected": true,
+                    "interfaceIndex": 16,
+                    "interfaceName": "ethernet1/1",
+                    "active": true,
+                    "weight": 1
+                  },
+                  {
+                    "flags": "A E ",
+                    "fib": true,
+                    "directlyConnected": true,
+                    "interfaceIndex": 17,
+                    "interfaceName": "ethernet1/2",
+                    "active": true,
+                    "weight": 1
+                  }
+                ]
+              }
+            ],
+            "10.0.0.0/8": [
+              {
+                "prefix": "10.0.0.0/8",
+                "protocol": "static",
+                "vrfId": 0,
+                "vrfName": "default",
+                "selected": true,
+                "destSelected": true,
+                "distance": 10,
+                "metric": 10,
+                "installed": true,
+                "table": 254,
+                "internalStatus": 16,
+                "internalFlags": 73,
+                "internalNextHopNum": 1,
+                "internalNextHopActiveNum": 1,
+                "installedNexthopGroupId": 3,
+                "uptime": "2d23h53m",
+                "nexthops": [
+                  {
+                    "flags": "A ",
+                    "fib": true,
+                    "directlyConnected": true,
+                    "interfaceIndex": 61442,
+                    "interfaceName": "private-lr",
+                    "active": true,
+                    "weight": 1
+                  }
+                ]
+              }
+            ]
+          },
+          "private-lr": {
+            "0.0.0.0/0": [
+              {
+                "prefix": "0.0.0.0/0",
+                "protocol": "static",
+                "vrfId": 0,
+                "vrfName": "default",
+                "selected": true,
+                "destSelected": true,
+                "distance": 10,
+                "metric": 10,
+                "installed": true,
+                "table": 254,
+                "internalStatus": 16,
+                "internalFlags": 73,
+                "internalNextHopNum": 1,
+                "internalNextHopActiveNum": 1,
+                "installedNexthopGroupId": 3,
+                "uptime": "2d23h53m",
+                "nexthops": [
+                  {
+                    "flags": "A ",
+                    "fib": true,
+                    "directlyConnected": true,
+                    "interfaceIndex": 61441,
+                    "interfaceName": "public-lr",
+                    "active": true,
+                    "weight": 1
+                  }
+                ]
+              }
+            ]
+          }
+        }
+        ```
+
+        """
+        response = self.op_parser(cmd="show advanced-routing route")
+        json_response = response.get("json")
+
+        # response contains JSON in a string format
+        import json
+
+        if not isinstance(json_response, str):
+            raise exceptions.MalformedResponseException(f"Expected string JSON response, got {type(json_response)}")
+
+        try:
+            parsed_response = json.loads(json_response)
+            return parsed_response
+        except json.JSONDecodeError:
+            raise exceptions.MalformedResponseException("Failed to decode JSON response from advanced-routing routes")
 
     def get_system_time_rebooted(self) -> datetime:
         """Returns the date and time the system last rebooted using the system uptime.

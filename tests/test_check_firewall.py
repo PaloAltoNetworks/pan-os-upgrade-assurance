@@ -3,8 +3,8 @@ import pytest
 from unittest.mock import MagicMock
 from panos_upgrade_assurance.check_firewall import CheckFirewall
 from panos_upgrade_assurance.firewall_proxy import FirewallProxy
-from panos_upgrade_assurance.utils import CheckResult
-from panos_upgrade_assurance.utils import CheckStatus
+from panos_upgrade_assurance.utils import CheckResult, SnapResult
+from panos_upgrade_assurance.utils import CheckStatus, SnapStatus
 from panos_upgrade_assurance.exceptions import (
     WrongDataTypeException,
     UpdateServerConnectivityException,
@@ -736,22 +736,335 @@ class TestCheckFirewall:
 
         assert check_firewall_mock.check_free_disk_space() == CheckResult(CheckStatus.ERROR)
 
-    def test_get_content_db_version(self, check_firewall_mock):
+    def test_get_content_db_version_snapshot(self, check_firewall_mock):
         check_firewall_mock._node.get_content_db_version.return_value = "5555-6666"
 
-        assert check_firewall_mock.get_content_db_version() == {"version": "5555-6666"}
+        snapshot_result = check_firewall_mock.get_content_db_version_snapshot()
+        assert snapshot_result.snapshot == {"version": "5555-6666"}
+        assert snapshot_result.status == SnapStatus.SUCCESS
 
-    def test_get_ip_sec_tunnels(self, check_firewall_mock):
+    def test_get_content_db_version_snapshot_exception(self, check_firewall_mock):
+        # Test when an exception is raised from the underlying method
+        error_message = "Failed to get content DB version"
+        check_firewall_mock._node.get_content_db_version.side_effect = Exception(error_message)
+
+        snapshot_result = check_firewall_mock.get_content_db_version_snapshot()
+
+        assert snapshot_result.status == SnapStatus.ERROR
+        assert f"Failed to retrieve content DB version information: {error_message}" in snapshot_result.reason
+        assert snapshot_result.snapshot is None
+
+    def test_get_ip_sec_tunnels_snapshot(self, check_firewall_mock):
         check_firewall_mock._node.get_tunnels.return_value = {"IPSec": {"MyTunnel": {"name": "tunnel_name"}}}
 
-        check_firewall_mock.get_ip_sec_tunnels() == {"MyTunnel": {"name": "tunnel_name"}}
+        snapshot_result = check_firewall_mock.get_ip_sec_tunnels_snapshot()
+        assert snapshot_result.snapshot == {"MyTunnel": {"name": "tunnel_name"}}
+        assert snapshot_result.status == SnapStatus.SUCCESS
+
+    def test_get_ip_sec_tunnels_snapshot_no_ipsec(self, check_firewall_mock):
+        check_firewall_mock._node.get_tunnels.return_value = {"SSL-VPN": {}, "GlobalProtect-Gateway": {}}
+
+        snapshot_result = check_firewall_mock.get_ip_sec_tunnels_snapshot()
+        assert snapshot_result.status == SnapStatus.ERROR
+        assert snapshot_result.reason == "No IPSec tunnel element returned."
+
+    def test_get_ip_sec_tunnels_snapshot_exception(self, check_firewall_mock):
+        # Test when an exception is raised from the underlying method
+        error_message = "API connection failed"
+        check_firewall_mock._node.get_tunnels.side_effect = Exception(error_message)
+
+        snapshot_result = check_firewall_mock.get_ip_sec_tunnels_snapshot()
+
+        assert snapshot_result.status == SnapStatus.ERROR
+        assert f"Failed to retrieve IPSec tunnels information: {error_message}" in snapshot_result.reason
+        assert snapshot_result.snapshot is None
 
     @pytest.mark.parametrize("global_jumbo_frame", [True, False])
-    def test_get_global_jumbo_frame(self, global_jumbo_frame, check_firewall_mock):
+    def test_get_global_jumbo_frame_snapshot(self, global_jumbo_frame, check_firewall_mock):
         check_firewall_mock._node.is_global_jumbo_frame_set.return_value = global_jumbo_frame
-        result = check_firewall_mock.get_global_jumbo_frame()
+        result = check_firewall_mock.get_global_jumbo_frame_snapshot()
 
-        assert result == {"mode": global_jumbo_frame}
+        assert result.snapshot == {"mode": global_jumbo_frame}
+        assert result.status == SnapStatus.SUCCESS
+
+    def test_get_global_jumbo_frame_snapshot_exception(self, check_firewall_mock):
+        # Test when an exception is raised from the underlying method
+        error_message = "Unable to retrieve jumbo frame configuration"
+        check_firewall_mock._node.is_global_jumbo_frame_set.side_effect = Exception(error_message)
+
+        result = check_firewall_mock.get_global_jumbo_frame_snapshot()
+
+        assert result.status == SnapStatus.ERROR
+        assert f"Failed to retrieve global jumbo frame configuration: {error_message}" in result.reason
+        assert result.snapshot is None
+
+    def test_get_nics_snapshot(self, check_firewall_mock):
+        nics_data = {"ethernet1/1": "up", "ethernet1/2": "down"}
+        check_firewall_mock._node.get_nics.return_value = nics_data
+
+        result = check_firewall_mock.get_nics_snapshot()
+
+        assert result.snapshot == nics_data
+        assert result.status == SnapStatus.SUCCESS
+
+    def test_get_nics_snapshot_exception(self, check_firewall_mock):
+        check_firewall_mock._node.get_nics.side_effect = Exception("API Error")
+
+        result = check_firewall_mock.get_nics_snapshot()
+
+        assert result.status == SnapStatus.ERROR
+        assert "Failed to retrieve NICs information" in result.reason
+
+    def test_get_routes_snapshot(self, check_firewall_mock):
+        routes_data = {
+            "private_0.0.0.0/0_private/i3_vr-public": {
+                "age": None,
+                "destination": "0.0.0.0/0",
+                "flags": "A S",
+                "interface": "private/i3",
+                "metric": "10",
+                "nexthop": "vr public",
+                "route-table": "unicast",
+                "virtual-router": "private",
+            }
+        }
+        check_firewall_mock._node.get_routes.return_value = routes_data
+
+        result = check_firewall_mock.get_routes_snapshot()
+
+        assert result.snapshot == routes_data
+        assert result.status == SnapStatus.SUCCESS
+
+    def test_get_routes_snapshot_exception(self, check_firewall_mock):
+        check_firewall_mock._node.get_routes.side_effect = Exception("API Error")
+
+        result = check_firewall_mock.get_routes_snapshot()
+
+        assert result.status == SnapStatus.ERROR
+        assert "Failed to retrieve routes information" in result.reason
+
+    def test_get_bgp_peers_snapshot(self, check_firewall_mock):
+        bgp_data = {
+            "default_Peer-Group1_Peer1": {
+                "@peer": "Peer1",
+                "@vr": "default",
+                "peer-group": "Peer-Group1",
+                "status": "Established",
+                "peer-address": "169.254.8.2:35355",
+            }
+        }
+        check_firewall_mock._node.get_bgp_peers.return_value = bgp_data
+
+        result = check_firewall_mock.get_bgp_peers_snapshot()
+
+        assert result.snapshot == bgp_data
+        assert result.status == SnapStatus.SUCCESS
+
+    def test_get_bgp_peers_snapshot_exception(self, check_firewall_mock):
+        check_firewall_mock._node.get_bgp_peers.side_effect = Exception("API Error")
+
+        result = check_firewall_mock.get_bgp_peers_snapshot()
+
+        assert result.status == SnapStatus.ERROR
+        assert "Failed to retrieve BGP peers information" in result.reason
+
+    def test_get_license_snapshot(self, check_firewall_mock):
+        license_data = {"AutoFocus Device License": {"expired": "no", "expires": "September 25, 2099"}}
+        check_firewall_mock._node.get_licenses.return_value = license_data
+
+        result = check_firewall_mock.get_license_snapshot()
+
+        assert result.snapshot == license_data
+        assert result.status == SnapStatus.SUCCESS
+
+    def test_get_license_snapshot_not_licensed(self, check_firewall_mock):
+        check_firewall_mock._node.get_licenses.side_effect = DeviceNotLicensedException("Device not licensed")
+
+        result = check_firewall_mock.get_license_snapshot()
+
+        assert result.status == SnapStatus.ERROR
+        assert "Device not licensed" in result.reason
+
+    def test_get_license_snapshot_exception(self, check_firewall_mock):
+        check_firewall_mock._node.get_licenses.side_effect = Exception("API Error")
+
+        result = check_firewall_mock.get_license_snapshot()
+
+        assert result.status == SnapStatus.ERROR
+        assert "Failed to retrieve license information" in result.reason
+
+    def test_get_arp_table_snapshot(self, check_firewall_mock):
+        arp_data = {
+            "ethernet1/1_10.0.2.1": {
+                "interface": "ethernet1/1",
+                "ip": "10.0.2.1",
+                "mac": "12:34:56:78:9a:bc",
+                "port": "ethernet1/1",
+                "status": "c",
+                "ttl": "1094",
+            }
+        }
+        check_firewall_mock._node.get_arp_table.return_value = arp_data
+
+        result = check_firewall_mock.get_arp_table_snapshot()
+
+        assert result.snapshot == arp_data
+        assert result.status == SnapStatus.SUCCESS
+
+    def test_get_arp_table_snapshot_exception(self, check_firewall_mock):
+        check_firewall_mock._node.get_arp_table.side_effect = Exception("API Error")
+
+        result = check_firewall_mock.get_arp_table_snapshot()
+
+        assert result.status == SnapStatus.ERROR
+        assert "Failed to retrieve ARP table information" in result.reason
+
+    def test_get_session_stats_snapshot(self, check_firewall_mock):
+        session_stats = {
+            "age-accel-thresh": "80",
+            "age-accel-tsf": "2",
+            "num-active": "4",
+            "num-tcp": "4",
+            "num-udp": "0",
+            "num-icmp": "0",
+            "num-max": "819200",
+        }
+        check_firewall_mock._node.get_session_stats.return_value = session_stats
+
+        result = check_firewall_mock.get_session_stats_snapshot()
+
+        assert result.snapshot == session_stats
+        assert result.status == SnapStatus.SUCCESS
+
+    def test_get_session_stats_snapshot_exception(self, check_firewall_mock):
+        check_firewall_mock._node.get_session_stats.side_effect = Exception("API Error")
+
+        result = check_firewall_mock.get_session_stats_snapshot()
+
+        assert result.status == SnapStatus.ERROR
+        assert "Failed to retrieve session statistics" in result.reason
+
+    def test_get_fib_snapshot(self, check_firewall_mock):
+        fib_data = {
+            "0.0.0.0/0_ethernet1/1_10.10.11.1": {
+                "Destination": "0.0.0.0/0",
+                "Interface": "ethernet1/1",
+                "Next Hop Type": "0",
+                "Flags": "ug",
+                "Next Hop": "10.10.11.1",
+                "MTU": "1500",
+            }
+        }
+        check_firewall_mock._node.get_fib.return_value = fib_data
+
+        result = check_firewall_mock.get_fib_snapshot()
+
+        assert result.snapshot == fib_data
+        assert result.status == SnapStatus.SUCCESS
+
+    def test_get_fib_snapshot_exception(self, check_firewall_mock):
+        check_firewall_mock._node.get_fib.side_effect = Exception("API Error")
+
+        result = check_firewall_mock.get_fib_snapshot()
+
+        assert result.status == SnapStatus.ERROR
+        assert "Failed to retrieve FIB routes information" in result.reason
+
+    def test_get_interfaces_mtu_snapshot(self, check_firewall_mock):
+        interfaces_mtu = {
+            "ethernet1/1": {
+                "mtu": 1500,
+            },
+            "ethernet1/2": {
+                "mtu": 9192,
+            },
+        }
+        check_firewall_mock._node.get_interfaces_mtu.return_value = interfaces_mtu
+
+        result = check_firewall_mock.get_interfaces_mtu_snapshot()
+
+        assert result.snapshot == interfaces_mtu
+        assert result.status == SnapStatus.SUCCESS
+
+    def test_get_interfaces_mtu_snapshot_with_subinterfaces(self, check_firewall_mock):
+        interfaces_mtu = {
+            "ethernet1/1": {
+                "mtu": 1500,
+            },
+            "ethernet1/1.1": {
+                "mtu": 1500,
+            },
+        }
+        check_firewall_mock._node.get_interfaces_mtu.return_value = interfaces_mtu
+
+        result = check_firewall_mock.get_interfaces_mtu_snapshot(include_subinterfaces=True)
+
+        assert result.snapshot == interfaces_mtu
+        assert result.status == SnapStatus.SUCCESS
+        check_firewall_mock._node.get_interfaces_mtu.assert_called_with(True)
+
+    def test_get_interfaces_mtu_snapshot_exception(self, check_firewall_mock):
+        check_firewall_mock._node.get_interfaces_mtu.side_effect = Exception("API Error")
+
+        result = check_firewall_mock.get_interfaces_mtu_snapshot()
+
+        assert result.status == SnapStatus.ERROR
+        assert "Failed to retrieve interfaces MTU information" in result.reason
+
+    def test_get_are_routes_snapshot(self, check_firewall_mock):
+        are_routes = {
+            "public-lr": {
+                "0.0.0.0/0": [
+                    {
+                        "prefix": "0.0.0.0/0",
+                        "protocol": "static",
+                        "vrfId": 0,
+                        "selected": True,
+                        "nexthops": [{"fib": True, "interfaceName": "ethernet1/1", "active": True}],
+                    }
+                ]
+            }
+        }
+        check_firewall_mock._node.get_are_routes.return_value = are_routes
+
+        result = check_firewall_mock.get_are_routes_snapshot()
+
+        assert result.snapshot == are_routes
+        assert result.status == SnapStatus.SUCCESS
+
+    def test_get_are_routes_snapshot_exception(self, check_firewall_mock):
+        check_firewall_mock._node.get_are_routes.side_effect = Exception("API Error")
+
+        result = check_firewall_mock.get_are_routes_snapshot()
+
+        assert result.status == SnapStatus.ERROR
+        assert "Failed to retrieve ARE routes information" in result.reason
+
+    def test_get_are_fib_snapshot(self, check_firewall_mock):
+        are_fib = {
+            "0.0.0.0/0_ethernet1/1_10.10.11.1": {
+                "Destination": "0.0.0.0/0",
+                "Interface": "ethernet1/1",
+                "Next Hop Type": "0",
+                "Flags": "ug",
+                "Next Hop": "10.10.11.1",
+                "MTU": "1500",
+            }
+        }
+        check_firewall_mock._node.get_are_fib.return_value = are_fib
+
+        result = check_firewall_mock.get_are_fib_snapshot()
+
+        assert result.snapshot == are_fib
+        assert result.status == SnapStatus.SUCCESS
+
+    def test_get_are_fib_snapshot_exception(self, check_firewall_mock):
+        check_firewall_mock._node.get_are_fib.side_effect = Exception("API Error")
+
+        result = check_firewall_mock.get_are_fib_snapshot()
+
+        assert result.status == SnapStatus.ERROR
+        assert "Failed to retrieve ARE FIB routes information" in result.reason
 
     def test_check_active_support_license_not_licensed(self, check_firewall_mock):
         check_firewall_mock._node.get_licenses.side_effect = DeviceNotLicensedException
@@ -1463,9 +1776,13 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         assert "Failed to retrieve management plane CPU utilization" in result.reason
 
     def test_run_readiness_checks(self, check_firewall_mock):
+        # Create proper CheckResult objects as return values
+        mock_result1 = CheckResult(status=CheckStatus.SUCCESS, reason="")
+        mock_result2 = CheckResult(status=CheckStatus.FAIL, reason="Something failed")
+
         check_firewall_mock._check_method_mapping = {
-            "check1": MagicMock(return_value=True),
-            "check2": MagicMock(return_value=False),
+            "check1": MagicMock(return_value=mock_result1),
+            "check2": MagicMock(return_value=mock_result2),
         }
 
         checks_configuration = ["check1", {"check2": {"param1": 123}}]
@@ -1474,8 +1791,8 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         result = check_firewall_mock.run_readiness_checks(checks_configuration, report_style)
 
         expected_result = {
-            "check1": {"state": True, "reason": "True"},
-            "check2": {"state": False, "reason": "False"},
+            "check1": mock_result1.to_dict(),
+            "check2": mock_result2.to_dict(),
         }
         assert result == expected_result
 
@@ -1483,8 +1800,11 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         check_firewall_mock._check_method_mapping["check2"].assert_called_once_with(param1=123)
 
     def test_run_readiness_checks_empty_dict(self, check_firewall_mock):
+        # Create proper CheckResult object as return value
+        mock_result = CheckResult(status=CheckStatus.SUCCESS, reason="")
+
         check_firewall_mock._check_method_mapping = {
-            "check1": MagicMock(return_value=True),
+            "check1": MagicMock(return_value=mock_result),
         }
 
         checks_configuration = [{"check1": None}]
@@ -1493,7 +1813,7 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         result = check_firewall_mock.run_readiness_checks(checks_configuration, report_style)
 
         expected_result = {
-            "check1": {"state": True, "reason": "True"},
+            "check1": mock_result.to_dict(),
         }
         assert result == expected_result
 
@@ -1513,9 +1833,13 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         # assert str(exception_msg.value) == f"Wrong configuration format for check: check1."
 
     def test_run_snapshots(self, check_firewall_mock):
+        # Create proper SnapResult objects as return values
+        mock_result1 = SnapResult(status=SnapStatus.SUCCESS, snapshot={"data": "value1"})
+        mock_result2 = SnapResult(status=SnapStatus.ERROR, reason="Something failed", snapshot={"data": "value2"})
+
         check_firewall_mock._snapshot_method_mapping = {
-            "snapshot1": MagicMock(return_value={"status": "success"}),
-            "snapshot2": MagicMock(return_value={"status": "failed"}),
+            "snapshot1": MagicMock(return_value=mock_result1),
+            "snapshot2": MagicMock(return_value=mock_result2),
         }
 
         snapshots_config = ["snapshot1", {"snapshot2": {"param1": 123}}]
@@ -1523,8 +1847,8 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         result = check_firewall_mock.run_snapshots(snapshots_config)
 
         expected_result = {
-            "snapshot1": {"status": "success"},
-            "snapshot2": {"status": "failed"},
+            "snapshot1": mock_result1.to_dict(),
+            "snapshot2": mock_result2.to_dict(),
         }
         assert result == expected_result
 
@@ -1532,8 +1856,11 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         check_firewall_mock._snapshot_method_mapping["snapshot2"].assert_called_once_with(param1=123)
 
     def test_run_snapshots_empty_dict(self, check_firewall_mock):
+        # Create proper SnapResult object as return value
+        mock_result = SnapResult(status=SnapStatus.SUCCESS, snapshot={"data": "value"})
+
         check_firewall_mock._snapshot_method_mapping = {
-            "snapshot1": MagicMock(return_value={"status": "success"}),
+            "snapshot1": MagicMock(return_value=mock_result),
         }
 
         snapshots_config = [{"snapshot1": None}]
@@ -1541,7 +1868,7 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         result = check_firewall_mock.run_snapshots(snapshots_config)
 
         expected_result = {
-            "snapshot1": {"status": "success"},
+            "snapshot1": mock_result.to_dict(),
         }
         assert result == expected_result
 
@@ -1660,9 +1987,13 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         )
 
     def test_run_health_checks(self, check_firewall_mock):
+        # Create proper CheckResult objects as return values
+        mock_result1 = CheckResult(status=CheckStatus.SUCCESS, reason="")
+        mock_result2 = CheckResult(status=CheckStatus.FAIL, reason="Health check failed")
+
         check_firewall_mock._health_check_method_mapping = {
-            "check1": MagicMock(return_value=True),
-            "check2": MagicMock(return_value=False),
+            "check1": MagicMock(return_value=mock_result1),
+            "check2": MagicMock(return_value=mock_result2),
         }
 
         checks_configuration = ["check1", {"check2": {"param1": 123}}]
@@ -1671,8 +2002,8 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         result = check_firewall_mock.run_health_checks(checks_configuration, report_style)
 
         expected_result = {
-            "check1": {"state": True, "reason": "True"},
-            "check2": {"state": False, "reason": "False"},
+            "check1": mock_result1.to_dict(),
+            "check2": mock_result2.to_dict(),
         }
         assert result == expected_result
 

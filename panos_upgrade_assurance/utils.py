@@ -1,7 +1,7 @@
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from copy import deepcopy
-from typing import Optional, Union, List, Iterable, Iterator, Set
+from typing import Optional, Union, List, Iterable, Iterator, Set, Dict
 from enum import Enum
 from panos_upgrade_assurance import exceptions
 import sys
@@ -64,6 +64,8 @@ class SnapType:
     FIB_ROUTES = "fib_routes"
     GLOBAL_JUMBO_FRAME = "global_jumbo_frame"
     INTERFACES_MTU = "mtu"
+    ARE_ROUTES = "are_routes"
+    ARE_FIB_ROUTES = "are_fib_routes"
 
 
 class HealthType:
@@ -78,6 +80,19 @@ class HealthType:
 
     DEVICE_ROOT_CERTIFICATE_ISSUE = "device_root_certificate_issue"
     DEVICE_CDSS_AND_PANORAMA_CERTIFICATE_ISSUE = "cdss_and_panorama_certificate_issue"
+
+
+class SnapStatus(Enum):
+    """Status enum for snapshot operations.
+
+    Represents the possible statuses for snapshot operations:
+
+    * `SUCCESS` - Snapshot was successfully captured
+    * `ERROR` - An error occurred during snapshot capture
+    """
+
+    SUCCESS = 0
+    ERROR = 1
 
 
 class CheckStatus(Enum):
@@ -120,6 +135,92 @@ class SupportedHashes(Enum):
     SHA256 = 3
     SHA384 = 4
     SHA512 = 5
+
+
+def enum_state_dict_factory(data):
+    """Custom dict factory to handle Enum values in dataclasses.
+
+    Converts SnapStatus or CheckStatus enums to boolean (SUCCESS=True, others=False).
+    Also includes the original enum name as a string.
+    """
+    result = {}
+
+    for key, value in data:
+        if key == "status" and (isinstance(value, SnapStatus) or isinstance(value, CheckStatus)):
+            # Convert Status enum to boolean
+            result["state"] = value == SnapStatus.SUCCESS if isinstance(value, SnapStatus) else value == CheckStatus.SUCCESS
+            # Keep the original status name
+            result["status"] = value.name
+        else:
+            result[key] = value
+    return result
+
+
+@dataclass
+class SnapResult:
+    """Class representing the result of a snapshot operation.
+
+    It provides three types of information:
+
+    * `status` which represents the outcome of the snapshot operation,
+    * `reason` explaining why a snapshot operation succeeded or failed,
+    * `snapshot` containing the actual snapshot data when successful.
+
+    # Attributes
+
+    status (SnapStatus): Holds the status of a snapshot operation. See [`SnapStatus`](#class-snapstatus) class for details.
+    reason (str): Explanation of the snapshot outcome, particularly useful for error conditions.
+    snapshot (Optional[dict]): Contains the actual snapshot data when successful, None otherwise.
+    """
+
+    status: SnapStatus = SnapStatus.ERROR
+    reason: str = ""
+    snapshot: Optional[Dict[str, Union[str, dict, bool]]] = None
+
+    def __str__(self):
+        """This class' string representation.
+
+        # Returns
+
+        str: a string combined from the `self.status` and `self.reason` variables. Provides a human readable representation of
+        the snapshot operation.
+        """
+        return f"[{self.status.name}] {self.reason}"
+
+    def __bool__(self):
+        """Class' boolean representation.
+
+        # Returns
+
+        bool: a boolean value interpreting the value of the current `status`:
+
+        * `True` when `status` [`SnapStatus.SUCCESS`](#class-snapstatus)
+        * `False` otherwise.
+        """
+        return True if self.status == SnapStatus.SUCCESS else False
+
+    def to_dict(self) -> dict:
+        """Convert the SnapResult object to a dictionary.
+
+        Converts the enum status to a more serializable format and adds state boolean value for success or failure.
+
+        # Returns
+
+        dict: A dictionary containing the state (boolean), status (string), reason, and snapshot data.
+
+        ```python showLineNumbers title="Sample output"
+        {
+            'reason': '',
+            'snapshot': {'ethernet1/1': 'up',
+                         'ethernet1/2': 'up',
+                         'ethernet1/3': 'down'},
+            'state': True,
+            'status': 'SUCCESS'
+        }
+        ```
+
+        """
+        return asdict(self, dict_factory=enum_state_dict_factory)
 
 
 @dataclass
@@ -169,6 +270,26 @@ class CheckResult:
 
         """
         return True if self.status == CheckStatus.SUCCESS else False
+
+    def to_dict(self) -> dict:
+        """Convert the CheckResult object to a dictionary.
+
+        Converts the enum status to a more serializable format and adds state boolean value for success or failure.
+
+        # Returns
+
+        dict: A dictionary containing the state (boolean), status (string), and reason.
+
+        ```python showLineNumbers title="Sample output"
+        {
+            'reason': 'Pending changes found on device.',
+            'state': False,
+            'status': 'FAIL'
+        }
+        ```
+
+        """
+        return asdict(self, dict_factory=enum_state_dict_factory)
 
 
 class ConfigParser:
@@ -520,7 +641,11 @@ def printer(report: dict, indent_level: int = 0) -> None:  # pragma: no cover - 
             if isinstance(v, list):
                 print(f"{delim*indent_level} {k}:")
                 for element in v:
-                    print(f"{delim*(indent_level +1)}- {element}")
+                    if isinstance(element, dict):
+                        print(f"{delim*(indent_level +1)}- ")
+                        printer(element, indent_level + 1)
+                    else:
+                        print(f"{delim*(indent_level +1)}- {element}")
             elif isinstance(v, dict):
                 print(f"{delim * indent_level} {k}:")
                 printer(v, indent_level + 1)

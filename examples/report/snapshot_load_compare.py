@@ -33,7 +33,9 @@ if __name__ == "__main__":
             }
         },
         "global_jumbo_frame",
-        "mtu"
+        "mtu",
+        {"are_routes": { "properties": ["!flags", "!internalNextHopNum"], "count_change_threshold": 10}},
+        {"are_fib_routes": { "properties": ["!10.2.0.38/32_ethernet1/2_0.0.0.0"], "count_change_threshold": 10}},
     ]
 
     compare = SnapshotCompare(

@@ -52,23 +52,25 @@ class SnapshotCompare:
 
         left_snapshot (dict): First snapshot dictionary to be compared, usually the older one, for example a pre-upgrade snapshot.
         right_snapshot (dict): Second snapshot dictionary to be compared, usually the newer one, for example a post-upgrade
-        snapshot.
+            snapshot.
 
         """
         self.left_snap = left_snapshot
         self.right_snap = right_snapshot
         self._functions_mapping = {
-            SnapType.NICS: self.get_diff_and_threshold,
-            SnapType.ROUTES: self.get_diff_and_threshold,
-            SnapType.BGP_PEERS: self.get_diff_and_threshold,
-            SnapType.LICENSE: self.get_diff_and_threshold,
-            SnapType.ARP_TABLE: self.get_diff_and_threshold,
-            SnapType.CONTENT_VERSION: self.get_diff_and_threshold,
-            SnapType.SESSION_STATS: self.get_count_change_percentage,
-            SnapType.IPSEC_TUNNELS: self.get_diff_and_threshold,
-            SnapType.FIB_ROUTES: self.get_diff_and_threshold,
-            SnapType.GLOBAL_JUMBO_FRAME: self.get_diff_and_threshold,
-            SnapType.INTERFACES_MTU: self.get_diff_and_threshold,
+            SnapType.NICS: self.compare_type_generic,
+            SnapType.ROUTES: self.compare_type_generic,
+            SnapType.BGP_PEERS: self.compare_type_generic,
+            SnapType.LICENSE: self.compare_type_generic,
+            SnapType.ARP_TABLE: self.compare_type_generic,
+            SnapType.CONTENT_VERSION: self.compare_type_generic,
+            SnapType.SESSION_STATS: self.compare_type_metric_values,
+            SnapType.IPSEC_TUNNELS: self.compare_type_generic,
+            SnapType.FIB_ROUTES: self.compare_type_generic,
+            SnapType.GLOBAL_JUMBO_FRAME: self.compare_type_generic,
+            SnapType.INTERFACES_MTU: self.compare_type_generic,
+            SnapType.ARE_ROUTES: self.compare_type_are_routes,
+            SnapType.ARE_FIB_ROUTES: self.compare_type_generic,
         }
 
     def compare_snapshots(self, reports: Optional[List[Union[dict, str]]] = None) -> Dict[str, dict]:
@@ -127,14 +129,14 @@ class SnapshotCompare:
                     f"Wrong configuration format for report: {report}."
                 )  # NOTE checks are already validated in ConfigParser - this is never executed.
 
-            self.key_checker(self.left_snap, self.right_snap, report_type)
+            self.validate_keys_exist(self.left_snap, self.right_snap, report_type)
             result.update({report_type: self._functions_mapping[report_type](**report_config)})
 
         return result
 
     @staticmethod
-    def key_checker(left_dict: dict, right_dict: dict, key: Union[str, set, list]) -> None:
-        """The static method to check if a key or a list/set of keys is available in both dictionaries.
+    def validate_keys_exist(left_dict: dict, right_dict: dict, key: Union[str, set, list]) -> None:
+        """The static method to validate if a key or a list/set of keys is available in both dictionaries.
 
         This method looks for a given key or list/set of keys in two dictionaries. Its main purpose is to assure that when
         comparing a key-value pair from two dictionaries, it actually exists in both.
@@ -167,70 +169,6 @@ class SnapshotCompare:
             raise exceptions.MissingKeyException(
                 f"{key} (some elements if set/list) is missing in {'left snapshot' if left_snap_missing_key else 'right snapshot'}"
             )
-
-    @staticmethod
-    def calculate_change_percentage(
-        first_value: Union[str, int],
-        second_value: Union[str, int],
-        threshold: Union[str, float],
-    ) -> Dict[str, Union[bool, float]]:
-        """The static method to compare differences between values against a given threshold.
-
-        Values to be compared should be the `int` or `str` representation of `int`. This method is used when comparing a count of
-        elements so a floating point value here is not expected. The threshold value, on the other hand, should be the `float` or
-        `str` representation of `float`. This is a percentage value.
-
-        The format of the returned value is the following:
-
-        ```python showLineNumbers
-        {
-            passed: bool,
-            change_percentage: float,
-            change_threshold: float
-        }
-        ```
-
-        Where:
-
-        - `passed` is an information if the test passed:
-            - `True` if difference is lower or equal to threshold,
-            - `False` otherwise,
-        - the actual difference represented as percentage,
-        - the originally requested threshold (for reporting purposes).
-
-        # Parameters
-
-        first_value (int, str): First value to compare.
-        second_value (int, str): Second value to compare.
-        threshold (float, str): Maximal difference between values given as percentage.
-
-        # Raises
-
-        WrongDataTypeException: An exception is raised when the threshold value is not between `0` and `100` (typical percentage
-            boundaries).
-
-        # Returns
-
-        dict: A dictionary with the comparison results.
-
-        """
-        first_value = int(first_value)
-        second_value = int(second_value)
-        threshold = float(threshold)
-
-        result = dict(passed=True, change_percentage=float(0), change_threshold=threshold)
-
-        if not (first_value == 0 and second_value == 0):
-            if threshold < 0 or threshold > 100:
-                raise exceptions.WrongDataTypeException("The threshold should be a percentage value between 0 and 100.")
-
-            result["change_percentage"] = round(
-                (abs(first_value - second_value) / (first_value if first_value >= second_value else second_value)) * 100,
-                2,
-            )
-            if result["change_percentage"] > threshold:
-                result["passed"] = False
-        return result
 
     @staticmethod
     def calculate_diff_on_dicts(
@@ -471,7 +409,7 @@ class SnapshotCompare:
         """The static method to calculate the upper level `passed` value.
 
         When two snapshots are compared, a dictionary that is the result of this comparison is structured as in the following
-        [`get_diff_and_threshold()`](#snapshotcompareget_diff_and_threshold) method: each root key contains a dictionary that has
+        [`compare_type_generic()`](#snapshotcomparecompare_type_generic) method: each root key contains a dictionary that has
         a structure returned by the [`calculate_diff_on_dicts()`](#snapshotcomparecalculate_diff_on_dicts) method.
 
         This method takes a dictionary under the root key and calculates the `passed` flag based on the all `passed` flags in
@@ -515,13 +453,129 @@ class SnapshotCompare:
                 passed = False
         result["passed"] = passed
 
-    def get_diff_and_threshold(
+    def _calculate_metric_change_percentage(
+        self,
+        first_value: Union[str, int],
+        second_value: Union[str, int],
+        threshold: Union[str, float],
+    ) -> Dict[str, Union[bool, float]]:
+        """Compare differences between metric values against a given threshold.
+
+        Values to be compared should be the `int` or `str` representation of `int`. This method is used when comparing a count of
+        elements so a floating point value here is not expected. The threshold value, on the other hand, should be the `float` or
+        `str` representation of `float`. This is a percentage value.
+
+        The format of the returned value is the following:
+
+        ```python showLineNumbers
+        {
+            passed: bool,
+            change_percentage: float,
+            change_threshold: float
+        }
+        ```
+
+        Where:
+
+        - `passed` is an information if the test passed:
+            - `True` if difference is lower or equal to threshold,
+            - `False` otherwise,
+        - the actual difference represented as percentage,
+        - the originally requested threshold (for reporting purposes).
+
+        # Parameters
+
+        first_value (int, str): First value to compare.
+        second_value (int, str): Second value to compare.
+        threshold (float, str): Maximal difference between values given as percentage.
+
+        # Raises
+
+        WrongDataTypeException: An exception is raised when the threshold value is not between `0` and `100` (typical percentage
+            boundaries).
+
+        # Returns
+
+        dict: A dictionary with the comparison results.
+
+        """
+        first_value = int(first_value)
+        second_value = int(second_value)
+        threshold = float(threshold)
+
+        result = dict(passed=True, change_percentage=float(0), change_threshold=threshold)
+
+        if not (first_value == 0 and second_value == 0):
+            if threshold < 0 or threshold > 100:
+                raise exceptions.WrongDataTypeException("The threshold should be a percentage value between 0 and 100.")
+
+            result["change_percentage"] = round(
+                (abs(first_value - second_value) / (first_value if first_value >= second_value else second_value)) * 100,
+                2,
+            )
+            if result["change_percentage"] > threshold:
+                result["passed"] = False
+        return result
+
+    def _calculate_count_change_percentage(
+        self,
+        comparison_result: Dict[str, dict],
+        left_snapshot_type_dict: Dict[str, Union[str, dict]],
+        right_snapshot_type_dict: Dict[str, Union[str, dict]],
+        count_change_threshold: Union[int, float],
+    ) -> Dict[str, Union[bool, float]]:
+        """Calculate the percentage of elements changed between two snapshots of a snapshot type.
+
+        This method calculates what percentage of elements have been added, removed, or changed
+        between two snapshot captures of a snapshot type, and determines if this percentage is within
+        an acceptable threshold.
+
+        # Parameters
+
+        comparison_result (dict): The comparison result dictionary containing added, missing and changed keys for a snapshot type.
+        left_snapshot_type_dict (dict): The left (usually older) snapshot dictionary for a particualar snapshot type.
+        right_snapshot_type_dict (dict): The right (usually newer) snapshot dictionary for a particualar snapshot type.
+        count_change_threshold (int, float): The maximum acceptable percentage change.
+
+        # Raises
+
+        WrongDataTypeException: If the threshold is not between 0 and 100.
+
+        # Returns
+
+        dict: A dictionary with the calculation results containing:
+            - passed (bool): Whether the change percentage is within threshold
+            - change_percentage (float): The calculated change percentage
+            - change_threshold (float): The original threshold value
+        """
+        if count_change_threshold < 0 or count_change_threshold > 100:
+            raise exceptions.WrongDataTypeException("The threshold should be a percentage value between 0 and 100.")
+
+        added_count = len(comparison_result["added"]["added_keys"])
+        missing_count = len(comparison_result["missing"]["missing_keys"])
+        changed_count = len(comparison_result["changed"]["changed_raw"])
+        left_total_count = len(left_snapshot_type_dict.keys())
+        right_total_count = len(right_snapshot_type_dict.keys())
+
+        if left_total_count == 0 and right_total_count == 0:  # diff should be 0 when both sides are empty
+            diff = 0
+        elif left_total_count == 0:
+            diff = 1
+        else:
+            diff = (added_count + missing_count + changed_count) / left_total_count
+
+        diff_percentage = round(float(diff) * 100, 2)
+        passed = diff_percentage <= count_change_threshold
+
+        return {"passed": passed, "change_percentage": diff_percentage, "change_threshold": float(count_change_threshold)}
+
+    def compare_type_generic(
         self,
         report_type: str,
         properties: Optional[List[str]] = None,
         count_change_threshold: Optional[Union[int, float]] = None,
-    ) -> Optional[Dict[str, Optional[Union[bool, dict]]]]:
-        """The generic snapshot comparison method.
+    ) -> Dict[str, Union[bool, dict]]:
+        """The generic snapshot type comparison method.
 
         The generic method to compare two snapshots of a given type. It is meant to fit most of the comparison cases.
         It is capable of calculating both - a difference between two snapshots and the change count in the elements against a
@@ -612,61 +666,42 @@ class SnapshotCompare:
         """
         result = {}
 
+        report_type_left_snapshot = self.left_snap[report_type]["snapshot"]
+        report_type_right_snapshot = self.right_snap[report_type]["snapshot"]
+
+        if report_type_left_snapshot is None or report_type_right_snapshot is None:
+            raise exceptions.SnapshotNoneComparisonException("Cannot compare snapshot when either side is None.")
+
         diff = self.calculate_diff_on_dicts(
-            left_side_to_compare=self.left_snap[report_type],
-            right_side_to_compare=self.right_snap[report_type],
+            left_side_to_compare=report_type_left_snapshot,
+            right_side_to_compare=report_type_right_snapshot,
             properties=properties,
         )
         result.update(diff)
 
         if count_change_threshold and result:
-            if count_change_threshold < 0 or count_change_threshold > 100:
-                raise exceptions.WrongDataTypeException("The threshold should be a percentage value between 0 and 100.")
-
-            added_count = len(result["added"]["added_keys"])
-            missing_count = len(result["missing"]["missing_keys"])
-            changed_count = len(result["changed"]["changed_raw"])
-            left_total_count = len(self.left_snap[report_type].keys())
-            right_total_count = len(self.right_snap[report_type].keys())
-
-            if left_total_count == 0 and right_total_count == 0:  # diff should be 0 when both sides are empty
-                diff = 0
-            elif left_total_count == 0:
-                diff = 1
-            else:
-                diff = (added_count + missing_count + changed_count) / left_total_count
-
-            diff_percentage = round(float(diff) * 100, 2)
-
-            passed = diff_percentage <= count_change_threshold
-
-            result.update(
-                {
-                    "count_change_percentage": dict(
-                        passed=passed,
-                        change_percentage=diff_percentage,
-                        change_threshold=float(count_change_threshold),
-                    )
-                }
+            count_change_result = self._calculate_count_change_percentage(
+                comparison_result=result,
+                left_snapshot_type_dict=report_type_left_snapshot,
+                right_snapshot_type_dict=report_type_right_snapshot,
+                count_change_threshold=count_change_threshold,
             )
+            result.update({"count_change_percentage": count_change_result})
 
-        if result:
-            self.calculate_passed(result)
-        else:
-            result = None
+        self.calculate_passed(result)
         return result
 
-    # custom compare methods
-    def get_count_change_percentage(
+    # CUSTOM COMPARISON METHODS
+    def compare_type_metric_values(
         self,
         report_type: str,
         thresholds: Optional[List[Dict[str, Union[int, float]]]] = None,
     ) -> Optional[Dict[str, Union[bool, dict]]]:
-        """Generic method to calculate the change on values and compare them against a given threshold.
+        """Generic method to compare metric values of a snapshot type against given thresholds.
 
-        In opposition to the [`get_diff_and_threshold()`](#snapshotcompareget_diff_and_threshold) method, this one does not
+        In opposition to the [`compare_type_generic()`](#snapshotcomparecompare_type_generic) method, this one does not
         calculate the count change but the actual difference between the numerical values.
-        A good example is a change in the session count. The snapshot for this area is a dictionary with the keys taking values
+        A good example is a change in the session stats. The snapshot for this area is a dictionary with the keys taking values
         of different session types and values containing the actual session count:
 
         ```python showLineNumbers title="Example"
@@ -737,7 +772,7 @@ class SnapshotCompare:
         # Returns
 
         dict: The result of difference compared against a threshold. The result for each value is in the same form as returned \
-            by the [`calculate_change_percentage()`](#snapshotcomparecalculate_change_percentage) method. For the examples \
+            by the [`_calculate_metric_change_percentage()`](#snapshotcompare_calculate_metric_change_percentage) method. For the examples \
             above, the return value would be:
 
         ```python showLineNumbers title="Sample output"
@@ -765,11 +800,17 @@ class SnapshotCompare:
             passed=True,
         )
 
+        report_type_left_snapshot = self.left_snap[report_type]["snapshot"]
+        report_type_right_snapshot = self.right_snap[report_type]["snapshot"]
+
+        if report_type_left_snapshot is None or report_type_right_snapshot is None:
+            raise exceptions.SnapshotNoneComparisonException("Cannot compare snapshot when either side is None.")
+
         requested_elements = set(next(iter(unary_dict)) for unary_dict in thresholds)
         try:
-            self.key_checker(
-                self.left_snap[report_type],
-                self.right_snap[report_type],
+            self.validate_keys_exist(
+                report_type_left_snapshot,
+                report_type_right_snapshot,
                 requested_elements,
             )
         except exceptions.MissingKeyException as exc:  # raised when any requested key is missing in one of the snapshots
@@ -778,7 +819,7 @@ class SnapshotCompare:
             ) from exc
 
         elements = ConfigParser(
-            valid_elements=set(self.left_snap[report_type].keys()),
+            valid_elements=set(report_type_left_snapshot.keys()),
             requested_config=thresholds,
         ).prepare_config()
 
@@ -786,9 +827,9 @@ class SnapshotCompare:
             element_type, threshold_value = list(element.items())[0]
             result.update(
                 {
-                    element_type: self.calculate_change_percentage(
-                        first_value=self.left_snap[report_type][element_type],
-                        second_value=self.right_snap[report_type][element_type],
+                    element_type: self._calculate_metric_change_percentage(
+                        first_value=report_type_left_snapshot[element_type],
+                        second_value=report_type_right_snapshot[element_type],
                         threshold=threshold_value,
                     )
                 }
@@ -796,3 +837,103 @@ class SnapshotCompare:
 
         self.calculate_passed(result)
         return result
+
+    def compare_type_are_routes(
+        self, report_type: str, properties: Optional[List[str]] = None, count_change_threshold: Optional[Union[int, float]] = None
+    ) -> Dict[str, Union[bool, dict]]:
+        """Compare advanced routing engine routes between two snapshots of the are_routes type.
+
+        This method specifically handles the advanced routing engine data format where:
+        - Only installed routes for each destination (CIDR key) on each logical router are considered
+        - Nexthops are organized as (ethernet, IP) pairs for comparison
+
+        # Parameters
+
+        report_type (str): Name of report (type) that has to be compared (always "are_routes" as of now)
+        properties (list(str), optional): Optional list of properties to include/exclude when comparing
+        count_change_threshold (int, float, optional): Maximum difference between number of changed
+            elements in each snapshot (as percentage)
+
+        # Returns
+
+        dict: Comparison results with the same structure as compare_type_generic()
+
+        """
+        result = {}
+
+        report_type_left_snapshot = self.left_snap[report_type]["snapshot"]
+        report_type_right_snapshot = self.right_snap[report_type]["snapshot"]
+
+        if report_type_left_snapshot is None or report_type_right_snapshot is None:
+            raise exceptions.SnapshotNoneComparisonException("Cannot compare snapshot when either side is None.")
+
+        # Extract normalized routing data from both snapshots
+        left_normalized = self._normalize_are_routes(report_type_left_snapshot)
+        right_normalized = self._normalize_are_routes(report_type_right_snapshot)
+
+        # Perform comparison on the normalized data
+        diff = self.calculate_diff_on_dicts(
+            left_side_to_compare=left_normalized,
+            right_side_to_compare=right_normalized,
+            properties=properties,
+        )
+        result.update(diff)
+
+        # Calculate threshold comparison if requested
+        if count_change_threshold and result:
+            count_change_result = self._calculate_count_change_percentage(
+                comparison_result=result,
+                left_snapshot_type_dict=left_normalized,
+                right_snapshot_type_dict=right_normalized,
+                count_change_threshold=count_change_threshold,
+            )
+            result.update({"count_change_percentage": count_change_result})
+
+        self.calculate_passed(result)
+        return result
+
+    def _normalize_are_routes(self, are_routes: Dict) -> Dict:
+        """Normalize advanced routing engine routes for comparison.
+
+        For each logical router and destination:
+        1. Select only installed routes
+        2. Convert nexthop list to dict with ethernet_ip as keys
+
+        # Parameters
+
+        are_routes (dict): The ARE routes data from a snapshot
+
+        # Returns
+
+        dict: Normalized routing data for comparison
+        """
+        normalized = {}
+
+        # Process each logical router
+        for lr_name, routes in are_routes.items():
+            normalized[lr_name] = {}
+
+            # Process each destination prefix
+            for prefix, route_entries in routes.items():
+                # Filter for installed routes only
+                installed_routes = [route for route in route_entries if route.get("installed", False)]
+
+                if installed_routes:
+                    # Use the first installed route (should be the best one)
+                    best_route = installed_routes[0]
+                    normalized[lr_name][prefix] = {
+                        # Add all route attributes directly to the prefix dictionary
+                        **{k: v for k, v in best_route.items() if k != "nexthops"},
+                        # Add an empty nexthops dictionary that will be populated below
+                        "nexthops": {},
+                    }
+
+                    # Convert nexthops list to a dictionary keyed by <interface>_<nexthop-ip>
+                    if "nexthops" in best_route:
+                        for nexthop in best_route["nexthops"]:
+                            interface_name = nexthop.get("interfaceName", "none")
+                            nexthop_ip = nexthop.get("ip", "direct")
+                            nexthop_key = f"{interface_name}_{nexthop_ip}"
+                            normalized[lr_name][prefix]["nexthops"][nexthop_key] = nexthop
+
+        return normalized
