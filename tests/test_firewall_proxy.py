@@ -2843,3 +2843,29 @@ class TestFirewallProxy:
             fw_proxy_mock.get_interfaces_mtu()
 
         assert "sw.dev.interface.config system state data not found in response" in str(exc_info.value)
+
+    def test_get_interfaces_mtu_with_comment_fields(self, fw_proxy_mock):
+        # Test with comment fields containing single quotes and commas (issue from real-world scenario)
+        # These comment fields previously caused SyntaxError during ast.literal_eval
+        interfaces_with_comments_xml = """
+        <response status="success">
+          <result>
+            <![CDATA[ sw.dev.interface.config: { 'TCI': { 'hwaddr': '7c:89:c3:d3:5b:0c', 'mtu': '1500', }, 'ethernet1/1': { 'hwaddr': '00:0d:3a:dd:a3:76', 'mtu': '1500', }, 'ethernet1/2': { 'comment': private 'NAT' interface, with comma, 'hwaddr': '00:0d:3a:dd:a4:0b', 'mtu': '1500', }, 'ethernet1/3': { 'hwaddr': 'ba:db:ad:ba:db:03', 'mtu': '1500', }, 'loopback': { }, 'loopback.11': { 'comment': 'some' loopback interface, }, 'tunnel': { }, 'tunnel.12': { 'comment': 'Guest-Wifi' tunnel, }, } ]]>
+          </result>
+        </response>
+        """
+        response = ET.fromstring(interfaces_with_comments_xml)
+        fw_proxy_mock.op.return_value = response
+
+        # Should successfully parse even with comment fields containing quotes
+        result = fw_proxy_mock.get_interfaces_mtu(include_subinterfaces=False)
+
+        # Verify the interfaces were parsed correctly (comments are removed during parsing)
+        assert result == {
+            "TCI": {"mtu": 1500},
+            "ethernet1/1": {"mtu": 1500},
+            "ethernet1/2": {"mtu": 1500},
+            "ethernet1/3": {"mtu": 1500},
+            "loopback": {"mtu": None},
+            "tunnel": {"mtu": None},
+        }
