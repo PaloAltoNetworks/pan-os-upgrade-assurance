@@ -2157,6 +2157,9 @@ class FirewallProxy:
         match = re.search(r"sw\.dev\.interface\.config:\s*(\{.*\})", response)
         if match:
             interfaces_state_str = match.group(1)
+            # remove comment fields as they may contain unescaped quotes that break parsing
+            # use non-greedy match with lookahead to handle commas within comment values
+            interfaces_state_str = re.sub(r"'comment':\s*.*?,\s*(?='[^']+':|})", "", interfaces_state_str)
             # add quotes around non-quoted values
             interfaces_state_str = re.sub(
                 r"'([^']+)':\s+([^'{},\s][^{},\s]*(?:\.[^{},\s]+)*)", r"'\1': '\2'", interfaces_state_str
