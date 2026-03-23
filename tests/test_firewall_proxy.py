@@ -1546,7 +1546,7 @@ class TestFirewallProxy:
 
         response = datetime.strptime("Wed May 31 11:52:34 2023", "%a %b %d %H:%M:%S %Y")
 
-        assert fw_proxy_mock.get_dp_clock() == response
+        assert fw_proxy_mock.get_dp_clock() == [response]
 
     def test_get_dp_clock_alt_format_all_in_sync(self, fw_proxy_mock):
         """Test the get_dp_clock function returns a single item list when there's only one dataplane to worry about
