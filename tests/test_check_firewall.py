@@ -1143,7 +1143,7 @@ class TestCheckFirewall:
         )
         check_firewall_mock._node.get_dp_clock.return_value = [
             datetime.strptime(
-            "Wed May 30 11:50:21 2023", "%a %b %d %H:%M:%S %Y"
+                "Wed May 30 11:50:21 2023", "%a %b %d %H:%M:%S %Y"
             ),
             datetime.strptime(
                 "Wed May 31 11:50:21 2023", "%a %b %d %H:%M:%S %Y"

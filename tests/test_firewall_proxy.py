@@ -1555,13 +1555,13 @@ class TestFirewallProxy:
         <response status="success">
             <result>
                 <member>DP s3dp0:
-        
+
         dataplane time: Sun Mar 22 19:19:10 PDT 2026
-        
-        
-        
+
+
+
         DP s3dp1:
-        
+
         dataplane time: Sun Mar 22 19:19:10 PDT 2026
                 </member>
             </result>
