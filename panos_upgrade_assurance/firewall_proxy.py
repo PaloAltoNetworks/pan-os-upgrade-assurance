@@ -3,7 +3,7 @@ import ast
 import xml.etree.ElementTree as ET
 from panos_upgrade_assurance.utils import interpret_yes_no
 from xmltodict import parse as XMLParse
-from typing import Optional, Union
+from typing import Optional, Union, List
 from panos.firewall import Firewall
 from pan.xapi import PanXapiError
 from panos_upgrade_assurance import exceptions
@@ -1214,15 +1214,16 @@ class FirewallProxy:
 
         return dt
 
-    def get_dp_clock(self) -> list[datetime]:
+    def get_dp_clock(self) -> List[datetime]:
         """Get the clock information from data plane.
 
         The actual API command is `show clock more`.
 
         # Returns
 
-        datetime: The clock information represented as a `datetime` object. As devices can have multiple dataplanes,
-            this function returns the time of each dataplane clock if they are different.
+        List[datetime]: The clock information represented as a list of `datetime` object.
+            As devices can have multiple dataplanes, this function returns the time of each dataplane clock if they are
+            different.
         """
         response = self.op_parser(cmd="show clock more")
         time_string = dict(response)["member"]
