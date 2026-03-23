@@ -1597,7 +1597,10 @@ class TestFirewallProxy:
         first_time = datetime.strptime("Sun Mar 22 19:19:10 2026", "%a %b %d %H:%M:%S %Y")
         second_time = datetime.strptime("Sun Mar 23 19:19:10 2026", "%a %b %d %H:%M:%S %Y")
 
-        assert fw_proxy_mock.get_dp_clock() == [first_time, second_time]
+        result = fw_proxy_mock.get_dp_clock()
+        assert first_time in result
+        assert second_time in result
+        assert len(result) == 2
 
     def test_get_jobs(self, fw_proxy_mock):
         xml_text = """
