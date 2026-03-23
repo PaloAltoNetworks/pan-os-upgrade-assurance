@@ -1,3 +1,7 @@
+import importlib.metadata
 from importlib import metadata
 
-__version__ = metadata.version(__package__)
+try:
+    __version__ = metadata.version(__package__)
+except importlib.metadata.PackageNotFoundError:
+    __version__ = "devel"

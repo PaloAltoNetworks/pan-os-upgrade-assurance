@@ -1109,9 +1109,9 @@ class TestCheckFirewall:
         check_firewall_mock._node.get_mp_clock.return_value = datetime.strptime(
             "Wed May 31 11:50:21 2023", "%a %b %d %H:%M:%S %Y"
         )
-        check_firewall_mock._node.get_dp_clock.return_value = datetime.strptime(
+        check_firewall_mock._node.get_dp_clock.return_value = [datetime.strptime(
             "Wed May 31 11:52:34 2023", "%a %b %d %H:%M:%S %Y"
-        )
+        )]
 
         assert check_firewall_mock.check_mp_dp_sync(1) == CheckResult(
             status=CheckStatus.FAIL, reason="The data plane clock and management clock are different by 133.0 seconds."
@@ -1121,9 +1121,9 @@ class TestCheckFirewall:
         check_firewall_mock._node.get_mp_clock.return_value = datetime.strptime(
             "Wed May 31 11:50:21 2023", "%a %b %d %H:%M:%S %Y"
         )
-        check_firewall_mock._node.get_dp_clock.return_value = datetime.strptime(
+        check_firewall_mock._node.get_dp_clock.return_value = [datetime.strptime(
             "Wed May 31 11:50:34 2023", "%a %b %d %H:%M:%S %Y"
-        )
+        )]
 
         assert check_firewall_mock.check_mp_dp_sync(30) == CheckResult(status=CheckStatus.SUCCESS)
 
@@ -1131,11 +1131,29 @@ class TestCheckFirewall:
         check_firewall_mock._node.get_mp_clock.return_value = datetime.strptime(
             "Wed May 31 11:50:21 2023", "%a %b %d %H:%M:%S %Y"
         )
-        check_firewall_mock._node.get_dp_clock.return_value = datetime.strptime(
+        check_firewall_mock._node.get_dp_clock.return_value = [datetime.strptime(
             "Wed May 31 11:50:21 2023", "%a %b %d %H:%M:%S %Y"
-        )
+        )]
 
         assert check_firewall_mock.check_mp_dp_sync(1) == CheckResult(status=CheckStatus.SUCCESS)
+
+    def test_check_mp_dp_sync_dp_clocks_not_sync(self, check_firewall_mock):
+        check_firewall_mock._node.get_mp_clock.return_value = datetime.strptime(
+            "Wed May 31 11:50:21 2023", "%a %b %d %H:%M:%S %Y"
+        )
+        check_firewall_mock._node.get_dp_clock.return_value = [
+            datetime.strptime(
+            "Wed May 30 11:50:21 2023", "%a %b %d %H:%M:%S %Y"
+            ),
+            datetime.strptime(
+                "Wed May 31 11:50:21 2023", "%a %b %d %H:%M:%S %Y"
+            )
+        ]
+
+        assert check_firewall_mock.check_mp_dp_sync(1) == CheckResult(
+            status=CheckStatus.FAIL,
+            reason="Time values between dataplane clocks are different."
+        )
 
     @pytest.mark.parametrize(
         "param_rsa, param_ecdsa, exc_msg",

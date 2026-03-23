@@ -1548,6 +1548,57 @@ class TestFirewallProxy:
 
         assert fw_proxy_mock.get_dp_clock() == response
 
+    def test_get_dp_clock_alt_format_all_in_sync(self, fw_proxy_mock):
+        """Test the get_dp_clock function returns a single item list when there's only one dataplane to worry about
+        and the clocks are in sync"""
+        xml_text = """
+        <response status="success">
+            <result>
+                <member>DP s3dp0:
+        
+        dataplane time: Sun Mar 22 19:19:10 PDT 2026
+        
+        
+        
+        DP s3dp1:
+        
+        dataplane time: Sun Mar 22 19:19:10 PDT 2026
+                </member>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        response = datetime.strptime("Sun Mar 22 19:19:10 2026", "%a %b %d %H:%M:%S %Y")
+
+        assert fw_proxy_mock.get_dp_clock() == [response]
+
+    def test_get_dp_clock_alt_format_out_of_sync(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <member>DP s3dp0:
+
+        dataplane time: Sun Mar 22 19:19:10 PDT 2026
+
+
+
+        DP s3dp1:
+
+        dataplane time: Sun Mar 23 19:19:10 PDT 2026
+                </member>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        first_time = datetime.strptime("Sun Mar 22 19:19:10 2026", "%a %b %d %H:%M:%S %Y")
+        second_time = datetime.strptime("Sun Mar 23 19:19:10 2026", "%a %b %d %H:%M:%S %Y")
+
+        assert fw_proxy_mock.get_dp_clock() == [first_time, second_time]
+
     def test_get_jobs(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
