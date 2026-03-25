@@ -2068,13 +2068,13 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
     def test_check_config_locks_config_locked(self, check_firewall_mock):
         check_firewall_mock._node.get_config_locks.return_value = [
             {
-                '@name': 'admin',
-                'type': 'shared',
-                'name': 'shared',
-                'created': '2026/03/19 17:00:45',
-                'last-activity': '2026/03/19 17:00:45',
-                'loggedin': 'yes',
-                'comment': 'Testing config lock api'
+                "@name": "admin",
+                "type": "shared",
+                "name": "shared",
+                "created": "2026/03/19 17:00:45",
+                "last-activity": "2026/03/19 17:00:45",
+                "loggedin": "yes",
+                "comment": "Testing config lock api",
             }
         ]
 

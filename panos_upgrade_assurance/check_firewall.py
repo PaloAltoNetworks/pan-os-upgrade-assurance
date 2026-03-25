@@ -2005,8 +2005,7 @@ class CheckFirewall:
 
         return result
 
-
-    def check_config_locks(self):
+    def check_config_locks(self) -> CheckResult:
         """Checks for the prescence of configuration locks on the system. A locked configuration implies an
         administrator is actively working on the device.
 

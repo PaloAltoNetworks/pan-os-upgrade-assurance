@@ -3261,13 +3261,13 @@ class TestFirewallProxy:
 
         assert fw_proxy_mock.get_config_locks() == [
             {
-                '@name': 'admin',
-                'type': 'shared',
-                'name': 'shared',
-                'created': '2026/03/19 17:00:45',
-                'last-activity': '2026/03/19 17:00:45',
-                'loggedin': 'yes',
-                'comment': 'Testing config lock api'
+                "@name": "admin",
+                "type": "shared",
+                "name": "shared",
+                "created": "2026/03/19 17:00:45",
+                "last-activity": "2026/03/19 17:00:45",
+                "loggedin": "yes",
+                "comment": "Testing config lock api",
             }
         ]
 

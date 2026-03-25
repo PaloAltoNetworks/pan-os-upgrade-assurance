@@ -2232,10 +2232,7 @@ class FirewallProxy:
         """
 
         # Get parent interfaces and their MTUs using `show system state filter sw.dev.interface.config`
-        response = self.op_parser(
-            cmd="<show><config-locks><vsys>all</vsys></config-locks></show>",
-            cmd_in_xml=True
-        )
+        response = self.op_parser(cmd="<show><config-locks><vsys>all</vsys></config-locks></show>", cmd_in_xml=True)
         locks = response.get("config-locks")
         if locks:
             entries = locks.get("entry")
