@@ -3236,3 +3236,50 @@ class TestFirewallProxy:
         with pytest.raises(MalformedResponseException) as exc_info:
             fw_proxy_mock.get_are_routes()
         assert "Failed to decode JSON response" in str(exc_info.value)
+
+    def test_get_config_locks(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <config-locks>
+                    <entry name="admin">
+                        <type>shared</type>
+                        <name>shared</name>
+                        <created>2026/03/19 17:00:45</created>
+                        <last-activity>2026/03/19 17:00:45</last-activity>
+                        <loggedin>yes</loggedin>
+                        <comment>
+                            <![CDATA[Testing config lock api]]>
+                        </comment>
+                    </entry>
+                </config-locks>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_config_locks() == [
+            {
+                '@name': 'admin',
+                'type': 'shared',
+                'name': 'shared',
+                'created': '2026/03/19 17:00:45',
+                'last-activity': '2026/03/19 17:00:45',
+                'loggedin': 'yes',
+                'comment': 'Testing config lock api'
+            }
+        ]
+
+    def test_get_config_locks_no_locks(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <config-locks></config-locks>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        assert fw_proxy_mock.get_config_locks() == []

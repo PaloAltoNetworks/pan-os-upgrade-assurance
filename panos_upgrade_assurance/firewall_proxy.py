@@ -2206,3 +2206,42 @@ class FirewallProxy:
             raise exceptions.MalformedResponseException("sw.dev.interface.config system state data not found in response")
 
         return result
+
+    def get_config_locks(self) -> list[dict]:
+        """
+        Get configuration lock details from the device.
+
+        # Returns
+
+        A list of config lock detail dictionaries
+
+        ```python showLineNumbers title="Sample output"
+        [
+            {
+                '@name': 'admin',
+                'type': 'shared',
+                'name': 'shared',
+                'created': '2026/03/19 17:00:45',
+                'last-activity': '2026/03/19 17:00:45',
+                'loggedin': 'yes',
+                'comment': 'Testing config lock api'
+            }
+        ]
+        ```
+
+        """
+
+        # Get parent interfaces and their MTUs using `show system state filter sw.dev.interface.config`
+        response = self.op_parser(
+            cmd="<show><config-locks><vsys>all</vsys></config-locks></show>",
+            cmd_in_xml=True
+        )
+        locks = response.get("config-locks")
+        if locks:
+            entries = locks.get("entry")
+            if isinstance(entries, dict):
+                return [entries]
+
+            return entries
+
+        return []

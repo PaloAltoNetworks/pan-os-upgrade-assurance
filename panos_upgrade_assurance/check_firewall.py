@@ -2004,3 +2004,27 @@ class CheckFirewall:
         )
 
         return result
+
+
+    def check_config_locks(self):
+        """Checks for the prescence of configuration locks on the system. A locked configuration implies an
+        administrator is actively working on the device.
+
+        # Returns
+
+        CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking \
+            value of:
+
+        * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) if the device is not affected,
+        * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise.
+
+        """
+        result = CheckResult()
+        locks = self._node.get_config_locks()
+        if not locks:
+            result.status = CheckStatus.SUCCESS
+            return result
+
+        result.reason = f"Configuration is currently locked by {', '.join([i.get('@name') for i in locks])}"
+        result.status = CheckStatus.FAIL
+        return result
