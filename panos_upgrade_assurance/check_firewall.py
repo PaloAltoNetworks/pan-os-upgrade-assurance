@@ -2019,11 +2019,20 @@ class CheckFirewall:
 
         """
         result = CheckResult()
-        locks = self._node.get_config_locks()
-        if not locks:
+        config_locks = self._node.get_config_locks()
+        commit_locks = self._node.get_commit_locks()
+        if not config_locks + commit_locks:
             result.status = CheckStatus.SUCCESS
             return result
 
-        result.reason = f"Configuration is currently locked by {', '.join([i.get('@name') for i in locks])}"
-        result.status = CheckStatus.FAIL
+        reason = ""
+        if config_locks:
+            reason += f"Configuration is currently locked by {', '.join([i.get('@name') for i in config_locks])}. "
+            result.status = CheckStatus.FAIL
+
+        if commit_locks:
+            reason += f"Commits are currently locked by {', '.join([i.get('@name') for i in commit_locks])}."
+            result.status = CheckStatus.FAIL
+
+        result.reason = reason
         return result

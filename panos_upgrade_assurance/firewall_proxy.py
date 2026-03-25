@@ -1,5 +1,6 @@
 import re
 import ast
+import enum
 import xml.etree.ElementTree as ET
 from panos_upgrade_assurance.utils import interpret_yes_no
 from xmltodict import parse as XMLParse
@@ -10,6 +11,11 @@ from panos_upgrade_assurance import exceptions
 from math import floor
 from datetime import datetime, timedelta
 from packaging import version
+
+
+class LockType(str, enum.Enum):
+    commit_lock = "commit-locks"
+    config_lock = "config-locks"
 
 
 class FirewallProxy:
@@ -2207,6 +2213,20 @@ class FirewallProxy:
 
         return result
 
+    def get_locks_by_type(self, lock_type: LockType):
+        """Helper function to make it easy to get locks by a given type"""
+        lock_type_str = lock_type.value
+        response = self.op_parser(cmd=f"<show><{lock_type_str}><vsys>all</vsys></{lock_type_str}></show>", cmd_in_xml=True)
+        locks = response.get(lock_type_str)
+        if locks:
+            entries = locks.get("entry")
+            if isinstance(entries, dict):
+                return [entries]
+
+            return entries
+
+        return []
+
     def get_config_locks(self) -> list[dict]:
         """
         Get configuration lock details from the device.
@@ -2231,14 +2251,30 @@ class FirewallProxy:
 
         """
 
-        # Get parent interfaces and their MTUs using `show system state filter sw.dev.interface.config`
-        response = self.op_parser(cmd="<show><config-locks><vsys>all</vsys></config-locks></show>", cmd_in_xml=True)
-        locks = response.get("config-locks")
-        if locks:
-            entries = locks.get("entry")
-            if isinstance(entries, dict):
-                return [entries]
+        return self.get_locks_by_type(LockType.config_lock)
 
-            return entries
+    def get_commit_locks(self) -> list[dict]:
+        """
+        Get commit lock details from the device
 
-        return []
+        # Returns
+
+        A list of config lock detail dictionaries
+
+        ```python showLineNumbers title="Sample output"
+        [
+            {
+                '@name': 'admin',
+                'type': 'shared',
+                'name': 'shared',
+                'created': '2026/03/19 17:00:45',
+                'last-activity': '2026/03/19 17:00:45',
+                'loggedin': 'yes',
+                'comment': 'Testing config lock api'
+            }
+        ]
+        ```
+
+        """
+
+        return self.get_locks_by_type(LockType.commit_lock)
