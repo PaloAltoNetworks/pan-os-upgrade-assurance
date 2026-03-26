@@ -1837,6 +1837,21 @@ __Returns__
 }
 ```
 
+### `FirewallProxy.get_mp_memory_usage`
+
+```python
+def get_mp_memory_usage()
+```
+
+Get management plane memory usage.
+
+The actual API command is `show running resource-monitor minute last {minutes}`.
+
+__Returns__
+
+
+Dict containing the total, used, free and cache memory details
+
 ### `FirewallProxy.get_config_locks`
 
 ```python
