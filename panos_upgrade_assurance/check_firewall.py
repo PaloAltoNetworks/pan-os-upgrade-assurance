@@ -771,7 +771,7 @@ class CheckFirewall:
         if free_space_panrepo > minimum_free_space:
             result.status = CheckStatus.SUCCESS
         else:
-            result.reason = f"There is not enough free space, only {str(round(free_space_panrepo/1024,1)) + 'G' if free_space_panrepo >= 1024 else str(free_space_panrepo) + 'M'}B is available."
+            result.reason = f"There is not enough free space, only {str(round(free_space_panrepo / 1024, 1)) + 'G' if free_space_panrepo >= 1024 else str(free_space_panrepo) + 'M'}B is available."
         return result
 
     def check_mp_dp_sync(self, diff_threshold: int = 0) -> CheckResult:
@@ -2004,6 +2004,51 @@ class CheckFirewall:
             " expiration, the first of which will occur on the 7th of April, 2024."
         )
 
+        return result
+
+    def check_memory_usage_percentage(self, threshold: int = 90):
+        """Checks the current memory usage of the management plane is under the given threshold percentage.
+
+        # Parameters
+
+        threshold (int, optional): (defaults to 90) Maximum acceptable memory utilization percentage.
+
+        # Raises
+
+        WrongDataTypeException: Raised when the threshold parameter is not an integer or is outside the allowed range.
+
+        # Returns
+
+        CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking \
+            value of:
+
+        * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when Memory utilization is below the threshold.
+        * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when Memory utilization is equal to or above the threshold.
+        * [`CheckStatus.ERROR`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) when the data cannot be retrieved.
+
+        """
+
+        if not isinstance(threshold, int):
+            raise exceptions.WrongDataTypeException(f"Threshold parameter should be an integer, got {type(threshold)}")
+
+        if threshold < 0 or threshold > 100:
+            raise exceptions.WrongDataTypeException(f"Threshold parameter should be between 0 and 100, got {threshold}")
+
+        memory_usage: dict = self._node.get_mp_memory_usage()
+        used_memory = memory_usage.get("used")
+        total_memory = memory_usage.get("total")
+        result = CheckResult()
+        if not used_memory or not total_memory:
+            result.status = CheckStatus.ERROR
+            result.reason = "Could not read memory details from device."
+
+        percent_used = int((used_memory / total_memory) * 100)
+        if percent_used > threshold:
+            result.status = CheckStatus.FAIL
+            result.reason = f"Current memory usage {percent_used}% greater than threshold {threshold}"
+            return result
+
+        result.status = CheckStatus.SUCCESS
         return result
 
     def check_config_locks(self) -> CheckResult:

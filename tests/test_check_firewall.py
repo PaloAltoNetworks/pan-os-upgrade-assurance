@@ -2065,6 +2065,27 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
 
         assert check_firewall_mock.check_cdss_and_panorama_certificate_issue().status == expected_status
 
+    def test_check_memory_usage_percentage(self, check_firewall_mock):
+        check_firewall_mock._node.get_mp_memory_usage.return_value = {
+            "total": 63739.8,
+            "free": 46728.6,
+            "used": 10179.2,
+            "buff/cache": 6832.0,
+        }
+        result = check_firewall_mock.check_memory_usage_percentage()
+        assert result.status == CheckStatus.SUCCESS
+
+    def test_check_memory_usage_percentage_fail(self, check_firewall_mock):
+        check_firewall_mock._node.get_mp_memory_usage.return_value = {
+            "total": 63739.8,
+            "free": 3739.8,
+            "used": 60000,
+            "buff/cache": 6832.0,
+        }
+        result = check_firewall_mock.check_memory_usage_percentage()
+        assert result.status == CheckStatus.FAIL
+        assert result.reason == "Current memory usage 94% greater than threshold 90"
+
     def test_check_config_locks_config_locked(self, check_firewall_mock):
         check_firewall_mock._node.get_config_locks.return_value = [
             {

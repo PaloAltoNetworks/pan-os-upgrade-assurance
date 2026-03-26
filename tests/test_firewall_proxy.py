@@ -3237,6 +3237,52 @@ class TestFirewallProxy:
             fw_proxy_mock.get_are_routes()
         assert "Failed to decode JSON response" in str(exc_info.value)
 
+    def test_get_mp_memory_usage(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <![CDATA[top - 16:29:19 up  4:18,  0 users,  load average: 0.26, 0.18, 0.19
+        Tasks: 456 total,   1 running, 452 sleeping,   0 stopped,   3 zombie
+        %Cpu(s):  0.2 us,  0.4 sy,  0.0 ni, 99.3 id,  0.0 wa,  0.0 hi,  0.2 si,  0.0 st
+        MiB Mem :  63739.8 total,  46728.6 free,  10179.2 used,   6832.0 buff/cache
+        MiB Swap:   1023.9 total,   1023.9 free,      0.0 used.  56059.9 avail Mem 
+        
+          PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+        13999       20   0  177396  23916  12740 S   6.2   0.0   0:26.59 packet_pa+
+            ]]>
+            </result>
+        </response>
+        """
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        result = fw_proxy_mock.get_mp_memory_usage()
+        assert result == {"total": 63739.8, "free": 46728.6, "used": 10179.2, "buff/cache": 6832.0}
+
+    def test_get_mp_memory_usage_bad_string(self, fw_proxy_mock):
+        xml_text = """
+        <response status="success">
+            <result>
+                <![CDATA[top - 16:29:19 up  4:18,  0 users,  load average: 0.26, 0.18, 0.19
+        Tasks: 456 total,   1 running, 452 sleeping,   0 stopped,   3 zombie
+        %Cpu(s):  0.2 us,  0.4 sy,  0.0 ni, 99.3 id,  0.0 wa,  0.0 hi,  0.2 si,  0.0 st
+        MiB Mem :  63739.8 total,  46728.6 free,  6832.0 buff/cache
+        MiB Swap:   1023.9 total,   1023.9 free,      0.0 used.  56059.9 avail Mem 
+
+          PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+        13999       20   0  177396  23916  12740 S   6.2   0.0   0:26.59 packet_pa+
+            ]]>
+            </result>
+        </response>
+        """
+        from panos_upgrade_assurance.exceptions import MalformedResponseException
+
+        raw_response = ET.fromstring(xml_text)
+        fw_proxy_mock.op.return_value = raw_response
+
+        with pytest.raises(MalformedResponseException):
+            fw_proxy_mock.get_mp_memory_usage()
+
     def test_get_config_locks(self, fw_proxy_mock):
         xml_text = """
         <response status="success">

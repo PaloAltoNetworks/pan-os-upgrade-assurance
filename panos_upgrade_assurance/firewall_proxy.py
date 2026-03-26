@@ -2,6 +2,9 @@ import re
 import ast
 import enum
 import xml.etree.ElementTree as ET
+
+from markdown_it.rules_inline.backticks import regex
+
 from panos_upgrade_assurance.utils import interpret_yes_no
 from xmltodict import parse as XMLParse
 from typing import Optional, Union, List
@@ -2210,6 +2213,32 @@ class FirewallProxy:
                     result[subif] = {"mtu": int(subif_mtu) if subif_mtu is not None else None}
         else:
             raise exceptions.MalformedResponseException("sw.dev.interface.config system state data not found in response")
+
+        return result
+
+    def get_mp_memory_usage(self):
+        """Get management plane memory usage.
+
+        The actual API command is `show running resource-monitor minute last {minutes}`.
+
+        # Returns
+
+        Dict containing the total, used, free and cache memory details
+        """
+
+        # panos SDK op command converts the minutes wrongly to xml so direct XML command is used
+        text_output: str = self.op_parser(cmd=f"show system resources")
+        result = {"total": None, "free": None, "used": None, "buff/cache": None}
+        for line in text_output.splitlines():
+            if "mib mem" in line.lower():
+                for k in result:
+                    re_pattern = re.compile(f"([0-9.]+)\s+{k}")
+                    found = re_pattern.findall(line)
+                    if not found:
+                        raise exceptions.MalformedResponseException(
+                            "Could not get memory usage from output of show system resources command"
+                        )
+                    result[k] = float(found[0])
 
         return result
 
