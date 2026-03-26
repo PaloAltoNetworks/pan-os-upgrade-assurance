@@ -1,10 +1,7 @@
-import re
 import ast
+import re
 import enum
 import xml.etree.ElementTree as ET
-
-from markdown_it.rules_inline.backticks import regex
-
 from panos_upgrade_assurance.utils import interpret_yes_no
 from xmltodict import parse as XMLParse
 from typing import Optional, Union, List
@@ -2232,7 +2229,7 @@ class FirewallProxy:
         for line in text_output.splitlines():
             if "mib mem" in line.lower():
                 for k in result:
-                    re_pattern = re.compile(f"([0-9.]+)\s+{k}")
+                    re_pattern = re.compile(rf"([0-9.]+)\s+{k}")
                     found = re_pattern.findall(line)
                     if not found:
                         raise exceptions.MalformedResponseException(
