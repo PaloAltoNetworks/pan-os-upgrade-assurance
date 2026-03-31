@@ -1080,7 +1080,7 @@ class CheckFirewall:
 
                 # let's get rid of all keys that are not related to a schedule
                 for k in list(schedule_details.keys()):
-                    if k in ["sync-to-peer", "threshold"] or k.startswith("@"):
+                    if k in ["sync-to-peer", "threshold", "new-app-threshold"] or k.startswith("@"):
                         schedule_details.pop(k)
 
                 # we now should have a single element dict
