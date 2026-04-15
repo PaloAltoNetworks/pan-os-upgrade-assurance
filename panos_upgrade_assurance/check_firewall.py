@@ -802,7 +802,13 @@ class CheckFirewall:
         result = CheckResult()
 
         mp_clock = self._node.get_mp_clock()
-        dp_clock = self._node.get_dp_clock()
+        dp_clocks = self._node.get_dp_clock()
+
+        if len(dp_clocks) > 1:
+            result.reason = "Time values between dataplane clocks are different."
+            return result
+
+        dp_clock = dp_clocks[0]
 
         time_fluctuation = abs((mp_clock - dp_clock).total_seconds())
         if time_fluctuation > diff_threshold:
