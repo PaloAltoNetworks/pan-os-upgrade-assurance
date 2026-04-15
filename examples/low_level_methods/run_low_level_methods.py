@@ -127,7 +127,7 @@ if __name__ == "__main__":
 
     print(f"\n  management plane clock:\n{firewall.get_mp_clock()}")
 
-    print(f"\n  data plane clock:\n{firewall.get_dp_clock()}")
+    print(f"\n  data plane clocks:\n{firewall.get_dp_clock()}")
 
     print(f"\n  certificates:\n{firewall.get_certificates()}")
 

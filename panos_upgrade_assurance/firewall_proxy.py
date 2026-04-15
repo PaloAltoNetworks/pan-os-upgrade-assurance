@@ -3,7 +3,7 @@ import ast
 import xml.etree.ElementTree as ET
 from panos_upgrade_assurance.utils import interpret_yes_no
 from xmltodict import parse as XMLParse
-from typing import Optional, Union
+from typing import Optional, Union, List
 from panos.firewall import Firewall
 from pan.xapi import PanXapiError
 from panos_upgrade_assurance import exceptions
@@ -1214,33 +1214,45 @@ class FirewallProxy:
 
         return dt
 
-    def get_dp_clock(self) -> dict:
+    def get_dp_clock(self) -> List[datetime]:
         """Get the clock information from data plane.
 
         The actual API command is `show clock more`.
 
         # Returns
 
-        datetime: The clock information represented as a `datetime` object.
-
+        List[datetime]: The clock information represented as a list of `datetime` object.
+            As devices can have multiple dataplanes, this function returns the time of each dataplane clock if they are
+            different.
         """
         response = self.op_parser(cmd="show clock more")
         time_string = dict(response)["member"]
-        time_parsed = time_string.split()
-        time_dict = {
-            "time": time_parsed[5],
-            "tz": time_parsed[6],
-            "day": time_parsed[4],
-            "month": time_parsed[3],
-            "year": time_parsed[7],
-            "day_of_week": time_parsed[2],
-        }
-        dt = datetime.strptime(
-            f"{time_dict['year']}-{time_dict['month']}-{time_dict['day']} {time_dict['time']}",
-            "%Y-%b-%d %H:%M:%S",
-        )
+        time_string_lines = time_string.split("\n")
 
-        return dt
+        found_times = set()
+        for line in time_string_lines:
+            if "dataplane time" in line.lower():
+                found_times.add(line)
+
+        result = []
+
+        for found_time in found_times:
+            time_parsed = found_time.split()
+            time_dict = {
+                "time": time_parsed[5],
+                "tz": time_parsed[6],
+                "day": time_parsed[4],
+                "month": time_parsed[3],
+                "year": time_parsed[7],
+                "day_of_week": time_parsed[2],
+            }
+            dt = datetime.strptime(
+                f"{time_dict['year']}-{time_dict['month']}-{time_dict['day']} {time_dict['time']}",
+                "%Y-%b-%d %H:%M:%S",
+            )
+            result.append(dt)
+
+        return result
 
     def get_certificates(self) -> dict:
         """Get information about certificates installed on a device.
