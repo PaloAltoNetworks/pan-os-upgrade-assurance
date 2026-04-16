@@ -49,6 +49,25 @@ jobs:
           python -m pip install --upgrade setuptools
           pip install -r requirements-docs.txt
 
+      - name: Fix databind package names for pkg_resources compatibility
+        run: |
+          SITE_PACKAGES=$(python -c "import site; print(site.getsitepackages()[0])")
+          cd "$SITE_PACKAGES"
+
+          # Create symlinks for databind packages with dots (databind.json, databind.core)
+          # to fix pkg_resources compatibility issue in older Python versions
+          for pkg in databind_json databind_core; do
+            for dir in ${pkg}-*.dist-info; do
+              if [ -d "$dir" ]; then
+                dotted_name=$(echo "$dir" | sed "s/${pkg}/$(echo $pkg | tr '_' '.')/" )
+                if [ ! -e "$dotted_name" ]; then
+                  echo "Creating symlink: $dotted_name -> $dir"
+                  ln -s "$dir" "$dotted_name"
+                fi
+              fi
+            done
+          done
+
       - name: Generate API docs
         run: make documentation
 
