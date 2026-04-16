@@ -2220,7 +2220,9 @@ class FirewallProxy:
 
         # Returns
 
-        Dict containing the total, used, free and cache memory details
+        dict: containing the total, used, free and cache memory details
+
+        
         """
 
         # panos SDK op command converts the minutes wrongly to xml so direct XML command is used

@@ -2006,7 +2006,7 @@ class CheckFirewall:
 
         return result
 
-    def check_memory_usage_percentage(self, threshold: int = 90):
+    def check_mp_mem_utilization(self, threshold: int = 90) -> CheckResult:
         """Checks the current memory usage of the management plane is under the given threshold percentage.
 
         # Parameters
@@ -2043,7 +2043,7 @@ class CheckFirewall:
             result.reason = "Could not read memory details from device."
 
         percent_used = int((used_memory / total_memory) * 100)
-        if percent_used > threshold:
+        if percent_used >= threshold:
             result.status = CheckStatus.FAIL
             result.reason = f"Current memory usage {percent_used}% greater than threshold {threshold}"
             return result
