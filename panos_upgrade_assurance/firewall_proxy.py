@@ -2213,7 +2213,7 @@ class FirewallProxy:
 
         return result
 
-    def get_mp_memory_usage(self):
+    def get_mp_mem_utilization(self):
         """Get management plane memory usage.
 
         The actual API command is `show running resource-monitor minute last {minutes}`.

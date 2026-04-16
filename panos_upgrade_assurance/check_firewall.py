@@ -2034,7 +2034,7 @@ class CheckFirewall:
         if threshold < 0 or threshold > 100:
             raise exceptions.WrongDataTypeException(f"Threshold parameter should be between 0 and 100, got {threshold}")
 
-        memory_usage: dict = self._node.get_mp_memory_usage()
+        memory_usage: dict = self._node.get_mp_mem_utilization()
         used_memory = memory_usage.get("used")
         total_memory = memory_usage.get("total")
         result = CheckResult()

@@ -3237,7 +3237,7 @@ class TestFirewallProxy:
             fw_proxy_mock.get_are_routes()
         assert "Failed to decode JSON response" in str(exc_info.value)
 
-    def test_get_mp_memory_usage(self, fw_proxy_mock):
+    def test_get_mp_mem_utilization(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -3256,10 +3256,10 @@ class TestFirewallProxy:
         raw_response = ET.fromstring(xml_text)
         fw_proxy_mock.op.return_value = raw_response
 
-        result = fw_proxy_mock.get_mp_memory_usage()
+        result = fw_proxy_mock.get_mp_mem_utilization()
         assert result == {"total": 63739.8, "free": 46728.6, "used": 10179.2, "buff/cache": 6832.0}
 
-    def test_get_mp_memory_usage_bad_string(self, fw_proxy_mock):
+    def test_get_mp_mem_utilization_bad_string(self, fw_proxy_mock):
         xml_text = """
         <response status="success">
             <result>
@@ -3281,7 +3281,7 @@ class TestFirewallProxy:
         fw_proxy_mock.op.return_value = raw_response
 
         with pytest.raises(MalformedResponseException):
-            fw_proxy_mock.get_mp_memory_usage()
+            fw_proxy_mock.get_mp_mem_utilization()
 
     def test_get_config_locks(self, fw_proxy_mock):
         xml_text = """

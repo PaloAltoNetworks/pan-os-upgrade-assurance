@@ -1837,10 +1837,10 @@ __Returns__
 }
 ```
 
-### `FirewallProxy.get_mp_memory_usage`
+### `FirewallProxy.get_mp_mem_utilization`
 
 ```python
-def get_mp_memory_usage()
+def get_mp_mem_utilization()
 ```
 
 Get management plane memory usage.
