@@ -1298,7 +1298,7 @@ class FirewallProxy:
         if "certificate" in shared_config:  # NOTE this causes exception if shared config has no sub-elements
             certificates = shared_config["certificate"]["entry"]
             for certificate in certificates if isinstance(certificates, list) else [certificates]:
-                if 'private-key' in certificate:
+                if "private-key" in certificate:
                     # Remove private-key field if it exists
                     certificate.pop("private-key")
                 cert_name = certificate.pop("@name")
