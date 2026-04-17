@@ -120,6 +120,7 @@ class CheckFirewall:
             CheckType.SYSTEM_ENVIRONMENTALS: self.check_system_environmentals,
             CheckType.DP_CPU_UTILIZATION: self.check_dp_cpu_utilization,
             CheckType.MP_CPU_UTILIZATION: self.check_mp_cpu_utilization,
+            CheckType.CONFIG_LOCKS: self.check_config_locks,
         }
 
         self._health_check_method_mapping = {
