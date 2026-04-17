@@ -4,7 +4,6 @@ from panos_upgrade_assurance.utils import ConfigParser, CheckType, SnapType, int
 from deepdiff import DeepDiff
 from panos_upgrade_assurance.exceptions import WrongDataTypeException, UnknownParameterException
 
-
 valid_check_types = [v for k, v in vars(CheckType).items() if not k.startswith("__")]
 valid_snap_types = [v for k, v in vars(SnapType).items() if not k.startswith("__")]
 

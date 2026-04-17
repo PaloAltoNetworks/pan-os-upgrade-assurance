@@ -2064,3 +2064,50 @@ UT1F7XqZcTWaThXLFMpQyUvUpuhilcmzucrvVI0=
         check_firewall_mock._node.get_system_time_rebooted = MagicMock(return_value=last_reboot)
 
         assert check_firewall_mock.check_cdss_and_panorama_certificate_issue().status == expected_status
+
+    def test_check_config_locks_config_locked(self, check_firewall_mock):
+        check_firewall_mock._node.get_config_locks.return_value = [
+            {
+                "@name": "admin",
+                "type": "shared",
+                "name": "shared",
+                "created": "2026/03/19 17:00:45",
+                "last-activity": "2026/03/19 17:00:45",
+                "loggedin": "yes",
+                "comment": "Testing config lock api",
+            }
+        ]
+        check_firewall_mock._node.get_commit_locks.return_value = []
+
+        result = check_firewall_mock.check_config_locks()
+
+        assert result.status == CheckStatus.FAIL
+        assert "Configuration is currently locked by admin. " in result.reason
+
+    def test_check_config_locks_commit_locked(self, check_firewall_mock):
+        check_firewall_mock._node.get_commit_locks.return_value = [
+            {
+                "@name": "admin",
+                "type": "shared",
+                "name": "shared",
+                "created": "2026/03/19 17:00:45",
+                "last-activity": "2026/03/19 17:00:45",
+                "loggedin": "yes",
+                "comment": "Testing commit lock api",
+            }
+        ]
+        check_firewall_mock._node.get_config_locks.return_value = []
+
+        result = check_firewall_mock.check_config_locks()
+
+        assert result.status == CheckStatus.FAIL
+        assert "Commits are currently locked by admin." in result.reason
+
+    def test_check_config_locks_config_is_not_locked(self, check_firewall_mock):
+        check_firewall_mock._node.get_config_locks.return_value = []
+        check_firewall_mock._node.get_commit_locks.return_value = []
+
+        result = check_firewall_mock.check_config_locks()
+
+        assert result.status == CheckStatus.SUCCESS
+        assert not result.reason
