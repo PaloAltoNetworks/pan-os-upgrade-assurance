@@ -1837,13 +1837,63 @@ __Returns__
 }
 ```
 
+### `FirewallProxy.get_mp_mem_utilization`
+
+```python
+def get_mp_mem_utilization()
+```
+
+Get management plane memory usage.
+
+The actual API command is `show running resource-monitor minute last {minutes}`.
+
+__Returns__
+
+
+`dict`: containing the total, used, free and cache memory details
+
+### `FirewallProxy.get_locks_by_type`
+
+```python
+def get_locks_by_type(lock_type: LockType)
+```
+
+Helper function to make it easy to get locks by a given type
+
 ### `FirewallProxy.get_config_locks`
 
 ```python
-def get_config_locks() -> list[dict]
+def get_config_locks() -> List[dict]
 ```
 
 Get configuration lock details from the device.
+
+__Returns__
+
+
+A list of config lock detail dictionaries
+
+```python showLineNumbers title="Sample output"
+[
+    {
+        '@name': 'admin',
+        'type': 'shared',
+        'name': 'shared',
+        'created': '2026/03/19 17:00:45',
+        'last-activity': '2026/03/19 17:00:45',
+        'loggedin': 'yes',
+        'comment': 'Testing config lock api'
+    }
+]
+```
+
+### `FirewallProxy.get_commit_locks`
+
+```python
+def get_commit_locks() -> List[dict]
+```
+
+Get commit lock details from the device
 
 __Returns__
 

@@ -1,5 +1,5 @@
-import re
 import ast
+import re
 import enum
 import xml.etree.ElementTree as ET
 from panos_upgrade_assurance.utils import interpret_yes_no
@@ -2215,6 +2215,34 @@ class FirewallProxy:
 
         return result
 
+    def get_mp_mem_utilization(self):
+        """Get management plane memory usage.
+
+        The actual API command is `show running resource-monitor minute last {minutes}`.
+
+        # Returns
+
+        dict: containing the total, used, free and cache memory details
+
+
+        """
+
+        # panos SDK op command converts the minutes wrongly to xml so direct XML command is used
+        text_output: str = self.op_parser(cmd="show system resources")
+        result = {"total": None, "free": None, "used": None, "buff/cache": None}
+        for line in text_output.splitlines():
+            if "mib mem" in line.lower():
+                for k in result:
+                    re_pattern = re.compile(rf"([0-9.]+)\s+{k}")
+                    found = re_pattern.findall(line)
+                    if not found:
+                        raise exceptions.MalformedResponseException(
+                            "Could not get memory usage from output of show system resources command"
+                        )
+                    result[k] = float(found[0])
+
+        return result
+
     def get_locks_by_type(self, lock_type: LockType):
         """Helper function to make it easy to get locks by a given type"""
         lock_type_str = lock_type.value
@@ -2229,7 +2257,7 @@ class FirewallProxy:
 
         return []
 
-    def get_config_locks(self) -> list[dict]:
+    def get_config_locks(self) -> List[dict]:
         """
         Get configuration lock details from the device.
 
@@ -2255,7 +2283,7 @@ class FirewallProxy:
 
         return self.get_locks_by_type(LockType.config_lock)
 
-    def get_commit_locks(self) -> list[dict]:
+    def get_commit_locks(self) -> List[dict]:
         """
         Get commit lock details from the device
 
