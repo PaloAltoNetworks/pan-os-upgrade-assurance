@@ -1056,3 +1056,20 @@ __Returns__
 * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) if the device is not affected,
 * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise.
 
+### `CheckFirewall.check_config_locks`
+
+```python
+def check_config_locks()
+```
+
+Checks for the prescence of configuration locks on the system. A locked configuration implies an
+administrator is actively working on the device.
+
+__Returns__
+
+
+`CheckResult`: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking             value of:
+
+* [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) if the device is not affected,
+* [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise.
+

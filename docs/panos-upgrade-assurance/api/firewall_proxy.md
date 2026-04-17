@@ -1837,3 +1837,30 @@ __Returns__
 }
 ```
 
+### `FirewallProxy.get_config_locks`
+
+```python
+def get_config_locks() -> list[dict]
+```
+
+Get configuration lock details from the device.
+
+__Returns__
+
+
+A list of config lock detail dictionaries
+
+```python showLineNumbers title="Sample output"
+[
+    {
+        '@name': 'admin',
+        'type': 'shared',
+        'name': 'shared',
+        'created': '2026/03/19 17:00:45',
+        'last-activity': '2026/03/19 17:00:45',
+        'loggedin': 'yes',
+        'comment': 'Testing config lock api'
+    }
+]
+```
+

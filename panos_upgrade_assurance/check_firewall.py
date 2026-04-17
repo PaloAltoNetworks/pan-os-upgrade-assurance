@@ -120,6 +120,7 @@ class CheckFirewall:
             CheckType.SYSTEM_ENVIRONMENTALS: self.check_system_environmentals,
             CheckType.DP_CPU_UTILIZATION: self.check_dp_cpu_utilization,
             CheckType.MP_CPU_UTILIZATION: self.check_mp_cpu_utilization,
+            CheckType.CONFIG_LOCKS: self.check_config_locks,
         }
 
         self._health_check_method_mapping = {
@@ -2003,4 +2004,36 @@ class CheckFirewall:
             " expiration, the first of which will occur on the 7th of April, 2024."
         )
 
+        return result
+
+    def check_config_locks(self) -> CheckResult:
+        """Checks for the prescence of configuration locks on the system. A locked configuration implies an
+        administrator is actively working on the device.
+
+        # Returns
+
+        CheckResult: Object of [`CheckResult`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkresult) class taking \
+            value of:
+
+        * [`CheckStatus.SUCCESS`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) if the device is not affected,
+        * [`CheckStatus.FAIL`](/panos/docs/panos-upgrade-assurance/api/utils#class-checkstatus) otherwise.
+
+        """
+        result = CheckResult()
+        config_locks = self._node.get_config_locks()
+        commit_locks = self._node.get_commit_locks()
+        if not config_locks + commit_locks:
+            result.status = CheckStatus.SUCCESS
+            return result
+
+        reason = ""
+        if config_locks:
+            reason += f"Configuration is currently locked by {', '.join([i.get('@name') for i in config_locks])}. "
+            result.status = CheckStatus.FAIL
+
+        if commit_locks:
+            reason += f"Commits are currently locked by {', '.join([i.get('@name') for i in commit_locks])}."
+            result.status = CheckStatus.FAIL
+
+        result.reason = reason
         return result
