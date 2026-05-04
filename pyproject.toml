@@ -23,7 +23,7 @@ pan-os-python = ">=1.8,<2.0"
 xmltodict = ">=1.0.4,<2.0.0"
 pyopenssl = ">=26.0.0,<27.0.0"
 packaging = ">=22.0"
-typing-extensions = { version = ">=4.13.2,<5.0", python = "<3.10" }
+typing-extensions = { version = ">=4.15.0,<5.0", python = "<3.10" }
 
 [tool.poetry.group.dev.dependencies]
 flake8 = ">=5"
